@@ -3,276 +3,924 @@
 
 <head>
 
-  <meta charset="UTF-8">
+<meta charset="UTF-8">
 
-  <meta
+<meta
     name="viewport"
-    content="width=device-width, initial-scale=1"
-  >
+    content="width=device-width, initial-scale=1.0"
+>
 
-  <meta
-    name="theme-color"
-    content="#ffffff"
-  >
+<title>TestLink - 管理者</title>
 
-  <title>
-    管理ダッシュボード | 学習AIチャット
-  </title>
-
-
-  <script>
-    document.documentElement.classList.add(
-      "auth-pending"
-    );
-  </script>
-
-
-  <link
+<link
     rel="stylesheet"
-    href="../assets/css/common.css"
-  >
+    href="../assets/css/style.css"
+>
 
-  <link
-    rel="stylesheet"
-    href="../assets/css/admin.css"
-  >
+<style>
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+
+    background:#f4f6fb;
+
+    color:#202938;
+
+    font-family:
+        Arial,
+        "Noto Sans JP",
+        sans-serif;
+}
+
+.layout{
+    min-height:100vh;
+
+    display:flex;
+}
+
+.sidebar{
+    width:250px;
+
+    flex-shrink:0;
+
+    background:#ffffff;
+
+    border-right:1px solid #e1e6ef;
+
+    padding:22px;
+}
+
+.logo{
+    font-size:20px;
+
+    font-weight:800;
+
+    color:#2857d9;
+
+    margin-bottom:25px;
+}
+
+.admin-badge{
+    display:inline-block;
+
+    padding:5px 9px;
+
+    border-radius:6px;
+
+    background:#eef4ff;
+
+    color:#2857d9;
+
+    font-size:12px;
+
+    font-weight:700;
+
+    margin-bottom:18px;
+}
+
+.user-area{
+    padding:14px;
+
+    background:#f4f6fb;
+
+    border-radius:10px;
+
+    margin-bottom:20px;
+
+    font-size:14px;
+
+    line-height:1.6;
+}
+
+.nav{
+    display:flex;
+
+    flex-direction:column;
+
+    gap:7px;
+}
+
+.nav button{
+    width:100%;
+
+    padding:11px 12px;
+
+    border:0;
+
+    border-radius:8px;
+
+    background:#ffffff;
+
+    color:#344054;
+
+    text-align:left;
+
+    font:inherit;
+
+    cursor:pointer;
+}
+
+.nav button:hover{
+    background:#eef4ff;
+}
+
+.nav button.active{
+    background:#2857d9;
+
+    color:#ffffff;
+}
+
+.logout-button{
+    margin-top:20px;
+
+    border-top:1px solid #e1e6ef !important;
+
+    padding-top:18px !important;
+
+    color:#b42318 !important;
+}
+
+.content{
+    flex:1;
+
+    padding:35px;
+
+    min-width:0;
+}
+
+.content-section{
+    display:none;
+}
+
+.content-section.active{
+    display:block;
+}
+
+.page-title{
+    margin-top:0;
+
+    font-size:28px;
+}
+
+.card{
+    background:#ffffff;
+
+    border:1px solid #e1e6ef;
+
+    border-radius:12px;
+
+    padding:22px;
+
+    margin-bottom:18px;
+}
+
+.stat-grid{
+    display:grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(180px,1fr)
+        );
+
+    gap:15px;
+}
+
+.stat-card{
+    background:#ffffff;
+
+    border:1px solid #e1e6ef;
+
+    border-radius:12px;
+
+    padding:20px;
+}
+
+.stat-title{
+    color:#667085;
+
+    font-size:13px;
+}
+
+.stat-value{
+    font-size:30px;
+
+    font-weight:800;
+
+    margin-top:8px;
+}
+
+.notice{
+    padding:15px;
+
+    border:1px solid #e1e6ef;
+
+    border-radius:9px;
+
+    margin-bottom:10px;
+}
+
+.loading{
+    color:#667085;
+}
+
+.error{
+    padding:15px;
+
+    background:#fff0f0;
+
+    color:#a11b1b;
+
+    border-radius:9px;
+}
+
+@media(max-width:800px){
+
+    .layout{
+        display:block;
+    }
+
+    .sidebar{
+        width:100%;
+
+        border-right:0;
+
+        border-bottom:1px solid #e1e6ef;
+    }
+
+    .content{
+        padding:22px;
+    }
+
+}
+
+</style>
 
 </head>
 
 
-<body data-role="admin">
+<body>
 
-  <div class="app-layout">
-
-
-    <aside
-      id="appSidebar"
-      class="sidebar"
-    ></aside>
+<div class="layout">
 
 
-    <main
-      id="appMain"
-      class="app-main"
-    >
+    <aside class="sidebar">
 
+        <div class="logo">
+            TestLink
+        </div>
 
-      <header class="page-header">
-
-        <h1 class="page-title">
-          運営管理コンソール
-        </h1>
-
-
-        <p>
-          学習AIチャットの運用状況を確認します。
-        </p>
-
-      </header>
-
-
-      <section class="page">
-
-
-        <div class="dashboard-grid">
-
-
-          <div class="admin-card">
-
-            <span>
-              サービス
-            </span>
-
-            <strong>
-              学習AIチャット
-            </strong>
-
-          </div>
-
-
-          <div class="admin-card">
-
-            <span>
-              AI接続先
-            </span>
-
-
-            <strong id="ai-status">
-              Supabase / Groq
-            </strong>
-
-
-            <p>
-              接続状態は AI 質問テストで確認してください。
-            </p>
-
-          </div>
-
-
-          <div class="admin-card">
-
-            <span>
-              メンテナンス
-            </span>
-
-
-            <strong id="maintenance-status">
-              確認中
-            </strong>
-
-          </div>
-
-
+        <div class="admin-badge">
+            管理者
         </div>
 
 
+        <div
+            class="user-area"
+            id="userInfo"
+        >
+            読み込み中...
+        </div>
+
+
+        <nav class="nav">
+
+            <button
+                type="button"
+                class="active"
+                data-page="home"
+            >
+                ダッシュボード
+            </button>
+
+            <button
+                type="button"
+                data-page="notices"
+            >
+                お知らせ管理
+            </button>
+
+            <button
+                type="button"
+                data-page="documents"
+            >
+                配布文書管理
+            </button>
+
+            <button
+                type="button"
+                data-page="calendar"
+            >
+                カレンダー管理
+            </button>
+
+            <button
+                type="button"
+                data-page="scoreForms"
+            >
+                成績フォーム作成
+            </button>
+
+            <button
+                type="button"
+                data-page="scores"
+            >
+                成績分析
+            </button>
+
+            <button
+                type="button"
+                data-page="users"
+            >
+                生徒管理
+            </button>
+
+            <button
+                type="button"
+                data-page="settings"
+            >
+                システム設定
+            </button>
+
+            <button
+                type="button"
+                id="logoutButton"
+                class="logout-button"
+            >
+                ログアウト
+            </button>
+
+        </nav>
+
+    </aside>
+
+
+    <main class="content">
+
+
         <section
-          class="page-card"
-          style="margin-top:20px"
+            id="page-home"
+            class="content-section active"
         >
 
-          <h2>
-            管理メニュー
-          </h2>
+            <h1 class="page-title">
+                ダッシュボード
+            </h1>
 
 
-          <p>
-            左側のメニューからユーザー、お知らせ、メンテナンス、
-            AI設定、監査ログ、システム状態を管理できます。
-          </p>
+            <div class="stat-grid">
+
+                <div class="stat-card">
+
+                    <div class="stat-title">
+                        登録生徒
+                    </div>
+
+                    <div
+                        class="stat-value"
+                        id="studentCount"
+                    >
+                        -
+                    </div>
+
+                </div>
 
 
-          <p
-            id="dashboard-error"
-            role="alert"
-            style="
-              color:#b42318;
-              white-space:pre-wrap
-            "
-          ></p>
+                <div class="stat-card">
+
+                    <div class="stat-title">
+                        お知らせ
+                    </div>
+
+                    <div
+                        class="stat-value"
+                        id="noticeCount"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-title">
+                        成績データ
+                    </div>
+
+                    <div
+                        class="stat-value"
+                        id="scoreCount"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <h2>
+                    システム状態
+                </h2>
+
+                <div class="notice">
+
+                    管理者としてログインしています。
+
+                </div>
+
+            </div>
 
         </section>
 
 
-      </section>
+        <section
+            id="page-notices"
+            class="content-section"
+        >
+
+            <h1 class="page-title">
+                お知らせ管理
+            </h1>
+
+            <div class="card">
+
+                <div class="notice">
+                    お知らせ管理機能
+                </div>
+
+            </div>
+
+        </section>
 
 
-      <footer class="app-footer">
-        © 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.
-      </footer>
+        <section
+            id="page-documents"
+            class="content-section"
+        >
+
+            <h1 class="page-title">
+                配布文書管理
+            </h1>
+
+            <div class="card">
+
+                <div class="notice">
+                    配布文書管理機能
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section
+            id="page-calendar"
+            class="content-section"
+        >
+
+            <h1 class="page-title">
+                カレンダー管理
+            </h1>
+
+            <div class="card">
+
+                <div class="notice">
+                    カレンダー管理機能
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section
+            id="page-scoreForms"
+            class="content-section"
+        >
+
+            <h1 class="page-title">
+                成績フォーム作成
+            </h1>
+
+            <div class="card">
+
+                <div class="notice">
+                    成績フォーム作成機能
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section
+            id="page-scores"
+            class="content-section"
+        >
+
+            <h1 class="page-title">
+                成績分析
+            </h1>
+
+            <div class="card">
+
+                <div class="notice">
+                    成績分析機能
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section
+            id="page-users"
+            class="content-section"
+        >
+
+            <h1 class="page-title">
+                生徒管理
+            </h1>
+
+            <div class="card">
+
+                <div class="notice">
+                    生徒管理機能
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section
+            id="page-settings"
+            class="content-section"
+        >
+
+            <h1 class="page-title">
+                システム設定
+            </h1>
+
+            <div class="card">
+
+                <div class="notice">
+                    システム設定
+                </div>
+
+            </div>
+
+        </section>
 
 
     </main>
 
-  </div>
+</div>
 
 
-  <script type="module">
+<script type="module">
 
-    import {
-      db,
-      doc,
-      getDoc
-    } from "../assets/js/firebase.js";
-
-
-    const maintenanceStatus =
-      document.getElementById(
-        "maintenance-status"
-      );
+import {
+    auth,
+    db
+} from "../assets/js/firebase.js";
 
 
-    const dashboardError =
-      document.getElementById(
-        "dashboard-error"
-      );
+import {
+    onAuthStateChanged,
+    signOut
+} from "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js";
 
 
-    /*
-     * Dashboardのデータだけ取得。
-     *
-     * 認証処理はlayout.jsが担当する。
-     */
-
-    async function loadDashboard() {
-
-      try {
-
-        const snapshot =
-          await getDoc(
-            doc(
-              db,
-              "settings",
-              "system"
-            )
-          );
+import {
+    doc,
+    getDoc
+} from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
 
 
-        if (
-          !snapshot.exists()
-        ) {
+/*
+ * ============================================
+ * HTMLエスケープ
+ * ============================================
+ */
 
-          maintenanceStatus.textContent =
-            "設定なし";
+function escapeHTML(value){
+
+    return String(value ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+
+}
 
 
-          dashboardError.textContent =
-            "Firestore の settings/system がありません。Firebase Console で作成してください。";
+/*
+ * ============================================
+ * ページ切り替え
+ * ============================================
+ */
+
+document
+    .querySelectorAll("[data-page]")
+    .forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                const page =
+                    button.dataset.page;
 
 
-          return;
+                document
+                    .querySelectorAll(
+                        ".content-section"
+                    )
+                    .forEach(section => {
+
+                        section.classList.remove(
+                            "active"
+                        );
+
+                    });
+
+
+                document
+                    .getElementById(
+                        "page-" + page
+                    )
+                    ?.classList.add(
+                        "active"
+                    );
+
+
+                document
+                    .querySelectorAll(
+                        ".nav button"
+                    )
+                    .forEach(item => {
+
+                        item.classList.remove(
+                            "active"
+                        );
+
+                    });
+
+
+                button.classList.add(
+                    "active"
+                );
+
+            }
+        );
+
+    });
+
+
+/*
+ * ============================================
+ * 管理者認証
+ * ============================================
+ *
+ * 未ログイン
+ *     ↓
+ * login.html
+ *
+ * admin
+ *     ↓
+ * このページに残る
+ *
+ * student
+ *     ↓
+ * student/index.html
+ */
+
+onAuthStateChanged(
+    auth,
+    async user => {
+
+        if(!user){
+
+            window.location.replace(
+                "../login.html"
+            );
+
+            return;
         }
 
 
-        const settings =
-          snapshot.data();
+        try{
+
+            const reference =
+                doc(
+                    db,
+                    "users",
+                    user.uid
+                );
 
 
-        maintenanceStatus.textContent =
-          settings.maintenance === true
-            ? "メンテナンス中"
-            : "通常稼働";
+            const snapshot =
+                await getDoc(reference);
 
 
-      } catch (error) {
+            if(!snapshot.exists()){
 
-        console.error(
-          "ダッシュボード取得エラー:",
-          error
+                await signOut(auth);
+
+                window.location.replace(
+                    "../login.html"
+                );
+
+                return;
+            }
+
+
+            const data =
+                snapshot.data();
+
+
+            if(data.status !== "active"){
+
+                await signOut(auth);
+
+                window.location.replace(
+                    "../login.html"
+                );
+
+                return;
+            }
+
+
+            /*
+             * 生徒が管理者画面へ
+             * 直接アクセスした場合。
+             */
+
+            if(data.role === "student"){
+
+                window.location.replace(
+                    "../student/index.html"
+                );
+
+                return;
+            }
+
+
+            /*
+             * 管理者ならここに残す。
+             */
+
+            if(data.role !== "admin"){
+
+                await signOut(auth);
+
+                window.location.replace(
+                    "../login.html"
+                );
+
+                return;
+            }
+
+
+            loadUser(data);
+
+            loadDashboard();
+
+
+        }catch(error){
+
+            console.error(
+                "Admin authentication error:",
+                error
+            );
+
+
+            document.body.innerHTML = `
+
+                <div style="
+                    padding:40px;
+                    font-family:Arial,sans-serif;
+                ">
+
+                    <h1>
+                        画面を表示できませんでした
+                    </h1>
+
+                    <p>
+                        管理者アカウント情報を取得できませんでした。
+                    </p>
+
+                </div>
+
+            `;
+
+        }
+
+    }
+);
+
+
+/*
+ * ============================================
+ * 管理者情報
+ * ============================================
+ */
+
+function loadUser(data){
+
+    const area =
+        document.getElementById(
+            "userInfo"
         );
 
 
-        maintenanceStatus.textContent =
-          "取得エラー";
+    area.innerHTML = `
+
+        <strong>
+            ${escapeHTML(
+                data.displayName ||
+                data.name ||
+                "管理者"
+            )}
+        </strong>
+
+        <br>
+
+        管理者
+
+    `;
+
+}
 
 
-        dashboardError.textContent =
-          `${
-            error.code ||
-            "error"
-          }: ${
-            error.message ||
-            String(error)
-          }`;
-      }
-    }
+/*
+ * ============================================
+ * ダッシュボード
+ * ============================================
+ */
+
+function loadDashboard(){
+
+    document.getElementById(
+        "studentCount"
+    ).textContent = "-";
 
 
-    loadDashboard();
+    document.getElementById(
+        "noticeCount"
+    ).textContent = "-";
 
-  </script>
+
+    document.getElementById(
+        "scoreCount"
+    ).textContent = "-";
+
+}
 
 
-  <!--
-    layout.jsだけが
-    data-role="admin" の認証・権限確認を担当する。
-  -->
+/*
+ * ============================================
+ * ログアウト
+ * ============================================
+ */
 
-  <script
-    type="module"
-    src="../assets/js/layout.js"
-  ></script>
+document
+    .getElementById("logoutButton")
+    .addEventListener(
+        "click",
+        async () => {
 
+            try{
+
+                await signOut(auth);
+
+                window.location.replace(
+                    "../login.html"
+                );
+
+            }catch(error){
+
+                console.error(
+                    "Logout error:",
+                    error
+                );
+
+            }
+
+        }
+    );
+
+</script>
 
 </body>
 
