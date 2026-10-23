@@ -1,4 +1,3 @@
-
 /* =========================================================
    学習AIチャット - ページ機能
    File: assets/js/page.js
@@ -880,11 +879,6 @@
           throw new Error("不正な状態です。");
         }
 
-        /*
-         * Firestore Rules側でも管理者権限を検証すること。
-         * 重要な権限変更は、custom claims等を更新する
-         * 信頼できるサーバー側処理と併用する。
-         */
         await requireDatabase().collection("users").doc(id).update({
           role,
           status,
@@ -893,7 +887,7 @@
 
         await addAudit("user.update", { targetUid: id, role, status });
 
-        showMessage("ユーザー情報を保存しました。", "success");
+        showMessage("ユーザー情報を更新しました。", "success");
         await renderUsers();
       } catch (error) {
         showMessage(error.message, "error");
@@ -910,10 +904,8 @@
 
     const body = renderShell(
       "メンテナンス設定",
-      "サービス全体の利用状態を管理します。"
+      "生徒画面へのアクセス制限を設定します。"
     );
-
-    body.innerHTML = `<p>設定を読み込んでいます...</p>`;
 
     const ref = requireDatabase().collection("maintenance").doc("global");
     const snapshot = await ref.get();
@@ -925,11 +917,11 @@
           <label>
             <input type="checkbox" id="maintenance-enabled"
               ${config.enabled ? "checked" : ""}>
-            メンテナンスモードを有効にする
+            メンテナンスを有効にする
           </label>
 
           <label for="maintenance-message">表示メッセージ</label>
-          <textarea id="maintenance-message" maxlength="1000"
+          <textarea id="maintenance-message" maxlength="2000"
             rows="4">${escapeHtml(config.message || "現在メンテナンス中です。")}</textarea>
 
           <button type="submit">設定を保存</button>
@@ -1212,51 +1204,92 @@
         );
       }
 
+      // Firebaseの認証状態の初期化を待つ
+      if (window.authReadyPromise) {
+        await window.authReadyPromise;
+      }
+
       const role = document.body.dataset.role || "student";
       const page = document.body.dataset.page || "home";
 
-      const result = await window.requireAuth(role);
+      // 現在のauth.jsは認証成功時にtrue、失敗時にfalseを返す
+      const authenticated = await window.requireAuth(role);
+      if (!authenticated) return;
 
-      if (result?.user) currentUser = result.user;
-      if (result?.profile) currentProfile = result.profile;
+      // 認証状態からユーザー情報を取得
+      let state = null;
 
-      if (!currentUser) {
-        currentUser = auth?.currentUser || null;
+      if (typeof window.getAuthState === "function") {
+        state = await window.getAuthState();
+      } else if (window.authState) {
+        // 旧auth.jsとの互換性
+        if (window.authState.ready) {
+          await window.authState.ready;
+        }
+        state = window.authState;
       }
 
+      currentUser = state?.user || auth?.currentUser || null;
+      currentProfile = state?.profile || null;
+
+      // プロフィールが公開インターフェースから取得できない場合はFirestoreから取得
       if (!currentProfile && currentUser && db) {
         const snapshot = await db.collection("users")
           .doc(currentUser.uid).get();
 
-        currentProfile = snapshot.exists ? snapshot.data() : null;
+        currentProfile = snapshot.exists
+          ? snapshot.data()
+          : null;
       }
 
-      if (!currentUser || !currentProfile) {
-        throw new Error(
-          "アカウント情報が見つかりません。管理者に登録状態を確認してください。"
+      if (!currentUser) {
+        showMessage(
+          "ログイン状態を確認できません。再度ログインしてください。",
+          "error"
         );
+        return;
+      }
+
+      if (!currentProfile) {
+        showMessage(
+          "アカウント情報が見つかりません。管理者に登録状態を確認してください。",
+          "error"
+        );
+        return;
       }
 
       if (currentProfile.status !== "active") {
-        throw new Error("このアカウントは現在利用できません。");
+        showMessage(
+          "このアカウントは現在利用できません。",
+          "error"
+        );
+        return;
       }
 
+      // 権限確認
       if (role === "admin" && !isAdmin()) {
         location.replace(paths.forbidden || "../403.html");
         return;
       }
 
-      if (role === "student" && currentProfile.role !== "student") {
+      if (
+        role === "student" &&
+        currentProfile.role !== "student"
+      ) {
         location.replace(paths.forbidden || "../403.html");
         return;
       }
 
+      // メンテナンス確認
       if (!isAdmin()) {
         await checkMaintenance();
       }
 
+      // 画面の振り分け
       const renderers = {
-        home: role === "admin" ? renderAdminDashboard : renderHome,
+        home: role === "admin"
+          ? renderAdminDashboard
+          : renderHome,
         dashboard: renderAdminDashboard,
         question: renderQuestion,
         history: renderHistory,
@@ -1273,16 +1306,34 @@
 
       if (!render) {
         renderShell("ページが見つかりません");
-        showMessage(`未対応のページです: ${page}`, "error");
+        showMessage(
+          `未対応のページです: ${page}`,
+          "error"
+        );
         return;
       }
 
       await render();
+
     } catch (error) {
       console.error("ページ初期化エラー:", error);
-      showMessage(error.message || "ページを読み込めませんでした。", "error");
+
+      showMessage(
+        error.message ||
+          "ページを読み込めませんでした。",
+        "error"
+      );
     }
   }
 
-  document.addEventListener("DOMContentLoaded", initPage);
+  // DOMの読み込み状態に応じて起動
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      initPage,
+      { once: true }
+    );
+  } else {
+    initPage();
+  }
 })();
