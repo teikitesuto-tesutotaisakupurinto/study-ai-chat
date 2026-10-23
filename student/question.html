@@ -1,12 +1,9 @@
+```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>問題演習 | 学習AIチャット</title>
 
@@ -17,37 +14,42 @@
 
     html,
     body {
-      margin: 0;
       width: 100%;
       height: 100%;
+      margin: 0;
+    }
+
+    body {
+      overflow: hidden;
+      background: #f5f7fb;
+      color: #172033;
       font-family:
         -apple-system,
         BlinkMacSystemFont,
         "Segoe UI",
         "Noto Sans JP",
         sans-serif;
-      background: #f5f7fb;
-      color: #172033;
     }
 
-    body {
-      overflow: hidden;
+    button,
+    textarea {
+      font-family: inherit;
     }
 
-    /* ========================================
+    a {
+      color: inherit;
+    }
+
+    /* =========================================
        認証確認中
-       ======================================== */
+       ========================================= */
 
     #authChecking {
       position: fixed;
       inset: 0;
-      background: #ffffff;
       z-index: 99999;
+      background: #ffffff;
     }
-
-    /* ========================================
-       アプリ本体
-       ======================================== */
 
     #app {
       display: none;
@@ -55,9 +57,9 @@
       height: 100%;
     }
 
-    /* ========================================
-       サイドバー
-       ======================================== */
+    /* =========================================
+       左メニュー
+       ========================================= */
 
     .sidebar {
       position: fixed;
@@ -67,17 +69,15 @@
 
       width: 270px;
 
-      background: #ffffff;
-      border-right: 1px solid #e5e9f2;
-
       display: flex;
       flex-direction: column;
 
       z-index: 1000;
 
-      transition:
-        transform 0.22s ease,
-        width 0.22s ease;
+      background: #ffffff;
+      border-right: 1px solid #e3e7ee;
+
+      transition: transform .2s ease;
     }
 
     .sidebar.closed {
@@ -90,65 +90,69 @@
       display: flex;
       align-items: center;
 
-      padding: 0 18px;
+      padding: 0 15px;
 
-      border-bottom: 1px solid #e8ebf2;
+      border-bottom: 1px solid #e8ebf0;
     }
 
     .brand {
-      min-width: 0;
       flex: 1;
+      min-width: 0;
     }
 
     .brand-title {
       font-size: 15px;
       font-weight: 700;
-      line-height: 1.4;
+      letter-spacing: .01em;
     }
 
     .brand-subtitle {
-      margin-top: 2px;
-      color: #7b8497;
-      font-size: 11px;
+      margin-top: 4px;
+
+      color: #858e9f;
+
+      font-size: 9px;
+      line-height: 1.5;
     }
 
     .close-menu {
       width: 38px;
       height: 38px;
 
+      flex-shrink: 0;
+
       border: 0;
       border-radius: 8px;
 
       background: transparent;
-      color: #657086;
+      color: #596477;
 
       cursor: pointer;
 
-      font-size: 22px;
+      font-size: 23px;
+      line-height: 1;
     }
 
     .close-menu:hover {
-      background: #f0f3f8;
+      background: #f1f3f7;
     }
-
-    /* ========================================
-       メニュー
-       ======================================== */
 
     .menu {
       flex: 1;
+
       overflow-y: auto;
 
-      padding: 14px 10px;
+      padding: 12px 10px;
     }
 
     .menu-section {
-      margin: 16px 10px 7px;
+      margin: 17px 10px 7px;
 
-      font-size: 11px;
+      color: #9aa2b1;
+
+      font-size: 10px;
       font-weight: 700;
-
-      color: #98a0b1;
+      letter-spacing: .04em;
     }
 
     .menu-item {
@@ -156,76 +160,78 @@
 
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 11px;
 
-      padding: 11px 12px;
       margin-bottom: 3px;
+      padding: 11px 12px;
 
       border: 0;
-      border-radius: 9px;
+      border-radius: 8px;
 
       background: transparent;
-      color: #4c566b;
-
-      font-size: 14px;
-      text-align: left;
-
-      cursor: pointer;
+      color: #505b6e;
 
       text-decoration: none;
+
+      font-size: 13px;
+
+      cursor: pointer;
     }
 
     .menu-item:hover {
-      background: #f3f6fb;
-      color: #1e5eff;
+      background: #f3f6fa;
     }
 
     .menu-item.active {
       background: #eaf1ff;
-      color: #1557d6;
+      color: #1558d6;
       font-weight: 600;
     }
 
-    .material-symbols-outlined {
-      font-family: "Material Symbols Outlined";
-      font-weight: normal;
-      font-style: normal;
-      font-size: 21px;
-      line-height: 1;
-      letter-spacing: normal;
-      text-transform: none;
-      display: inline-block;
-      white-space: nowrap;
-      word-wrap: normal;
-      direction: ltr;
-      -webkit-font-feature-settings: "liga";
-      -webkit-font-smoothing: antialiased;
+    .menu-icon {
+      width: 20px;
+
+      flex-shrink: 0;
+
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+
+      color: currentColor;
+
+      font-size: 16px;
+      font-weight: 600;
     }
 
     .sidebar-user {
-      border-top: 1px solid #e8ebf2;
-
       padding: 15px;
+
+      border-top: 1px solid #e8ebf0;
     }
 
     .user-name {
+      overflow: hidden;
+
+      color: #263043;
+
       font-size: 13px;
       font-weight: 600;
 
-      overflow: hidden;
-      white-space: nowrap;
       text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .user-email {
-      margin-top: 3px;
-
-      color: #8992a4;
-      font-size: 11px;
+      margin-top: 4px;
 
       overflow: hidden;
-      white-space: nowrap;
+
+      color: #8992a2;
+
+      font-size: 10px;
+
       text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .logout-button {
@@ -234,22 +240,24 @@
       margin-top: 12px;
       padding: 9px;
 
-      border: 1px solid #e1e5ec;
+      border: 1px solid #dfe4eb;
       border-radius: 8px;
 
       background: #ffffff;
-      color: #596276;
+      color: #596477;
 
       cursor: pointer;
+
+      font-size: 12px;
     }
 
     .logout-button:hover {
-      background: #f7f8fa;
+      background: #f5f6f8;
     }
 
-    /* ========================================
+    /* =========================================
        メイン
-       ======================================== */
+       ========================================= */
 
     .main {
       width: 100%;
@@ -257,17 +265,12 @@
 
       margin-left: 270px;
 
-      transition:
-        margin-left 0.22s ease;
+      transition: margin-left .2s ease;
     }
 
-    .sidebar.closed ~ .main {
+    .sidebar.closed + .main {
       margin-left: 0;
     }
-
-    /* ========================================
-       ヘッダー
-       ======================================== */
 
     .topbar {
       height: 64px;
@@ -278,40 +281,41 @@
       padding: 0 20px;
 
       background: #ffffff;
-      border-bottom: 1px solid #e5e9f2;
+      border-bottom: 1px solid #e4e8ef;
     }
 
-    .menu-open {
+    .open-menu {
       width: 40px;
       height: 40px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
       border: 0;
       border-radius: 8px;
 
       background: transparent;
-      color: #4d576b;
+      color: #4e586b;
 
       cursor: pointer;
 
-      font-size: 23px;
+      font-size: 22px;
     }
 
-    .menu-open:hover {
-      background: #f1f4f8;
+    .open-menu:hover {
+      background: #f1f3f7;
     }
 
     .page-title {
-      margin-left: 12px;
+      margin-left: 10px;
 
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
     }
 
-    /* ========================================
-       コンテンツ
-       ======================================== */
-
     .content {
+      width: 100%;
       height: calc(100% - 64px);
 
       overflow-y: auto;
@@ -326,20 +330,24 @@
 
     .page-heading {
       margin: 0;
-      font-size: 25px;
-      font-weight: 700;
+
+      color: #172033;
+
+      font-size: 24px;
+      line-height: 1.3;
     }
 
     .page-description {
       margin: 7px 0 24px;
 
-      color: #788297;
+      color: #7b8495;
+
       font-size: 13px;
     }
 
-    /* ========================================
+    /* =========================================
        チャット
-       ======================================== */
+       ========================================= */
 
     .chat-card {
       min-height: 600px;
@@ -347,28 +355,32 @@
       display: flex;
       flex-direction: column;
 
+      overflow: hidden;
+
       background: #ffffff;
 
-      border: 1px solid #e4e8ef;
-      border-radius: 14px;
+      border: 1px solid #e2e7ee;
+      border-radius: 13px;
 
       box-shadow:
-        0 3px 15px rgba(24, 38, 68, 0.04);
-
-      overflow: hidden;
+        0 3px 15px rgba(25, 40, 70, .04);
     }
 
     .chat-header {
-      padding: 16px 20px;
-
-      border-bottom: 1px solid #edf0f4;
+      min-height: 58px;
 
       display: flex;
       align-items: center;
       justify-content: space-between;
+
+      padding: 0 19px;
+
+      border-bottom: 1px solid #edf0f4;
     }
 
     .chat-header-title {
+      color: #263043;
+
       font-size: 14px;
       font-weight: 700;
     }
@@ -378,8 +390,9 @@
       align-items: center;
       gap: 6px;
 
+      color: #778195;
+
       font-size: 11px;
-      color: #718097;
     }
 
     .status-dot {
@@ -387,7 +400,12 @@
       height: 7px;
 
       border-radius: 50%;
-      background: #28a745;
+
+      background: #2eaa5b;
+    }
+
+    .status-dot.offline {
+      background: #b5bbc5;
     }
 
     .messages {
@@ -403,7 +421,7 @@
     .welcome {
       max-width: 650px;
 
-      margin: 70px auto;
+      margin: 80px auto;
 
       text-align: center;
     }
@@ -411,16 +429,18 @@
     .welcome h2 {
       margin: 0 0 12px;
 
+      color: #202938;
+
       font-size: 21px;
     }
 
     .welcome p {
       margin: 0;
 
-      color: #7c8698;
+      color: #7d8798;
 
-      line-height: 1.8;
       font-size: 13px;
+      line-height: 1.8;
     }
 
     .message {
@@ -434,7 +454,7 @@
     }
 
     .message-bubble {
-      max-width: min(760px, 82%);
+      max-width: 82%;
 
       padding: 13px 16px;
 
@@ -448,8 +468,8 @@
     }
 
     .message.assistant .message-bubble {
-      background: #f1f4f8;
-      color: #1f2938;
+      background: #f0f3f7;
+      color: #202938;
     }
 
     .message.user .message-bubble {
@@ -457,21 +477,20 @@
       color: #ffffff;
     }
 
-    /* ========================================
+    /* =========================================
        入力
-       ======================================== */
+       ========================================= */
 
     .input-area {
-      padding: 15px;
+      padding: 14px;
 
       border-top: 1px solid #edf0f4;
-
-      background: #ffffff;
     }
 
     .input-row {
       display: flex;
-      gap: 10px;
+      align-items: flex-end;
+      gap: 9px;
     }
 
     #questionInput {
@@ -482,31 +501,41 @@
 
       resize: vertical;
 
-      padding: 13px 14px;
+      padding: 12px 13px;
 
-      border: 1px solid #dce1e9;
+      border: 1px solid #d9dfe8;
       border-radius: 9px;
 
       outline: none;
 
-      font-family: inherit;
-      font-size: 14px;
-
       background: #ffffff;
+      color: #202938;
+
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    #questionInput::placeholder {
+      color: #a0a8b5;
     }
 
     #questionInput:focus {
-      border-color: #5c8df6;
+      border-color: #4d83ed;
 
       box-shadow:
-        0 0 0 3px rgba(36, 99, 235, 0.08);
+        0 0 0 3px rgba(36, 99, 235, .08);
+    }
+
+    #questionInput:disabled {
+      background: #f5f6f8;
+      cursor: not-allowed;
     }
 
     #sendButton {
-      align-self: flex-end;
-
-      min-width: 86px;
+      min-width: 82px;
       height: 48px;
+
+      flex-shrink: 0;
 
       border: 0;
       border-radius: 9px;
@@ -520,31 +549,50 @@
       cursor: pointer;
     }
 
-    #sendButton:hover {
+    #sendButton:hover:not(:disabled) {
       background: #1855d4;
     }
 
     #sendButton:disabled {
-      opacity: 0.55;
+      opacity: .55;
       cursor: not-allowed;
     }
 
     .input-note {
       margin-top: 7px;
 
-      color: #98a0af;
+      color: #9aa2af;
 
       font-size: 10px;
     }
 
-    /* ========================================
-       ローディング
-       ======================================== */
+    .error-message {
+      display: none;
+
+      margin-top: 10px;
+      padding: 10px 12px;
+
+      border: 1px solid #efc8c8;
+      border-radius: 8px;
+
+      background: #fff6f6;
+      color: #ad2419;
+
+      font-size: 12px;
+      line-height: 1.6;
+
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* =========================================
+       タイピング
+       ========================================= */
 
     .typing {
       display: inline-flex;
-      gap: 4px;
       align-items: center;
+      gap: 4px;
     }
 
     .typing span {
@@ -553,24 +601,24 @@
 
       border-radius: 50%;
 
-      background: #8993a6;
+      background: #8992a2;
 
       animation: typing 1.2s infinite;
     }
 
     .typing span:nth-child(2) {
-      animation-delay: 0.15s;
+      animation-delay: .15s;
     }
 
     .typing span:nth-child(3) {
-      animation-delay: 0.3s;
+      animation-delay: .3s;
     }
 
     @keyframes typing {
       0%,
       60%,
       100% {
-        opacity: 0.3;
+        opacity: .3;
         transform: translateY(0);
       }
 
@@ -580,63 +628,44 @@
       }
     }
 
-    /* ========================================
-       エラー
-       ======================================== */
-
-    .error-message {
-      margin-top: 10px;
-
-      padding: 11px 13px;
-
-      border: 1px solid #f0caca;
-      border-radius: 8px;
-
-      background: #fff6f6;
-      color: #b42318;
-
-      font-size: 12px;
-
-      display: none;
-    }
-
-    /* ========================================
+    /* =========================================
        メンテナンス
-       ======================================== */
+       ========================================= */
 
     #maintenanceScreen {
       position: fixed;
       inset: 0;
 
       display: none;
-
       align-items: center;
       justify-content: center;
 
-      background: #f5f7fb;
-
       z-index: 90000;
+
+      padding: 20px;
+
+      background: #f5f7fb;
     }
 
     .maintenance-box {
-      width: min(520px, calc(100% - 40px));
+      width: min(520px, 100%);
 
-      padding: 42px 35px;
-
-      text-align: center;
+      padding: 42px 34px;
 
       background: #ffffff;
 
-      border: 1px solid #e4e8ef;
+      border: 1px solid #e1e6ed;
       border-radius: 14px;
 
       box-shadow:
-        0 8px 30px rgba(24, 38, 68, 0.07);
+        0 8px 30px rgba(20, 35, 60, .07);
+
+      text-align: center;
     }
 
-    .maintenance-icon {
-      width: 58px;
-      height: 58px;
+    .maintenance-mark {
+      width: 54px;
+      height: 54px;
 
       display: flex;
       align-items: center;
@@ -646,20 +675,25 @@
 
       border-radius: 50%;
 
-      background: #eef2f7;
-      color: #596579;
+      background: #eef1f5;
+      color: #5d687b;
+
+      font-size: 22px;
+      font-weight: 700;
     }
 
     .maintenance-box h1 {
       margin: 0;
 
-      font-size: 23px;
+      color: #202938;
+
+      font-size: 22px;
     }
 
     .maintenance-box p {
       margin: 15px 0 0;
 
-      color: #788397;
+      color: #778195;
 
       font-size: 13px;
       line-height: 1.9;
@@ -668,24 +702,23 @@
     }
 
     .maintenance-brand {
-      margin-top: 25px;
+      margin-top: 24px;
 
-      color: #a0a7b4;
+      color: #9ba3b0;
 
       font-size: 10px;
       line-height: 1.6;
     }
 
-    /* ========================================
-       モバイル
-       ======================================== */
+    /* =========================================
+       レスポンシブ
+       ========================================= */
 
     @media (max-width: 800px) {
-      .sidebar {
-        width: 270px;
 
+      .sidebar {
         box-shadow:
-          8px 0 25px rgba(20, 30, 50, 0.08);
+          8px 0 25px rgba(20, 30, 50, .08);
       }
 
       .main {
@@ -696,55 +729,61 @@
         padding: 18px;
       }
 
-      .chat-card {
-        min-height: calc(100vh - 145px);
-      }
-
-      .messages {
-        min-height: 350px;
-      }
-
       .message-bubble {
         max-width: 90%;
       }
+
+      .chat-card {
+        min-height: calc(100vh - 150px);
+      }
+
     }
+
+    @media (max-width: 520px) {
+
+      .content {
+        padding: 12px;
+      }
+
+      .page-heading {
+        font-size: 21px;
+      }
+
+      .chat-header {
+        padding: 0 14px;
+      }
+
+      .messages {
+        padding: 15px;
+      }
+
+      .input-area {
+        padding: 10px;
+      }
+
+      .input-row {
+        gap: 6px;
+      }
+
+      #sendButton {
+        min-width: 64px;
+      }
+
+    }
+
   </style>
-
-  <!-- Google Material Symbols -->
-  <link
-    rel="preconnect"
-    href="https://fonts.googleapis.com"
-  >
-
-  <link
-    rel="preconnect"
-    href="https://fonts.gstatic.com"
-    crossorigin
-  >
-
-  <link
-    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
-    rel="stylesheet"
-  >
 </head>
 
 <body>
 
-  <!-- ==========================================
-       Firebase認証確認中
-       ここには文字を表示しない
-       ========================================== -->
-
+  <!-- 認証確認中 -->
   <div id="authChecking"></div>
 
-  <!-- ==========================================
-       アプリ
-       ========================================== -->
 
+  <!-- アプリ本体 -->
   <div id="app">
 
-    <!-- サイドバー -->
-
+    <!-- 左サイドメニュー -->
     <aside
       id="sidebar"
       class="sidebar"
@@ -782,37 +821,50 @@
           学習
         </div>
 
+
         <a
           href="/student/home.html"
           class="menu-item"
         >
-          <span class="material-symbols-outlined">
-            home
-          </span>
+          <span
+            class="menu-icon"
+            aria-hidden="true"
+          >⌂</span>
 
-          ホーム
+          <span>
+            ホーム
+          </span>
         </a>
+
 
         <a
           href="/student/question.html"
           class="menu-item active"
+          aria-current="page"
         >
-          <span class="material-symbols-outlined">
-            school
-          </span>
+          <span
+            class="menu-icon"
+            aria-hidden="true"
+          >□</span>
 
-          問題演習
+          <span>
+            問題演習
+          </span>
         </a>
+
 
         <a
           href="/student/history.html"
           class="menu-item"
         >
-          <span class="material-symbols-outlined">
-            history
-          </span>
+          <span
+            class="menu-icon"
+            aria-hidden="true"
+          >◷</span>
 
-          学習履歴
+          <span>
+            学習履歴
+          </span>
         </a>
 
 
@@ -820,15 +872,19 @@
           アカウント
         </div>
 
+
         <a
           href="/student/setting.html"
           class="menu-item"
         >
-          <span class="material-symbols-outlined">
-            settings
-          </span>
+          <span
+            class="menu-icon"
+            aria-hidden="true"
+          >⚙</span>
 
-          設定
+          <span>
+            設定
+          </span>
         </a>
 
       </nav>
@@ -843,12 +899,14 @@
           -
         </div>
 
+
         <div
           id="userEmail"
           class="user-email"
         >
           -
         </div>
+
 
         <button
           id="logoutButton"
@@ -863,22 +921,20 @@
     </aside>
 
 
-    <!-- ========================================
-         メイン
-         ======================================== -->
-
+    <!-- メイン -->
     <main class="main">
 
       <header class="topbar">
 
         <button
           id="openMenuButton"
-          class="menu-open"
+          class="open-menu"
           type="button"
           aria-label="メニューを開く"
         >
           ☰
         </button>
+
 
         <div class="page-title">
           問題演習
@@ -895,8 +951,9 @@
             学習AIチャット
           </h1>
 
+
           <p class="page-description">
-            分からない問題や学習内容について質問できます。
+            学習内容について質問してください。
           </p>
 
 
@@ -908,11 +965,17 @@
                 学習AI
               </div>
 
+
               <div class="chat-status">
 
-                <span class="status-dot"></span>
+                <span
+                  id="statusDot"
+                  class="status-dot"
+                ></span>
 
-                利用可能
+                <span id="statusText">
+                  利用可能
+                </span>
 
               </div>
 
@@ -934,7 +997,7 @@
                 </h2>
 
                 <p>
-                  数学・英語・国語・理科・社会などの
+                  数学・英語・国語・理科・社会など、
                   学習内容について質問できます。
                 </p>
 
@@ -949,9 +1012,11 @@
 
                 <textarea
                   id="questionInput"
-                  placeholder="学習について質問してください"
                   maxlength="4000"
+                  placeholder="学習について質問してください"
+                  autocomplete="off"
                 ></textarea>
+
 
                 <button
                   id="sendButton"
@@ -962,9 +1027,11 @@
 
               </div>
 
+
               <div class="input-note">
                 このAIは学習専用です。学習以外の質問はできません。
               </div>
+
 
               <div
                 id="errorMessage"
@@ -984,32 +1051,30 @@
   </div>
 
 
-  <!-- ==========================================
-       メンテナンス画面
-       ========================================== -->
+  <!-- メンテナンス画面 -->
 
   <section
     id="maintenanceScreen"
+    aria-live="polite"
   >
 
     <div class="maintenance-box">
 
-      <div class="maintenance-icon">
-
-        <span class="material-symbols-outlined">
-          build
-        </span>
-
+      <div class="maintenance-mark">
+        !
       </div>
+
 
       <h1>
         メンテナンス中です
       </h1>
 
+
       <p id="maintenanceMessage">
         ただいま学習AIチャットはメンテナンスを実施しています。
         しばらくお待ちください。
       </p>
+
 
       <div class="maintenance-brand">
         学習AIチャット<br>
@@ -1021,22 +1086,24 @@
   </section>
 
 
-  <!-- ==========================================
-       Firebase
-       ========================================== -->
-
   <script type="module">
+
+    /* =========================================
+       Firebase SDK
+       ========================================= */
 
     import {
       initializeApp
-    } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+    } from
+      "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
 
 
     import {
       getAuth,
       onAuthStateChanged,
       signOut
-    } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+    } from
+      "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
 
     import {
@@ -1044,17 +1111,18 @@
       doc,
       getDoc,
       onSnapshot
-    } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+    } from
+      "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
 
-    /* ========================================
+    /* =========================================
        Firebase設定
-       ======================================== */
+       ========================================= */
 
     const firebaseConfig = {
 
       apiKey:
-        "AIzaSyByt8kGALyS8AU8SR6PzWFEPXfgHY5iynk",
+        "AIzaSyByt8kGALyS8AU8SR8P6zWFEPXfgHY5iynk",
 
       authDomain:
         "studychat-1b39d.firebaseapp.com",
@@ -1070,36 +1138,56 @@
 
       appId:
         "1:982302014286:web:abf319aadb1ed919727c1f"
+
     };
 
 
-    const app =
-      initializeApp(firebaseConfig);
+    const firebaseApp =
+      initializeApp(
+        firebaseConfig
+      );
 
 
     const auth =
-      getAuth(app);
+      getAuth(
+        firebaseApp
+      );
 
 
     const db =
-      getFirestore(app);
+      getFirestore(
+        firebaseApp
+      );
 
 
-    /* ========================================
-       Supabase
-       ======================================== */
+    /* =========================================
+       Supabase設定
+
+       ここは公開用キー。
+
+       GROQ_API_KEYではない。
+       service_roleでもない。
+       ========================================= */
 
     const SUPABASE_URL =
       "https://fjqobjcvejhkevyfsoxt.supabase.co";
 
 
+    const SUPABASE_ANON_KEY =
+      "ここにSupabaseの公開用キーを貼る";
+
+
+    const FUNCTION_NAME =
+      "study-chat";
+
+
     const AI_FUNCTION_URL =
-      `${SUPABASE_URL}/functions/v1/study-chat`;
+      `${SUPABASE_URL}/functions/v1/${FUNCTION_NAME}`;
 
 
-    /* ========================================
+    /* =========================================
        DOM
-       ======================================== */
+       ========================================= */
 
     const authChecking =
       document.getElementById(
@@ -1191,24 +1279,41 @@
       );
 
 
-    /* ========================================
-       状態
-       ======================================== */
-
-    let currentUser = null;
-
-    let isMaintenance = false;
-
-    let unsubscribeMaintenance = null;
-
-    let chatHistory = [];
-
-    let sending = false;
+    const statusDot =
+      document.getElementById(
+        "statusDot"
+      );
 
 
-    /* ========================================
+    const statusText =
+      document.getElementById(
+        "statusText"
+      );
+
+
+    /* =========================================
+       アプリ状態
+       ========================================= */
+
+    let isMaintenance =
+      false;
+
+
+    let isSending =
+      false;
+
+
+    let chatHistory =
+      [];
+
+
+    let unsubscribeMaintenance =
+      null;
+
+
+    /* =========================================
        メニュー
-       ======================================== */
+       ========================================= */
 
     openMenuButton.addEventListener(
       "click",
@@ -1234,17 +1339,22 @@
     );
 
 
-    /* ========================================
+    /* =========================================
        ログアウト
-       ======================================== */
+       ========================================= */
 
     logoutButton.addEventListener(
       "click",
       async () => {
 
+        logoutButton.disabled =
+          true;
+
         try {
 
-          await signOut(auth);
+          await signOut(
+            auth
+          );
 
           location.replace(
             "/login.html"
@@ -1257,17 +1367,22 @@
             error
           );
 
+          logoutButton.disabled =
+            false;
+
         }
 
       }
     );
 
 
-    /* ========================================
+    /* =========================================
        エラー表示
-       ======================================== */
+       ========================================= */
 
-    function showError(message) {
+    function showError(
+      message
+    ) {
 
       errorMessage.textContent =
         message;
@@ -1289,55 +1404,113 @@
     }
 
 
-    /* ========================================
-       メンテナンス表示
-       ======================================== */
+    /* =========================================
+       ステータス
+       ========================================= */
 
-    function showMaintenance(message) {
+    function setAIStatus(
+      online,
+      text
+    ) {
 
-      isMaintenance = true;
+      statusText.textContent =
+        text;
+
+      if (online) {
+
+        statusDot.classList.remove(
+          "offline"
+        );
+
+      } else {
+
+        statusDot.classList.add(
+          "offline"
+        );
+
+      }
+
+    }
+
+
+    /* =========================================
+       メンテナンス
+       ========================================= */
+
+    function showMaintenance(
+      message
+    ) {
+
+      isMaintenance =
+        true;
+
 
       maintenanceMessage.textContent =
         message ||
         "ただいま学習AIチャットはメンテナンスを実施しています。\nしばらくお待ちください。";
 
+
       maintenanceScreen.style.display =
         "flex";
+
 
       questionInput.disabled =
         true;
 
+
       sendButton.disabled =
         true;
+
+
+      setAIStatus(
+        false,
+        "メンテナンス中"
+      );
 
     }
 
 
     function hideMaintenance() {
 
-      isMaintenance = false;
+      isMaintenance =
+        false;
+
 
       maintenanceScreen.style.display =
         "none";
 
-      questionInput.disabled =
-        false;
 
-      sendButton.disabled =
-        false;
+      if (!isSending) {
+
+        questionInput.disabled =
+          false;
+
+        sendButton.disabled =
+          false;
+
+      }
+
+
+      setAIStatus(
+        true,
+        "利用可能"
+      );
 
     }
 
 
-    /* ========================================
+    /* =========================================
        Firestoreメンテナンス監視
-       
-       settings/system
-       maintenance: true / false
-       message: string
-       ======================================== */
 
-    function watchMaintenance() {
+       settings/system
+
+       {
+         maintenance: true,
+         message: "..."
+       }
+       ========================================= */
+
+    function startMaintenanceListener() {
 
       const systemRef =
         doc(
@@ -1347,12 +1520,12 @@
         );
 
 
-      if (unsubscribeMaintenance) {
+      if (
+        typeof unsubscribeMaintenance ===
+        "function"
+      ) {
 
         unsubscribeMaintenance();
-
-        unsubscribeMaintenance =
-          null;
 
       }
 
@@ -1364,7 +1537,9 @@
 
           (snapshot) => {
 
-            if (!snapshot.exists()) {
+            if (
+              !snapshot.exists()
+            ) {
 
               hideMaintenance();
 
@@ -1377,21 +1552,16 @@
               snapshot.data();
 
 
-            const maintenance =
-              data.maintenance === true;
-
-
-            const message =
-              typeof data.message === "string" &&
-              data.message.trim()
-                ? data.message.trim()
-                : "ただいま学習AIチャットはメンテナンスを実施しています。\nしばらくお待ちください。";
-
-
-            if (maintenance) {
+            if (
+              data.maintenance === true
+            ) {
 
               showMaintenance(
-                message
+                typeof data.message ===
+                  "string" &&
+                data.message.trim()
+                  ? data.message
+                  : "ただいま学習AIチャットはメンテナンスを実施しています。\nしばらくお待ちください."
               );
 
             } else {
@@ -1409,11 +1579,6 @@
               error
             );
 
-            /*
-             * Firestoreが一時的に取得できない場合、
-             * 勝手にメンテナンス扱いにはしない。
-             */
-
           }
 
         );
@@ -1421,11 +1586,11 @@
     }
 
 
-    /* ========================================
-       ユーザー情報取得
-       ======================================== */
+    /* =========================================
+       ユーザー情報
+       ========================================= */
 
-    async function loadUserProfile(
+    async function checkUser(
       firebaseUser
     ) {
 
@@ -1443,7 +1608,9 @@
         );
 
 
-      if (!snapshot.exists()) {
+      if (
+        !snapshot.exists()
+      ) {
 
         throw new Error(
           "ユーザー情報が登録されていません。"
@@ -1456,28 +1623,47 @@
         snapshot.data();
 
 
-      if (data.status &&
-          data.status !== "active") {
+      /*
+       * statusが存在する場合、
+       * active以外は利用不可
+       */
+
+      if (
+        data.status &&
+        data.status !== "active"
+      ) {
 
         throw new Error(
-          "現在このアカウントは利用できません。"
+          "このアカウントは現在利用できません。"
         );
 
       }
 
 
-      if (data.role !== "student") {
+      /*
+       * 管理者は管理者画面へ
+       */
 
-        if (data.role === "admin") {
+      if (
+        data.role === "admin"
+      ) {
 
-          location.replace(
-            "/admin/home.html"
-          );
+        location.replace(
+          "/admin/home.html"
+        );
 
-          return null;
+        return false;
 
-        }
+      }
 
+
+      /*
+       * 学生以外は拒否
+       */
+
+      if (
+        data.role !== "student"
+      ) {
 
         throw new Error(
           "学生アカウントではありません。"
@@ -1497,85 +1683,266 @@
         "";
 
 
-      return data;
+      return true;
 
     }
 
 
-    /* ========================================
-       AIに質問
-       ======================================== */
+    /* =========================================
+       AI問い合わせ
+       ========================================= */
 
     async function askAI(
-      message
+      question
     ) {
 
-      if (isMaintenance) {
+      if (
+        isMaintenance
+      ) {
 
         throw new Error(
-          "現在メンテナンス中のため、AIを利用できません。"
+          "現在メンテナンス中です。"
         );
 
       }
 
 
-      const response =
-        await fetch(
-          AI_FUNCTION_URL,
-          {
+      /*
+       * 公開キーが未設定なら、
+       * Groqには到達させない。
+       */
 
-            method: "POST",
+      if (
+        !SUPABASE_ANON_KEY ||
+        SUPABASE_ANON_KEY ===
+          "sb_publishable_j6QpWj-1v86qkWHmXM8F3Q_Ieipaa3q"
+      ) {
 
-            headers: {
-
-              "Content-Type":
-                "application/json"
-
-            },
-
-            body: JSON.stringify({
-
-              message:
-
-                message,
-
-              grade:
-                "中学生",
-
-              subject:
-                "学習全般",
-
-              history:
-                chatHistory.slice(-10)
-
-            })
-
-          }
+        throw new Error(
+          "Supabaseの公開用キーがstudent/question.htmlに設定されていません。"
         );
 
+      }
 
-      let data;
+
+      let response;
+
+
+      try {
+
+        response =
+          await fetch(
+            AI_FUNCTION_URL,
+            {
+
+              method:
+                "POST",
+
+              headers: {
+
+                "Content-Type":
+                  "application/json",
+
+                /*
+                 * Supabase Data API / Edge Function
+                 * の公開クライアントキー
+                 */
+
+                "apikey":
+                  SUPABASE_ANON_KEY,
+
+                "Authorization":
+                  `Bearer ${SUPABASE_ANON_KEY}`
+
+              },
+
+              body:
+                JSON.stringify({
+
+                  message:
+                    question,
+
+                  grade:
+                    "中学生",
+
+                  subject:
+                    "学習全般",
+
+                  history:
+                    chatHistory
+                      .slice(-10)
+
+                })
+
+            }
+          );
+
+      } catch (error) {
+
+        console.error(
+          "Supabase fetch error:",
+          error
+        );
+
+        throw new Error(
+          "Supabase Edge Functionへ接続できません。Function URL、公開キー、デプロイ状態を確認してください。"
+        );
+
+      }
+
+
+      /*
+       * レスポンス本文を文字列で取得。
+       * JSONでなくても原因を表示できるようにする。
+       */
+
+      const responseText =
+        await response.text();
+
+
+      let data =
+        null;
 
 
       try {
 
         data =
-          await response.json();
+          responseText
+            ? JSON.parse(
+                responseText
+              )
+            : null;
 
       } catch {
 
+        data =
+          null;
+
+      }
+
+
+      console.log(
+        "AI HTTP status:",
+        response.status
+      );
+
+
+      console.log(
+        "AI response:",
+        data || responseText
+      );
+
+
+      /* =====================================
+         HTTPエラー
+         ===================================== */
+
+      if (
+        !response.ok
+      ) {
+
+        /*
+         * Supabase認証エラー
+         */
+
+        if (
+          response.status === 401
+        ) {
+
+          throw new Error(
+            data?.message ||
+            data?.error ||
+            "Supabase Edge Functionの認証に失敗しました。公開キーとFunctionのJWT設定を確認してください。"
+          );
+
+        }
+
+
+        /*
+         * 権限エラー
+         */
+
+        if (
+          response.status === 403
+        ) {
+
+          throw new Error(
+            data?.message ||
+            data?.error ||
+            "Supabase Edge Functionへのアクセスが拒否されました。"
+          );
+
+        }
+
+
+        /*
+         * Functionがない
+         */
+
+        if (
+          response.status === 404
+        ) {
+
+          throw new Error(
+            "Supabase Edge Function「study-chat」が見つかりません。Function名とDeploy状態を確認してください。"
+          );
+
+        }
+
+
+        /*
+         * Function内部エラー
+         */
+
+        if (
+          response.status === 500
+        ) {
+
+          throw new Error(
+            data?.error ||
+            data?.message ||
+            "Supabase Edge Function内部でエラーが発生しました。GROQ_API_KEYがSecretsに登録されているか確認してください。"
+          );
+
+        }
+
+
+        /*
+         * Groqエラー
+         */
+
+        if (
+          response.status === 502
+        ) {
+
+          throw new Error(
+            data?.error ||
+            "Groq APIへの接続に失敗しました。GROQ_API_KEY、Groq APIキーの有効性、Groq側のエラーを確認してください。"
+          );
+
+        }
+
+
         throw new Error(
-          "AIサーバーから正しい応答を取得できませんでした。"
+          data?.error ||
+          data?.message ||
+          responseText ||
+          `AI接続エラー（HTTP ${response.status}）`
         );
 
       }
 
 
-      if (!response.ok) {
+      /* =====================================
+         正常レスポンス
+         ===================================== */
+
+      if (
+        !data
+      ) {
 
         throw new Error(
-          data.error ||
-          "AIへの接続に失敗しました。"
+          "SupabaseからJSONレスポンスを取得できませんでした。"
         );
 
       }
@@ -1587,29 +1954,38 @@
       ) {
 
         throw new Error(
-          "AIから回答を取得できませんでした。"
+          data.error ||
+          "AIから正しい回答が返ってきませんでした。"
         );
 
       }
 
 
-      return data.reply;
+      return data.reply.trim();
 
     }
 
 
-    /* ========================================
+    /* =========================================
        メッセージ追加
-       ======================================== */
+       ========================================= */
 
     function addMessage(
       role,
       text
     ) {
 
-      if (welcome) {
+      const currentWelcome =
+        document.getElementById(
+          "welcome"
+        );
 
-        welcome.remove();
+
+      if (
+        currentWelcome
+      ) {
+
+        currentWelcome.remove();
 
       }
 
@@ -1634,6 +2010,11 @@
         "message-bubble";
 
 
+      /*
+       * textContentを使用。
+       * AI回答内HTMLをそのまま実行させない。
+       */
+
       bubble.textContent =
         text;
 
@@ -1651,21 +2032,26 @@
       messages.scrollTop =
         messages.scrollHeight;
 
-
-      return wrapper;
-
     }
 
 
-    /* ========================================
-       AI入力中表示
-       ======================================== */
+    /* =========================================
+       AI回答待機表示
+       ========================================= */
 
     function addTyping() {
 
-      if (welcome) {
+      const currentWelcome =
+        document.getElementById(
+          "welcome"
+        );
 
-        welcome.remove();
+
+      if (
+        currentWelcome
+      ) {
+
+        currentWelcome.remove();
 
       }
 
@@ -1676,12 +2062,12 @@
         );
 
 
-      wrapper.className =
-        "message assistant";
-
-
       wrapper.id =
         "typingMessage";
+
+
+      wrapper.className =
+        "message assistant";
 
 
       const bubble =
@@ -1694,13 +2080,14 @@
         "message-bubble";
 
 
-      bubble.innerHTML = `
+      bubble.innerHTML =
+        `
         <span class="typing">
           <span></span>
           <span></span>
           <span></span>
         </span>
-      `;
+        `;
 
 
       wrapper.appendChild(
@@ -1721,36 +2108,44 @@
 
     function removeTyping() {
 
-      const typing =
+      const element =
         document.getElementById(
           "typingMessage"
         );
 
 
-      if (typing) {
+      if (
+        element
+      ) {
 
-        typing.remove();
+        element.remove();
 
       }
 
     }
 
 
-    /* ========================================
+    /* =========================================
        質問送信
-       ======================================== */
+       ========================================= */
 
     async function sendQuestion() {
 
-      if (sending) {
+      if (
+        isSending
+      ) {
+
         return;
+
       }
 
 
-      if (isMaintenance) {
+      if (
+        isMaintenance
+      ) {
 
         showError(
-          "現在メンテナンス中のため、AIを利用できません。"
+          "現在メンテナンス中です。"
         );
 
         return;
@@ -1762,13 +2157,13 @@
         questionInput.value.trim();
 
 
-      if (!question) {
+      if (
+        !question
+      ) {
 
         showError(
           "質問を入力してください。"
         );
-
-        questionInput.focus();
 
         return;
 
@@ -1778,34 +2173,37 @@
       clearError();
 
 
-      sending = true;
+      isSending =
+        true;
+
 
       sendButton.disabled =
         true;
 
 
-      const previousQuestion =
-        question;
-
-
-      questionInput.value =
-        "";
+      questionInput.disabled =
+        true;
 
 
       addMessage(
         "user",
-        previousQuestion
+        question
       );
 
 
       chatHistory.push({
 
-        role: "user",
+        role:
+          "user",
 
         content:
-          previousQuestion
+          question
 
       });
+
+
+      questionInput.value =
+        "";
 
 
       addTyping();
@@ -1815,7 +2213,7 @@
 
         const reply =
           await askAI(
-            previousQuestion
+            question
           );
 
 
@@ -1830,7 +2228,8 @@
 
         chatHistory.push({
 
-          role: "assistant",
+          role:
+            "assistant",
 
           content:
             reply
@@ -1844,41 +2243,29 @@
 
 
         console.error(
-          "AI error:",
+          "AI request error:",
           error
         );
 
 
-        /*
-         * メンテナンス状態に変わった場合も
-         * 即時に画面へ反映する。
-         */
+        showError(
+          error?.message ||
+          "AIへの接続に失敗しました。"
+        );
 
-        if (
-          error.message.includes(
-            "メンテナンス"
-          )
-        ) {
-
-          showMaintenance(
-            error.message
-          );
-
-        } else {
-
-          showError(
-            error.message ||
-            "AIへの接続に失敗しました。"
-          );
-
-        }
 
       } finally {
 
-        sending = false;
+        isSending =
+          false;
 
 
-        if (!isMaintenance) {
+        if (
+          !isMaintenance
+        ) {
+
+          questionInput.disabled =
+            false;
 
           sendButton.disabled =
             false;
@@ -1890,17 +2277,20 @@
     }
 
 
+    /* =========================================
+       送信ボタン
+       ========================================= */
+
     sendButton.addEventListener(
       "click",
       sendQuestion
     );
 
 
-    /* ========================================
+    /* =========================================
        Enter送信
-       
        Shift + Enter = 改行
-       ======================================== */
+       ========================================= */
 
     questionInput.addEventListener(
       "keydown",
@@ -1921,19 +2311,21 @@
     );
 
 
-    /* ========================================
+    /* =========================================
        Firebase Authentication
-       ======================================== */
+       ========================================= */
 
     onAuthStateChanged(
       auth,
       async (firebaseUser) => {
 
         /*
-         * 認証確認中は白い画面のまま。
+         * 未ログイン
          */
 
-        if (!firebaseUser) {
+        if (
+          !firebaseUser
+        ) {
 
           location.replace(
             "/login.html"
@@ -1944,24 +2336,17 @@
         }
 
 
-        currentUser =
-          firebaseUser;
-
-
         try {
 
-          const profile =
-            await loadUserProfile(
+          const valid =
+            await checkUser(
               firebaseUser
             );
 
 
-          /*
-           * adminへのリダイレクトなどで
-           * profileがnullになった場合。
-           */
-
-          if (!profile) {
+          if (
+            !valid
+          ) {
 
             return;
 
@@ -1969,44 +2354,41 @@
 
 
           /*
-           * ユーザー確認が完了してから
-           * アプリを表示。
+           * 認証確認完了
            */
 
           authChecking.style.display =
             "none";
+
 
           appElement.style.display =
             "block";
 
 
           /*
-           * Firestoreのメンテナンス状態を
-           * リアルタイム監視。
+           * メンテナンス監視開始
            */
 
-          watchMaintenance();
+          startMaintenanceListener();
 
 
         } catch (error) {
 
           console.error(
-            "Authentication/profile error:",
+            "User verification error:",
             error
           );
 
 
-          /*
-           * ログイン確認中画面には
-           * エラー文字を表示しない。
-           *
-           * 不正・未登録ユーザーは
-           * login.htmlへ戻す。
-           */
+          try {
 
-          await signOut(
-            auth
-          );
+            await signOut(
+              auth
+            );
+
+          } catch {
+            // ログアウト失敗は遷移を優先
+          }
 
 
           location.replace(
@@ -2022,3 +2404,4 @@
 
 </body>
 </html>
+```
