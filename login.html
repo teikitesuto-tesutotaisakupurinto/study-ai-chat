@@ -1,115 +1,396 @@
+
 <!doctype html>
 <html lang="ja">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ログイン｜学習AIチャット</title>
+  <meta name="theme-color" content="#ffffff">
+  <title>ログイン | 学習AIチャット</title>
   <link rel="stylesheet" href="./assets/css/common.css">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #f5f7fb;
+      color: #172033;
+      font-family: Arial, "Noto Sans JP", sans-serif;
+    }
+    main {
+      flex: 1;
+      display: grid;
+      place-items: center;
+      padding: 32px 16px;
+    }
+    .login-card {
+      width: min(100%, 430px);
+      padding: 34px;
+      background: #fff;
+      border: 1px solid #e3e8f0;
+      border-radius: 16px;
+      box-shadow: 0 12px 40px rgba(15, 23, 42, .07);
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 27px;
+      text-align: center;
+      letter-spacing: -.5px;
+    }
+    .intro {
+      margin: 0 0 28px;
+      color: #64748b;
+      text-align: center;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+    label {
+      display: block;
+      margin: 16px 0 7px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    input {
+      display: block;
+      width: 100%;
+      min-height: 46px;
+      padding: 11px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 16px;
+      background: #fff;
+      color: #172033;
+    }
+    input:focus {
+      outline: 3px solid #dbeafe;
+      border-color: #2563eb;
+    }
+    button {
+      width: 100%;
+      min-height: 47px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:disabled { opacity: .6; cursor: wait; }
+    .primary {
+      margin-top: 22px;
+      border: 0;
+      background: #1d4ed8;
+      color: #fff;
+    }
+    .google-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 18px;
+      background: #fff;
+      color: #1f2937;
+      border: 1px solid #cbd5e1;
+    }
+    .google-button:hover { background: #f8fafc; }
+    .google-logo { width: 20px; height: 20px; flex: 0 0 20px; }
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 23px 0 4px;
+      color: #64748b;
+      font-size: 13px;
+    }
+    .divider::before, .divider::after {
+      content: "";
+      height: 1px;
+      flex: 1;
+      background: #e2e8f0;
+    }
+    .links {
+      display: flex;
+      justify-content: center;
+      margin-top: 18px;
+      font-size: 14px;
+    }
+    a { color: #1d4ed8; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    #login-error {
+      display: none;
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      background: #fef2f2;
+      color: #991b1b;
+      font-size: 14px;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+    #login-status {
+      min-height: 22px;
+      margin-top: 12px;
+      color: #475569;
+      font-size: 13px;
+      text-align: center;
+    }
+    footer {
+      padding: 20px 12px;
+      color: #64748b;
+      text-align: center;
+      font-size: 12px;
+    }
+    @media (max-width: 480px) {
+      .login-card { padding: 25px 20px; }
+    }
+  </style>
 </head>
 <body>
-  <main class="auth-page">
-    <section class="auth-card">
-      <div class="brand-mark">学</div>
-      <h1>学習AIチャット</h1>
-      <p class="muted">アカウントにログインしてください。</p>
+  <main>
+    <section class="login-card" aria-labelledby="login-title">
+      <h1 id="login-title">学習AIチャット</h1>
+      <p class="intro">アカウントにログインしてください。</p>
 
-      <form id="loginForm" class="auth-form">
+      <form id="login-form">
         <label for="email">メールアドレス</label>
-        <input id="email" type="email" autocomplete="username" required>
+        <input id="email" name="email" type="email"
+          autocomplete="username" required maxlength="254"
+          placeholder="name@example.com">
 
         <label for="password">パスワード</label>
-        <input id="password" type="password"
+        <input id="password" name="password" type="password"
           autocomplete="current-password" required>
 
-        <button class="primary-button" id="loginButton" type="submit">
-          ログイン
+        <button class="primary" id="email-login-button" type="submit">
+          メールアドレスでログイン
         </button>
       </form>
 
-      <button class="secondary-button" id="googleButton"
-        style="width:100%;margin-top:12px" type="button">
-        Googleアカウントでログイン
+      <div class="links">
+        <a id="reset-link" href="./reset.html">パスワードを忘れた場合</a>
+      </div>
+
+      <div class="divider">または</div>
+
+      <button class="google-button" id="google-login-button" type="button">
+        <svg class="google-logo" viewBox="0 0 48 48"
+          role="img" aria-label="Googleロゴ" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#EA4335"
+            d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z"
+            transform="translate(4 4) scale(.83)"/>
+          <path fill="#4285F4"
+            d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.75 7.18l7.73 6C44.42 37.94 46.98 31.83 46.98 24.55Z"/>
+          <path fill="#FBBC05"
+            d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.87.93 7.53 2.56 10.78l7.97-6.19Z"
+            transform="translate(4 4) scale(.83)"/>
+          <path fill="#34A853"
+            d="M24 48c6.48 0 11.93-2.13 15.91-5.8l-7.73-6c-2.15 1.45-4.92 2.3-8.18 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z"
+            transform="translate(4 4) scale(.83)"/>
+        </svg>
+        <span>Googleアカウントでログイン</span>
       </button>
 
-      <div id="loginMessage" class="notice" hidden aria-live="polite"></div>
-
-      <div class="auth-links">
-        <a href="./reset.html">パスワードを忘れた場合</a>
-      </div>
-
-      <div class="auth-footer">
-        © 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.
-      </div>
+      <div id="login-error" role="alert"></div>
+      <div id="login-status" role="status" aria-live="polite"></div>
     </section>
   </main>
+
+  <footer>
+    © 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.
+  </footer>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="./assets/js/paths.js"></script>
   <script src="./assets/js/firebase.js"></script>
-  <script src="./assets/js/auth.js"></script>
-
   <script>
-    const loginForm = document.getElementById("loginForm");
-    const loginButton = document.getElementById("loginButton");
-    const googleButton = document.getElementById("googleButton");
-    const loginMessage = document.getElementById("loginMessage");
+    (() => {
+      "use strict";
 
-    function showLoginMessage(text, type) {
-      loginMessage.textContent = text;
-      loginMessage.className = "notice " + (type || "error");
-      loginMessage.hidden = false;
-    }
+      const auth = window.auth;
+      const paths = window.AppPaths || {};
+      const $ = id => document.getElementById(id);
 
-    function friendlyAuthError(error) {
-      const messages = {
-        "auth/invalid-email": "メールアドレスの形式を確認してください。",
-        "auth/user-disabled": "このアカウントは停止されています。",
-        "auth/user-not-found": "アカウントが見つかりません。",
-        "auth/wrong-password": "メールアドレスまたはパスワードが違います。",
-        "auth/invalid-credential": "メールアドレスまたはパスワードが違います。",
-        "auth/too-many-requests": "試行回数が多すぎます。時間をおいてください。",
-        "auth/popup-closed-by-user": "Googleログインがキャンセルされました。",
-        "auth/unauthorized-domain": "Firebaseの承認済みドメイン設定を確認してください。"
-      };
-      return messages[error.code] || "ログインできませんでした。設定と入力内容を確認してください。";
-    }
+      const form = $("login-form");
+      const emailButton = $("email-login-button");
+      const googleButton = $("google-login-button");
+      const errorBox = $("login-error");
+      const statusBox = $("login-status");
 
-    loginForm.addEventListener("submit", async function (event) {
-      event.preventDefault();
-      loginButton.disabled = true;
-      googleButton.disabled = true;
-      loginMessage.hidden = true;
-
-      try {
-        await auth.signInWithEmailAndPassword(
-          document.getElementById("email").value.trim(),
-          document.getElementById("password").value
-        );
-        // auth.js がユーザーの役割を確認して遷移します。
-      } catch (error) {
-        showLoginMessage(friendlyAuthError(error));
-        loginButton.disabled = false;
-        googleButton.disabled = false;
+      function showError(message) {
+        errorBox.textContent = message;
+        errorBox.style.display = "block";
+        statusBox.textContent = "";
       }
-    });
 
-    googleButton.addEventListener("click", async function () {
-      loginButton.disabled = true;
-      googleButton.disabled = true;
-      loginMessage.hidden = true;
-
-      try {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        await auth.signInWithPopup(provider);
-        // auth.js がユーザーの役割を確認して遷移します。
-      } catch (error) {
-        showLoginMessage(friendlyAuthError(error));
-        loginButton.disabled = false;
-        googleButton.disabled = false;
+      function clearError() {
+        errorBox.textContent = "";
+        errorBox.style.display = "none";
       }
-    });
+
+      function setBusy(value, message = "") {
+        emailButton.disabled = value;
+        googleButton.disabled = value;
+        statusBox.textContent = message;
+      }
+
+      function destinationFor(profile) {
+        if (!profile || profile.status !== "active") {
+          return paths.forbidden || "./403.html";
+        }
+        if (profile.role === "admin") {
+          return paths.adminHome || "./admin/index.html";
+        }
+        if (profile.role === "student") {
+          return paths.studentHome || "./student/index.html";
+        }
+        return paths.forbidden || "./403.html";
+      }
+
+      async function routeSignedInUser(user) {
+        const db = window.db;
+        if (!db) throw new Error("データベースを初期化できません。");
+
+        const snapshot = await db.collection("users").doc(user.uid).get();
+        if (!snapshot.exists) {
+          throw new Error(
+            "このアカウントはまだ登録されていません。運営管理者に登録を依頼してください。"
+          );
+        }
+
+        const profile = snapshot.data();
+        if (profile.status !== "active") {
+          throw new Error("このアカウントは停止中です。管理者に確認してください。");
+        }
+
+        location.replace(destinationFor(profile));
+      }
+
+      function readableAuthError(error) {
+        switch (error?.code) {
+          case "auth/invalid-email":
+            return "メールアドレスの形式を確認してください。";
+          case "auth/missing-password":
+            return "パスワードを入力してください。";
+          case "auth/invalid-credential":
+          case "auth/wrong-password":
+          case "auth/user-not-found":
+            return "メールアドレスまたはパスワードが正しくありません。";
+          case "auth/user-disabled":
+            return "このアカウントは無効になっています。";
+          case "auth/too-many-requests":
+            return "試行回数が多すぎます。時間をおいて再度お試しください。";
+          case "auth/operation-not-allowed":
+            return "Firebase Consoleでメール/パスワード認証を有効にしてください。";
+          case "auth/popup-blocked":
+            return "Googleログインのポップアップがブロックされました。ポップアップを許可してください。";
+          case "auth/popup-closed-by-user":
+            return "Googleログインが途中で閉じられました。もう一度お試しください。";
+          case "auth/unauthorized-domain":
+            return "このサイトのドメインがFirebase Authenticationの承認済みドメインに登録されていません。";
+          case "auth/operation-not-supported-in-this-environment":
+            return "この環境ではポップアップ認証が使えません。通常のブラウザ画面で開いてください。";
+          case "auth/invalid-api-key":
+            return "Firebase APIキーが正しくありません。firebase.jsの設定を確認してください。";
+          default:
+            return `ログインに失敗しました。(${error?.code || "unknown"}) ${error?.message || ""}`;
+        }
+      }
+
+      if (!auth) {
+        showError("Firebase Authenticationを初期化できません。firebase.jsを確認してください。");
+        return;
+      }
+
+      $("reset-link").href = paths.reset || "./reset.html";
+
+      /*
+       * ログイン画面では、未ログインだからという理由だけで
+       * reset.htmlなどから強制リダイレクトしない。
+       * ログイン済みユーザーだけを判定する。
+       */
+      let routing = false;
+      auth.onAuthStateChanged(async user => {
+        if (!user || routing) return;
+        routing = true;
+        setBusy(true, "ログイン状態を確認しています...");
+
+        try {
+          await routeSignedInUser(user);
+        } catch (error) {
+          console.error(error);
+          showError(error.message || "アカウントを確認できませんでした。");
+        } finally {
+          routing = false;
+          setBusy(false);
+        }
+      });
+
+      form.addEventListener("submit", async event => {
+        event.preventDefault();
+        clearError();
+
+        const email = $("email").value.trim();
+        const password = $("password").value;
+
+        if (!email || !password) {
+          showError("メールアドレスとパスワードを入力してください。");
+          return;
+        }
+
+        try {
+          setBusy(true, "ログインしています...");
+          await auth.signInWithEmailAndPassword(email, password);
+          // 遷移はonAuthStateChanged側で行う。
+        } catch (error) {
+          console.error("Email login error:", error);
+          showError(readableAuthError(error));
+        } finally {
+          setBusy(false);
+        }
+      });
+
+      googleButton.addEventListener("click", async () => {
+        clearError();
+
+        try {
+          setBusy(true, "Googleアカウントを確認しています...");
+
+          const provider = new firebase.auth.GoogleAuthProvider();
+          provider.setCustomParameters({ prompt: "select_account" });
+
+          /*
+           * まずポップアップを試す。
+           * invalid-actionなどの設定エラーはredirectに変えても直らないため、
+           * 実際のエラーコードを表示する。
+           */
+          await auth.signInWithPopup(provider);
+        } catch (error) {
+          console.error("Google login error:", error);
+
+          if (error?.code === "auth/popup-blocked") {
+            try {
+              const provider = new firebase.auth.GoogleAuthProvider();
+              provider.setCustomParameters({ prompt: "select_account" });
+              await auth.signInWithRedirect(provider);
+              return;
+            } catch (redirectError) {
+              console.error("Google redirect error:", redirectError);
+              showError(readableAuthError(redirectError));
+            }
+          } else {
+            showError(readableAuthError(error));
+          }
+        } finally {
+          setBusy(false);
+        }
+      });
+
+      auth.getRedirectResult().catch(error => {
+        console.error("Google redirect result error:", error);
+        showError(readableAuthError(error));
+      });
+    })();
   </script>
 </body>
 </html>
