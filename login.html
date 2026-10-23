@@ -1,654 +1,115 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
-
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>定期テスト対策ポータル - ログイン</title>
-
-<link rel="stylesheet" href="assets/css/style.css">
-
-<style>
-
-*{
-    box-sizing:border-box;
-}
-
-body{
-    margin:0;
-    min-height:100vh;
-
-    display:flex;
-    align-items:center;
-    justify-content:center;
-
-    background:#f4f6fb;
-    color:#202938;
-
-    font-family:
-        Arial,
-        "Noto Sans JP",
-        sans-serif;
-}
-
-.login-container{
-    width:100%;
-    max-width:460px;
-    padding:24px;
-}
-
-.login-box{
-    background:#ffffff;
-
-    border:1px solid #e1e6ef;
-    border-radius:16px;
-
-    padding:34px;
-
-    box-shadow:
-        0 10px 35px rgba(20,40,80,.08);
-}
-
-.logo{
-    text-align:center;
-
-    font-size:30px;
-    font-weight:800;
-
-    color:#2857d9;
-
-    margin-bottom:8px;
-}
-
-.subtitle{
-    text-align:center;
-
-    color:#667085;
-
-    margin-bottom:28px;
-}
-
-.form-group{
-    margin-bottom:18px;
-}
-
-label{
-    display:block;
-
-    font-size:14px;
-    font-weight:700;
-
-    margin-bottom:7px;
-}
-
-input{
-    width:100%;
-
-    padding:13px 14px;
-
-    border:1px solid #cfd7e3;
-    border-radius:9px;
-
-    font:inherit;
-
-    outline:none;
-}
-
-input:focus{
-    border-color:#2857d9;
-
-    box-shadow:
-        0 0 0 3px rgba(40,87,217,.12);
-}
-
-button{
-    width:100%;
-
-    padding:13px;
-
-    border:0;
-    border-radius:9px;
-
-    font:inherit;
-    font-weight:700;
-
-    cursor:pointer;
-}
-
-button:disabled{
-    opacity:.6;
-    cursor:wait;
-}
-
-.login-button{
-    margin-top:6px;
-
-    background:#2857d9;
-    color:#ffffff;
-}
-
-.login-button:hover{
-    background:#2149ba;
-}
-
-.divider{
-    display:flex;
-
-    align-items:center;
-
-    gap:12px;
-
-    margin:24px 0;
-
-    color:#98a2b3;
-
-    font-size:13px;
-}
-
-.divider::before,
-.divider::after{
-    content:"";
-
-    flex:1;
-
-    height:1px;
-
-    background:#e4e8ef;
-}
-
-.google-button{
-    background:#ffffff;
-
-    color:#202938;
-
-    border:1px solid #cfd7e3;
-}
-
-.google-button:hover{
-    background:#f8fafc;
-}
-
-.message{
-    display:none;
-
-    margin-top:18px;
-
-    padding:12px;
-
-    border-radius:8px;
-
-    white-space:pre-wrap;
-
-    line-height:1.6;
-
-    font-size:14px;
-}
-
-.message.error{
-    display:block;
-
-    background:#fff0f0;
-
-    color:#a11b1b;
-}
-
-.message.info{
-    display:block;
-
-    background:#eef4ff;
-
-    color:#244a9b;
-}
-
-.footer{
-    text-align:center;
-
-    margin-top:25px;
-
-    color:#98a2b3;
-
-    font-size:12px;
-
-    line-height:1.6;
-}
-
-</style>
-
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ログイン｜学習AIチャット</title>
+  <link rel="stylesheet" href="./assets/css/common.css">
 </head>
-
-
 <body>
+  <main class="auth-page">
+    <section class="auth-card">
+      <div class="brand-mark">学</div>
+      <h1>学習AIチャット</h1>
+      <p class="muted">アカウントにログインしてください。</p>
 
-<div class="login-container">
+      <form id="loginForm" class="auth-form">
+        <label for="email">メールアドレス</label>
+        <input id="email" type="email" autocomplete="username" required>
 
-    <main class="login-box">
+        <label for="password">パスワード</label>
+        <input id="password" type="password"
+          autocomplete="current-password" required>
 
-        <div class="logo">
-            TestLink
-        </div>
-
-        <div class="subtitle">
-            定期テスト対策プリント運営事務局
-        </div>
-
-
-        <form id="loginForm">
-
-            <div class="form-group">
-
-                <label for="email">
-                    メールアドレス
-                </label>
-
-                <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autocomplete="username"
-                    required
-                >
-
-            </div>
-
-
-            <div class="form-group">
-
-                <label for="password">
-                    パスワード
-                </label>
-
-                <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autocomplete="current-password"
-                    required
-                >
-
-            </div>
-
-
-            <button
-                type="submit"
-                id="loginButton"
-                class="login-button"
-            >
-                ログイン
-            </button>
-
-        </form>
-
-
-        <div class="divider">
-            または
-        </div>
-
-
-        <button
-            type="button"
-            id="googleLoginButton"
-            class="google-button"
-        >
-            Googleでログイン
+        <button class="primary-button" id="loginButton" type="submit">
+          ログイン
         </button>
+      </form>
 
+      <button class="secondary-button" id="googleButton"
+        style="width:100%;margin-top:12px" type="button">
+        Googleアカウントでログイン
+      </button>
 
-        <div
-            id="message"
-            class="message"
-        ></div>
+      <div id="loginMessage" class="notice" hidden aria-live="polite"></div>
 
+      <div class="auth-links">
+        <a href="./reset.html">パスワードを忘れた場合</a>
+      </div>
 
-        <div class="footer">
+      <div class="auth-footer">
+        © 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.
+      </div>
+    </section>
+  </main>
 
-            定期テスト対策プリント運営事務局<br>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="./assets/js/paths.js"></script>
+  <script src="./assets/js/firebase.js"></script>
+  <script src="./assets/js/auth.js"></script>
 
-            © 2026 Regular Test Preparation Print Office.
-            All Rights Reserved.
+  <script>
+    const loginForm = document.getElementById("loginForm");
+    const loginButton = document.getElementById("loginButton");
+    const googleButton = document.getElementById("googleButton");
+    const loginMessage = document.getElementById("loginMessage");
 
-        </div>
-
-    </main>
-
-</div>
-
-
-<script type="module">
-
-import {
-    auth,
-    googleProvider,
-    db
-} from "./assets/js/firebase.js";
-
-
-import {
-    signInWithEmailAndPassword,
-    signInWithPopup,
-    onAuthStateChanged,
-    signOut,
-    setPersistence,
-    browserLocalPersistence
-} from "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js";
-
-
-import {
-    doc,
-    getDoc
-} from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
-
-
-const loginForm =
-    document.getElementById("loginForm");
-
-const loginButton =
-    document.getElementById("loginButton");
-
-const googleLoginButton =
-    document.getElementById("googleLoginButton");
-
-const message =
-    document.getElementById("message");
-
-
-function showMessage(text,type="error"){
-
-    message.textContent = text;
-
-    message.className =
-        "message " + type;
-
-}
-
-
-function clearMessage(){
-
-    message.textContent = "";
-
-    message.className =
-        "message";
-
-}
-
-
-function getRolePage(role){
-
-    if(role === "admin"){
-        return "./admin/index.html";
+    function showLoginMessage(text, type) {
+      loginMessage.textContent = text;
+      loginMessage.className = "notice " + (type || "error");
+      loginMessage.hidden = false;
     }
 
-    if(role === "student"){
-        return "./student/index.html";
+    function friendlyAuthError(error) {
+      const messages = {
+        "auth/invalid-email": "メールアドレスの形式を確認してください。",
+        "auth/user-disabled": "このアカウントは停止されています。",
+        "auth/user-not-found": "アカウントが見つかりません。",
+        "auth/wrong-password": "メールアドレスまたはパスワードが違います。",
+        "auth/invalid-credential": "メールアドレスまたはパスワードが違います。",
+        "auth/too-many-requests": "試行回数が多すぎます。時間をおいてください。",
+        "auth/popup-closed-by-user": "Googleログインがキャンセルされました。",
+        "auth/unauthorized-domain": "Firebaseの承認済みドメイン設定を確認してください。"
+      };
+      return messages[error.code] || "ログインできませんでした。設定と入力内容を確認してください。";
     }
 
-    return null;
-}
+    loginForm.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      loginButton.disabled = true;
+      googleButton.disabled = true;
+      loginMessage.hidden = true;
 
-
-/*
- * ログイン済みなら適切な画面へ。
- *
- * login.html → student/index.html
- * login.html → admin/index.html
- *
- * だけを担当する。
- *
- * student/admin側からlogin.htmlへ戻す処理は
- * 各ページ側で行う。
- */
-
-async function redirectLoggedInUser(user){
-
-    if(!user){
-        return;
-    }
-
-
-    const reference =
-        doc(db,"users",user.uid);
-
-
-    const snapshot =
-        await getDoc(reference);
-
-
-    if(!snapshot.exists()){
-
-        await signOut(auth);
-
-        showMessage(
-            "ユーザー情報が登録されていません。",
-            "error"
+      try {
+        await auth.signInWithEmailAndPassword(
+          document.getElementById("email").value.trim(),
+          document.getElementById("password").value
         );
-
-        return;
-    }
-
-
-    const data =
-        snapshot.data();
-
-
-    if(data.status !== "active"){
-
-        await signOut(auth);
-
-        showMessage(
-            "このアカウントは現在利用できません。",
-            "error"
-        );
-
-        return;
-    }
-
-
-    const page =
-        getRolePage(data.role);
-
-
-    if(!page){
-
-        await signOut(auth);
-
-        showMessage(
-            "ユーザー権限が正しく設定されていません。",
-            "error"
-        );
-
-        return;
-    }
-
-
-    /*
-     * login.htmlからのみ移動する。
-     *
-     * 同じページへのlocation.replaceはしない。
-     */
-
-    window.location.replace(page);
-}
-
-
-/*
- * ログイン状態確認
- */
-
-onAuthStateChanged(
-    auth,
-    async user => {
-
-        if(!user){
-            return;
-        }
-
-        try{
-
-            await redirectLoggedInUser(user);
-
-        }catch(error){
-
-            console.error(
-                "認証確認エラー:",
-                error
-            );
-
-            showMessage(
-                "アカウント情報を確認できませんでした。",
-                "error"
-            );
-
-        }
-
-    }
-);
-
-
-/*
- * メールログイン
- */
-
-loginForm.addEventListener(
-    "submit",
-    async event => {
-
-        event.preventDefault();
-
-        clearMessage();
-
-        const email =
-            document.getElementById("email")
-                .value
-                .trim();
-
-        const password =
-            document.getElementById("password")
-                .value;
-
-
-        loginButton.disabled = true;
-
-        loginButton.textContent =
-            "ログイン中...";
-
-
-        try{
-
-            await setPersistence(
-                auth,
-                browserLocalPersistence
-            );
-
-
-            /*
-             * ここでは直接
-             * student/adminへ飛ばさない。
-             *
-             * onAuthStateChangedに一本化する。
-             */
-
-            await signInWithEmailAndPassword(
-                auth,
-                email,
-                password
-            );
-
-
-        }catch(error){
-
-            console.error(
-                "ログインエラー:",
-                error
-            );
-
-
-            showMessage(
-                "ログインできませんでした。\n" +
-                error.message,
-                "error"
-            );
-
-
-            loginButton.disabled = false;
-
-            loginButton.textContent =
-                "ログイン";
-
-        }
-
-    }
-);
-
-
-/*
- * Googleログイン
- */
-
-googleLoginButton.addEventListener(
-    "click",
-    async () => {
-
-        clearMessage();
-
-        googleLoginButton.disabled = true;
-
-        googleLoginButton.textContent =
-            "Googleログイン中...";
-
-
-        try{
-
-            await setPersistence(
-                auth,
-                browserLocalPersistence
-            );
-
-
-            await signInWithPopup(
-                auth,
-                googleProvider
-            );
-
-
-            /*
-             * ここでも直接遷移しない。
-             *
-             * onAuthStateChanged →
-             * users/{uid} →
-             * role →
-             * 画面
-             *
-             * の一本だけにする。
-             */
-
-
-        }catch(error){
-
-            console.error(
-                "Googleログインエラー:",
-                error
-            );
-
-
-            showMessage(
-                "Googleログインに失敗しました。\n" +
-                error.message,
-                "error"
-            );
-
-
-            googleLoginButton.disabled = false;
-
-            googleLoginButton.textContent =
-                "Googleでログイン";
-
-        }
-
-    }
-);
-
-</script>
-
+        // auth.js がユーザーの役割を確認して遷移します。
+      } catch (error) {
+        showLoginMessage(friendlyAuthError(error));
+        loginButton.disabled = false;
+        googleButton.disabled = false;
+      }
+    });
+
+    googleButton.addEventListener("click", async function () {
+      loginButton.disabled = true;
+      googleButton.disabled = true;
+      loginMessage.hidden = true;
+
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await auth.signInWithPopup(provider);
+        // auth.js がユーザーの役割を確認して遷移します。
+      } catch (error) {
+        showLoginMessage(friendlyAuthError(error));
+        loginButton.disabled = false;
+        googleButton.disabled = false;
+      }
+    });
+  </script>
 </body>
-
 </html>
