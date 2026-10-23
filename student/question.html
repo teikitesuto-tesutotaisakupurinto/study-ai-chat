@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -5,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#ffffff">
   <title>AIに質問 | 学習AIチャット</title>
-
   <link rel="stylesheet" href="../assets/css/common.css">
 
   <style>
@@ -15,29 +15,15 @@
       --ai-muted: #64748b;
     }
 
-    * {
-      box-sizing: border-box;
-    }
-
     body {
-      margin: 0;
       background: #f7f8fa;
-      color: #202124;
-      font-family: Arial, "Noto Sans JP", sans-serif;
     }
 
     [hidden] {
       display: none !important;
     }
 
-    .app-layout {
-      min-height: 100vh;
-    }
-
     .app-main {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
       padding: 0;
     }
 
@@ -64,16 +50,6 @@
 
     .new-chat-button {
       flex-shrink: 0;
-      padding: 10px 14px;
-      background: #fff;
-      border: 1px solid var(--ai-border);
-      border-radius: 8px;
-      color: #202124;
-      cursor: pointer;
-    }
-
-    .new-chat-button:hover {
-      background: #f3f4f6;
     }
 
     .chat-content {
@@ -104,8 +80,6 @@
       max-width: 100%;
       padding: 11px 12px;
       background: #fff;
-      border: 1px solid #d1d5db;
-      border-radius: 8px;
       font-size: 15px;
     }
 
@@ -119,8 +93,8 @@
     }
 
     .welcome {
-      margin: auto;
       max-width: 550px;
+      margin: auto;
       padding: 30px 10px;
       text-align: center;
     }
@@ -181,9 +155,7 @@
     }
 
     .typing {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
+      align-self: flex-start;
       padding: 12px 14px;
       border: 1px solid var(--ai-border);
       border-radius: 10px;
@@ -201,9 +173,9 @@
 
     .composer-box {
       padding: 12px;
-      background: white;
       border: 1px solid #d1d5db;
       border-radius: 14px;
+      background: white;
       box-shadow: 0 4px 16px rgba(0, 0, 0, .04);
     }
 
@@ -218,8 +190,12 @@
       outline: none;
       background: transparent;
       color: #202124;
-      font: inherit;
       line-height: 1.7;
+    }
+
+    #questionInput:focus-visible {
+      outline: 2px solid rgba(37, 99, 235, .35);
+      outline-offset: 2px;
     }
 
     .composer-bottom {
@@ -227,7 +203,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 4px 4px 0;
+      padding: 4px;
     }
 
     .composer-hint {
@@ -237,18 +213,14 @@
 
     #sendButton {
       min-width: 100px;
-      padding: 11px 18px;
+      border-color: var(--ai-primary);
       background: var(--ai-primary);
-      border: 0;
-      border-radius: 8px;
       color: #fff;
       font-weight: 600;
-      cursor: pointer;
     }
 
-    #sendButton:disabled {
-      opacity: .5;
-      cursor: not-allowed;
+    #sendButton:hover:not(:disabled) {
+      background: #1d4ed8;
     }
 
     .notice {
@@ -309,29 +281,23 @@
 </head>
 
 <body data-role="student">
-
   <div class="app-layout">
-
     <aside id="appSidebar" class="sidebar"></aside>
 
     <main id="appMain" class="app-main">
-
       <header class="chat-header">
         <div>
           <h1>学習AIチャット</h1>
           <p>中学校の学習をサポートします</p>
         </div>
-
         <button id="newChatButton" class="new-chat-button" type="button">
           新しい質問
         </button>
       </header>
 
       <section class="chat-content">
-
         <div class="subject-panel">
           <label for="subjectSelect">質問する教科</label>
-
           <select id="subjectSelect">
             <option value="国語">国語</option>
             <option value="数学" selected>数学</option>
@@ -348,10 +314,7 @@
         <div id="conversation" class="conversation" aria-live="polite">
           <div id="welcomeMessage" class="welcome">
             <h2>何を勉強していますか？</h2>
-            <p>
-              わからない問題や授業で習った内容を入力してください。<br>
-              中学生にもわかりやすく説明します。
-            </p>
+            <p>わからない問題や授業で習った内容を入力してください。中学生にもわかりやすく説明します。</p>
           </div>
         </div>
 
@@ -368,27 +331,20 @@
             ></textarea>
 
             <div class="composer-bottom">
-              <span class="composer-hint">
-                Enterで改行できます
-              </span>
-
-              <button id="sendButton" type="submit">
+              <span class="composer-hint">Enterで送信・Shift+Enterで改行</span>
+              <button id="sendButton" class="primary-button" type="submit">
                 質問する
               </button>
             </div>
           </div>
 
-          <p class="notice">
-            このAIは学習専用です。学習以外の質問には対応していません。
-          </p>
+          <p class="notice">このAIは学習専用です。学習以外の質問には対応していません。</p>
         </form>
-
       </section>
 
       <footer class="app-footer">
         © 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.
       </footer>
-
     </main>
   </div>
 
@@ -396,32 +352,19 @@
     import {
       auth,
       db,
-      persistenceReady
+      persistenceReady,
+      doc,
+      collection,
+      getDoc,
+      setDoc,
+      updateDoc,
+      serverTimestamp
     } from "../assets/js/firebase.js";
 
     import {
       onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
-    import {
-      collection,
-      doc,
-      getDoc,
-      setDoc,
-      updateDoc,
-      query,
-      where,
-      getDocs,
-      limit,
-      serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
-
-    /*
-     * Supabase Edge Function
-     *
-     * Groq API キーはブラウザに絶対に置かない。
-     * API キーは Supabase の Secrets に保存する。
-     */
     const SUPABASE_FUNCTION_URL =
       "https://fjqobjcvejhkevyfsoxt.supabase.co/functions/v1/study-chat";
 
@@ -438,29 +381,20 @@
     const sendButton = $("sendButton");
     const statusMessage = $("statusMessage");
 
+    const ALLOWED_SUBJECTS = [
+      "国語", "数学", "英語", "理科", "社会",
+      "音楽", "美術", "保健体育", "技術家庭"
+    ];
+
+    const NON_STUDY_RESPONSE =
+      "このAIは学習専用です。学習以外の質問はできません。";
+
     let currentUser = null;
     let currentProfile = null;
     let currentHistoryId = null;
     let messages = [];
     let sending = false;
-    let maintenanceActive = false;
 
-    const ALLOWED_SUBJECTS = [
-      "国語",
-      "数学",
-      "英語",
-      "理科",
-      "社会",
-      "音楽",
-      "美術",
-      "保健体育",
-      "技術家庭"
-    ];
-
-    /*
-     * ログイン状態と生徒権限を確認。
-     * ログイン確認が完了する前に質問機能を有効にしない。
-     */
     function waitForFirstAuthState() {
       return new Promise((resolve, reject) => {
         let unsubscribe = () => {};
@@ -479,9 +413,44 @@
       });
     }
 
+    function showFatalError(title, message, detail = "") {
+      document.documentElement.classList.remove("auth-pending");
+      document.body.replaceChildren();
+
+      const main = document.createElement("main");
+      main.className = "auth-error";
+
+      const heading = document.createElement("h1");
+      heading.textContent = title;
+
+      const description = document.createElement("p");
+      description.textContent = message;
+
+      main.append(heading, description);
+
+      if (detail) {
+        const pre = document.createElement("pre");
+        pre.textContent = detail;
+        main.append(pre);
+      }
+
+      const retry = document.createElement("button");
+      retry.type = "button";
+      retry.textContent = "再読み込み";
+      retry.addEventListener("click", () => location.reload());
+      main.append(retry);
+
+      const link = document.createElement("a");
+      link.href = "../login.html";
+      link.className = "button";
+      link.textContent = "ログイン画面へ";
+      main.append(link);
+
+      document.body.append(main);
+    }
+
     async function checkAccess() {
       await persistenceReady;
-
       currentUser = await waitForFirstAuthState();
 
       if (!currentUser) {
@@ -489,43 +458,45 @@
         return false;
       }
 
-      const userRef = doc(db, "users", currentUser.uid);
-      const userSnapshot = await getDoc(userRef);
+      const userSnapshot = await getDoc(
+        doc(db, "users", currentUser.uid)
+      );
 
       if (!userSnapshot.exists()) {
-        location.replace("../login.html");
+        showFatalError(
+          "ユーザープロフィールがありません",
+          "ログインはできていますが、users/{uid} にプロフィールがありません。管理者に確認してください。"
+        );
         return false;
       }
 
       currentProfile = userSnapshot.data();
 
-      if (
-        currentProfile.role !== "student" ||
-        currentProfile.status !== "active"
-      ) {
-        location.replace(
-          currentProfile.role === "admin"
-            ? "../admin/index.html"
-            : "../login.html"
+      if (currentProfile.status !== "active") {
+        showFatalError(
+          "アカウント利用不可",
+          "このアカウントは無効化されています。管理者にお問い合わせください。"
         );
         return false;
       }
 
-      const systemSnapshot = await getDoc(
+      if (currentProfile.role !== "student") {
+        location.replace("../403.html");
+        return false;
+      }
+
+      const settingsSnapshot = await getDoc(
         doc(db, "settings", "system")
       );
 
-      if (!systemSnapshot.exists()) {
+      if (!settingsSnapshot.exists()) {
         throw new Error(
-          "Firestore に settings/system がありません。"
+          "Firestore の settings/system がありません。必要なデータを作成してください。"
         );
       }
 
-      maintenanceActive =
-        systemSnapshot.data().maintenance === true;
-
-      if (maintenanceActive) {
-        location.replace("../login.html");
+      if (settingsSnapshot.data().maintenance === true) {
+        location.replace("../maintenance.html");
         return false;
       }
 
@@ -543,28 +514,19 @@
       const wrapper = document.createElement("div");
       wrapper.className = `message ${role}`;
 
-      if (isError) {
-        wrapper.classList.add("error");
-      }
+      if (isError) wrapper.classList.add("error");
 
       const roleLabel = document.createElement("div");
       roleLabel.className = "message-role";
-      roleLabel.textContent =
-        role === "user" ? "あなた" : "学習AI";
+      roleLabel.textContent = role === "user" ? "あなた" : "学習AI";
 
       const body = document.createElement("div");
       body.className = "message-content";
-
-      // AI の回答は HTML として実行せず、テキストとして表示する。
       body.textContent = content;
 
       wrapper.append(roleLabel, body);
       conversation.append(wrapper);
-
-      wrapper.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest"
-      });
+      wrapper.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
       return wrapper;
     }
@@ -587,78 +549,39 @@
       sendButton.disabled = value;
       subjectSelect.disabled = value;
       questionInput.disabled = value;
+      $("newChatButton").disabled = value;
       sendButton.textContent = value ? "回答中..." : "質問する";
     }
 
     function normalizeAnswer(data) {
-      if (typeof data === "string") {
-        return data;
-      }
-
-      if (data && typeof data.answer === "string") {
-        return data.answer;
-      }
-
-      if (data && typeof data.response === "string") {
-        return data.response;
-      }
-
-      if (data && typeof data.message === "string") {
-        return data.message;
-      }
-
+      if (typeof data === "string") return data;
+      if (typeof data?.answer === "string") return data.answer;
+      if (typeof data?.response === "string") return data.response;
+      if (typeof data?.message === "string") return data.message;
       return "";
     }
-
-    /*
-     * 学習以外の質問を画面側でも確認する。
-     * 最終的な制限は必ず Edge Function 側にも実装する。
-     */
-    const NON_STUDY_RESPONSE =
-      "このAIは学習専用です。学習以外の質問はできません。";
 
     function looksLikeNonStudyRequest(text) {
       const value = text.trim();
 
-      const studyTerms =
-        /数学|算数|国語|英語|理科|社会|音楽|美術|保健体育|技術家庭|勉強|学習|問題|宿題|テスト|定期試験|定期テスト|解説|説明して|教えて|計算|方程式|関数|図形|英文|文法|単語|漢字|歴史|地理|公民|化学|物理|生物|地学|レポート|作文|読解|一次関数|連立方程式|比例|反比例|因数分解|平方根|中学|中学生|公式|用語|覚え方|答え合わせ|採点|添削|翻訳|和訳|英訳|要約|文の成分|品詞|古文|漢文|電流|天気|地層|植物|人体|日本国憲法|鎌倉時代|江戸時代|明治時代|世界地理|日本地理|実験|観察|自由研究|発音|リスニング|長文|読解問題|記述問題/;
-
       const nonStudyTerms =
-        /ゲームを作|ゲームして|恋愛相談|占って|雑談し|今日の天気|株価|投資|政治家の支持|おすすめの店|レストラン|旅行プラン|買い物|商品を買|動画を探|音楽を流|パスワードを教|ハッキング|ウイルスを作|勉強と関係ない/;
+        /恋愛相談|占って|雑談しよう|今日の天気|株価|投資|おすすめの店|レストラン|旅行プラン|買い物|商品を買いたい|動画を探して|音楽を流して|パスワードを教えて|ハッキング|ウイルスを作って|勉強と関係ない/;
 
-      if (nonStudyTerms.test(value) && !studyTerms.test(value)) {
-        return true;
-      }
+      const studyTerms =
+        /勉強|学習|問題|宿題|テスト|試験|解説|説明|教えて|計算|方程式|関数|図形|英文|文法|単語|漢字|歴史|地理|公民|化学|物理|生物|地学|作文|読解|公式|用語|添削|翻訳|和訳|英訳|要約|古文|漢文|電流|地層|植物|人体|実験|観察|発音|リスニング|記述問題/;
 
-      return false;
+      return nonStudyTerms.test(value) && !studyTerms.test(value);
     }
 
-    async function getFirebaseIdToken() {
-      if (!currentUser) {
-        throw new Error("ログイン状態を確認できません。");
-      }
-
-      return await currentUser.getIdToken();
-    }
-
-    /*
-     * AI 呼び出し。
-     * Authorization に Firebase ID トークンを送る。
-     *
-     * 注意:
-     * Supabase 側で Firebase ID トークンを検証する実装が必要。
-     * Supabase の通常の JWT 検証だけでは Firebase トークンを
-     * そのまま認証できない構成がある。
-     */
     async function callAI(message, subject) {
-      const firebaseToken = await getFirebaseIdToken();
+      const token = await currentUser.getIdToken();
 
       const response = await fetch(SUPABASE_FUNCTION_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "apikey": SUPABASE_PUBLISHABLE_KEY,
-          "Authorization": `Bearer ${firebaseToken}`
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
           message,
@@ -671,25 +594,18 @@
         })
       });
 
-      const responseText = await response.text();
-
+      const raw = await response.text();
       let data;
 
       try {
-        data = JSON.parse(responseText);
+        data = JSON.parse(raw);
       } catch {
-        data = { message: responseText };
+        data = { message: raw };
       }
 
       if (!response.ok) {
-        const detail =
-          data.message ||
-          data.error ||
-          data.msg ||
-          `HTTP ${response.status}`;
-
         throw new Error(
-          `AI サーバーでエラーが発生しました。\n${detail}`
+          `${data.message || data.error || `HTTP ${response.status}`}\nAIサーバーの認証設定とログを確認してください。`
         );
       }
 
@@ -697,37 +613,32 @@
 
       if (!answer) {
         throw new Error(
-          "AI サーバーから回答を取得できませんでした。Edge Function のレスポンス形式を確認してください。"
+          "AIサーバーの応答に answer / response / message がありません。Edge Function の返却形式を確認してください。"
         );
       }
 
       return answer;
     }
 
-    /*
-     * 会話履歴を Firestore に保存。
-     * ドキュメントには必ず userId を含める。
-     */
     async function saveConversation() {
       if (!currentUser || !currentHistoryId) return;
 
-      const historyRef = doc(
-        db,
-        "chatHistories",
-        currentHistoryId
-      );
+      const historyRef = doc(db, "chatHistories", currentHistoryId);
+      const snapshot = await getDoc(historyRef);
 
       const payload = {
         userId: currentUser.uid,
         subject: subjectSelect.value,
         grade: currentProfile.grade || "中学生",
-        messages: messages,
+        messages,
         updatedAt: serverTimestamp()
       };
 
-      const snapshot = await getDoc(historyRef);
-
       if (snapshot.exists()) {
+        if (snapshot.data().userId !== currentUser.uid) {
+          throw new Error("この会話履歴を変更する権限がありません。");
+        }
+
         await updateDoc(historyRef, payload);
       } else {
         await setDoc(historyRef, {
@@ -738,38 +649,31 @@
     }
 
     async function createConversation() {
-      if (!currentUser) return;
-
       const historyRef = doc(collection(db, "chatHistories"));
+
+      await setDoc(historyRef, {
+        userId: currentUser.uid,
+        subject: subjectSelect.value,
+        grade: currentProfile.grade || "中学生",
+        messages: [],
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
 
       currentHistoryId = historyRef.id;
       messages = [];
 
-      try {
-        await setDoc(historyRef, {
-          userId: currentUser.uid,
-          subject: subjectSelect.value,
-          grade: currentProfile.grade || "中学生",
-          messages: [],
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
-
-        localStorage.setItem(
-          `studyAIConversation:${currentUser.uid}`,
-          currentHistoryId
-        );
-      } catch (error) {
-        console.error("会話の作成エラー:", error);
-        currentHistoryId = null;
-        throw error;
-      }
+      localStorage.setItem(
+        `studyAIConversation:${currentUser.uid}`,
+        currentHistoryId
+      );
     }
 
     async function restoreConversation() {
-      const storedId = localStorage.getItem(
-        `studyAIConversation:${currentUser.uid}`
-      );
+      const storageKey =
+        `studyAIConversation:${currentUser.uid}`;
+
+      const storedId = localStorage.getItem(storageKey);
 
       if (!storedId) {
         await createConversation();
@@ -791,7 +695,11 @@
       const data = snapshot.data();
 
       messages = Array.isArray(data.messages)
-        ? data.messages
+        ? data.messages.filter(item =>
+            item &&
+            ["user", "assistant"].includes(item.role) &&
+            typeof item.content === "string"
+          )
         : [];
 
       if (ALLOWED_SUBJECTS.includes(data.subject)) {
@@ -803,19 +711,12 @@
       welcomeMessage.hidden = messages.length > 0;
 
       for (const item of messages) {
-        if (
-          item &&
-          ["user", "assistant"].includes(item.role) &&
-          typeof item.content === "string"
-        ) {
-          renderMessage(item.role, item.content);
-        }
+        renderMessage(item.role, item.content);
       }
     }
 
     async function submitQuestion(event) {
       event.preventDefault();
-
       if (sending) return;
 
       showStatus("");
@@ -837,61 +738,39 @@
 
       try {
         renderMessage("user", question);
-
-        messages.push({
-          role: "user",
-          content: question
-        });
-
+        messages.push({ role: "user", content: question });
         questionInput.value = "";
 
+        let answer;
+
         if (looksLikeNonStudyRequest(question)) {
-          renderMessage("assistant", NON_STUDY_RESPONSE);
-
-          messages.push({
-            role: "assistant",
-            content: NON_STUDY_RESPONSE
-          });
-
-          await saveConversation();
-          return;
+          answer = NON_STUDY_RESPONSE;
+        } else {
+          showTyping();
+          answer = await callAI(question, subject);
+          hideTyping();
         }
 
-        showTyping();
-
-        const answer = await callAI(question, subject);
-
-        hideTyping();
         renderMessage("assistant", answer);
-
-        messages.push({
-          role: "assistant",
-          content: answer
-        });
+        messages.push({ role: "assistant", content: answer });
 
         await saveConversation();
       } catch (error) {
         hideTyping();
-
-        console.error("AI 質問エラー:", error);
+        console.error("AI質問エラー:", error);
 
         renderMessage(
           "assistant",
-          error.message ||
-            "回答を取得できませんでした。時間をおいて再度お試しください。",
+          error?.message || "回答を取得できませんでした。時間をおいて再度お試しください。",
           true
         );
 
-        /*
-         * エラー時は会話内容を可能な限り保存する。
-         * 保存自体が失敗しても、元のエラーを隠さない。
-         */
         try {
           await saveConversation();
         } catch (saveError) {
           console.error("会話履歴保存エラー:", saveError);
           showStatus(
-            "会話履歴を保存できませんでした。Firestore のルールを確認してください。"
+            `会話履歴を保存できませんでした。\n${saveError?.code || ""} ${saveError?.message || String(saveError)}`
           );
         }
       } finally {
@@ -908,18 +787,15 @@
 
       try {
         await createConversation();
-
         conversation.replaceChildren();
         conversation.append(welcomeMessage);
         welcomeMessage.hidden = false;
-
         questionInput.value = "";
         questionInput.focus();
       } catch (error) {
-        console.error(error);
+        console.error("新しい会話の作成エラー:", error);
         showStatus(
-          "新しい会話を作成できませんでした。\n" +
-          (error.message || String(error))
+          `新しい会話を作成できませんでした。\n${error?.code || ""} ${error?.message || String(error)}`
         );
       }
     });
@@ -931,21 +807,15 @@
         !event.isComposing
       ) {
         event.preventDefault();
-
-        if (questionForm.requestSubmit) {
-          questionForm.requestSubmit();
-        }
+        questionForm.requestSubmit();
       }
     });
 
     questionForm.addEventListener("submit", submitQuestion);
 
-    /*
-     * 初期化中は認証が確定するまで画面を見せない。
-     */
-    document.documentElement.classList.add("auth-pending");
-
     async function initializePage() {
+      document.documentElement.classList.add("auth-pending");
+
       try {
         const allowed = await checkAccess();
 
@@ -955,38 +825,21 @@
 
         document.documentElement.classList.remove("auth-pending");
       } catch (error) {
-        console.error("AI 画面初期化エラー:", error);
+        console.error("AI画面初期化エラー:", error);
 
-        document.documentElement.classList.remove("auth-pending");
-
-        document.body.innerHTML = `
-          <main style="
-            max-width:650px;
-            margin:60px auto;
-            padding:24px;
-            font-family:Arial,sans-serif;
-            line-height:1.8
-          ">
-            <h1>AI画面を開けません</h1>
-            <p>認証状態、Firestore の設定、会話履歴のアクセス権限を確認してください。</p>
-            <pre id="initError" style="
-              white-space:pre-wrap;
-              overflow-wrap:anywhere;
-              color:#b42318
-            "></pre>
-            <a href="../login.html">ログイン画面へ戻る</a>
-          </main>
-        `;
-
-        document.getElementById("initError").textContent =
-          error.message || String(error);
+        showFatalError(
+          error?.code === "permission-denied"
+            ? "403 Forbidden"
+            : "AI画面を開けません",
+          "認証、Firestore の設定、または会話履歴のアクセス権限を確認してください。",
+          `${error?.code || "error"}: ${error?.message || String(error)}`
+        );
       }
     }
 
-    initializePage();
+    await initializePage();
   </script>
 
   <script type="module" src="../assets/js/layout.js"></script>
-
 </body>
 </html>
