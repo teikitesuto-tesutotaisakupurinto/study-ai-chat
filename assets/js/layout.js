@@ -1,11 +1,9 @@
-import {
-  requireRole,
-  auth
-} from "./auth.js";
+
+import { requireRole, auth } from "./auth.js";
 
 import {
   signOut
-} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+} from "./firebase.js";
 
 import {
   db,
@@ -104,6 +102,7 @@ function setActiveNavigation() {
     ".sidebar .nav-link, .sidebar .sidebar-link"
   ).forEach((link) => {
     const href = link.getAttribute("href") || "";
+
     const targetFile = href
       .split("?")[0]
       .split("#")[0]
@@ -122,7 +121,6 @@ function setActiveNavigation() {
   });
 }
 
-// 旧HTMLのサイドバーにも対応する。
 export function setupSidebar() {
   document.querySelectorAll(".sidebar-toggle").forEach(
     bindSidebarToggle
@@ -131,7 +129,6 @@ export function setupSidebar() {
   setActiveNavigation();
 }
 
-// ログアウトボタンは動的に生成されたものにも対応。
 export function setupLogout() {
   document.querySelectorAll(
     "[data-logout], .logout-button"
@@ -156,13 +153,9 @@ export function setupLogout() {
         );
       } catch (error) {
         console.error("ログアウトエラー:", error);
-
         button.disabled = false;
 
-        showLayoutError(
-          "ログアウトに失敗しました。",
-          error
-        );
+        showLayoutError("ログアウトに失敗しました。", error);
       }
     });
   });
@@ -207,6 +200,7 @@ function formatDate(value) {
 
 async function renderRecentConversations(sidebar, user) {
   const section = makeElement("section", "sidebar-history");
+
   const heading = makeElement(
     "h2",
     "sidebar-history-heading",
@@ -241,6 +235,7 @@ async function renderRecentConversations(sidebar, user) {
       const data = item.data();
 
       const link = makeElement("a", "sidebar-history-link");
+
       link.href =
         `question.html?conversationId=${encodeURIComponent(item.id)}`;
 
@@ -267,12 +262,12 @@ async function renderRecentConversations(sidebar, user) {
 
 async function renderSidebar(role, user, profile) {
   const sidebar = document.getElementById("appSidebar");
-
   if (!sidebar) return;
 
   sidebar.replaceChildren();
 
   const brand = makeElement("div", "sidebar-header");
+
   const brandTitle = makeElement(
     "strong",
     "",
@@ -284,6 +279,7 @@ async function renderSidebar(role, user, profile) {
 
   const toggleRow = makeElement("div", "sidebar-toggle-row");
   const toggle = makeElement("button", "sidebar-toggle", "☰");
+
   bindSidebarToggle(toggle);
   toggleRow.append(toggle);
   sidebar.append(toggleRow);
@@ -339,7 +335,7 @@ async function startLayout() {
 
   const role = document.body.dataset.role;
 
-  // data-role のない旧形式ページは、ページ側の認証処理に任せる。
+  // data-role のないページでは、ページ側の初期化に任せる。
   if (!role) {
     setupSidebar();
     setupLogout();
@@ -350,6 +346,8 @@ async function startLayout() {
     showLayoutError(
       "ページ設定エラー：data-role は student または admin にしてください。"
     );
+
+    document.documentElement.classList.remove("auth-pending");
     return;
   }
 
@@ -362,11 +360,7 @@ async function startLayout() {
 
     if (!result) return;
 
-    await renderSidebar(
-      role,
-      result.user,
-      result.profile
-    );
+    await renderSidebar(role, result.user, result.profile);
 
     const nameElement =
       document.getElementById("currentUserName");
@@ -385,8 +379,6 @@ async function startLayout() {
       footer.textContent =
         "© 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.";
     }
-
-    document.documentElement.classList.remove("auth-pending");
   } catch (error) {
     console.error("画面初期化エラー:", error);
 
@@ -394,17 +386,16 @@ async function startLayout() {
       "画面を初期化できませんでした。",
       error
     );
-
+  } finally {
     document.documentElement.classList.remove("auth-pending");
   }
 }
 
-if (
-  typeof document !== "undefined" &&
-  document.body?.dataset?.role
-) {
-  startLayout();
-} else if (typeof document !== "undefined") {
-  setupSidebar();
-  setupLogout();
+if (typeof document !== "undefined") {
+  if (document.body?.dataset?.role) {
+    startLayout();
+  } else {
+    setupSidebar();
+    setupLogout();
+  }
 }
