@@ -1,0 +1,59 @@
+.dashboard-grid,
+.status-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+.admin-card span {
+  display: block;
+  color: #687386;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.admin-card strong {
+  font-size: 22px;
+}
+
+.user-card {
+  display: grid;
+  grid-template-columns:
+    1.5fr 1.5fr 150px 150px 90px;
+  gap: 12px;
+  align-items: center;
+}
+
+.user-card input,
+.user-card select {
+  margin: 0;
+}
+
+.user-card button {
+  padding: 10px;
+  border: 0;
+  border-radius: 7px;
+  background: #1769e0;
+  color: white;
+  cursor: pointer;
+}
+
+.switch-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.switch-row input {
+  width: auto;
+  margin: 0;
+}
+
+@media (max-width: 800px) {
+
+  .user-card {
+    grid-template-columns: 1fr;
+  }
+
+}
