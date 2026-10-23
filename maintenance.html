@@ -1,0 +1,121 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <title>メンテナンス中 | 学習AIチャット</title>
+  <link rel="stylesheet" href="assets/css/common.css">
+  <style>
+    body {
+      display: grid;
+      min-height: 100vh;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .maintenance-card {
+      width: min(680px, 100%);
+      padding: 36px;
+      border: 1px solid #e1e5ec;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 10px 36px rgba(20, 30, 50, .06);
+    }
+
+    .maintenance-card h1 {
+      margin-top: 0;
+      font-size: 26px;
+    }
+
+    .maintenance-card p {
+      white-space: pre-wrap;
+      line-height: 1.9;
+    }
+
+    #maintenanceStatus {
+      color: #667085;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <main class="maintenance-card">
+    <h1 id="maintenanceTitle">システムメンテナンス中</h1>
+
+    <p id="maintenanceMessage">現在、メンテナンスを実施しています。しばらくお待ちください。</p>
+
+    <p id="maintenanceStatus" role="status" aria-live="polite">設定を確認しています。</p>
+
+    <button id="retryButton" class="primary-button" type="button">
+      再確認する
+    </button>
+  </main>
+
+  <script type="module">
+    import {
+      db,
+      doc,
+      getDoc
+    } from "./assets/js/firebase.js";
+
+    const title = document.getElementById("maintenanceTitle");
+    const message = document.getElementById("maintenanceMessage");
+    const status = document.getElementById("maintenanceStatus");
+    const retry = document.getElementById("retryButton");
+
+    async function loadMaintenance() {
+      retry.disabled = true;
+      status.textContent = "設定を確認しています。";
+
+      try {
+        const snapshot = await getDoc(
+          doc(db, "settings", "system")
+        );
+
+        if (!snapshot.exists()) {
+          throw new Error(
+            "Firestore の settings/system がありません。"
+          );
+        }
+
+        const settings = snapshot.data();
+
+        if (settings.maintenance !== true) {
+          status.textContent =
+            "メンテナンスは終了しています。ログイン画面へ移動します。";
+
+          location.replace("./login.html");
+          return;
+        }
+
+        title.textContent =
+          settings.maintenanceTitle ||
+          "システムメンテナンス中";
+
+        message.textContent =
+          settings.maintenanceMessage ||
+          "現在、メンテナンスを実施しています。しばらくお待ちください。";
+
+        status.textContent =
+          "メンテナンス終了後に、再確認してください。";
+      } catch (error) {
+        console.error(
+          "メンテナンス設定取得エラー:",
+          error
+        );
+
+        status.textContent =
+          `設定を確認できませんでした。\n${error.code || "error"}: ${error.message || String(error)}`;
+      } finally {
+        retry.disabled = false;
+      }
+    }
+
+    retry.addEventListener("click", loadMaintenance);
+
+    loadMaintenance();
+  </script>
+</body>
+</html>
