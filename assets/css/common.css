@@ -233,3 +233,300 @@ footer.app-footer {
     padding: 16px;
   }
 }
+
+/* ===== 共通ボタン・リンクの表示修正 ===== */
+
+button,
+.button,
+a.button,
+.primary-button,
+.logout-button,
+.sidebar-toggle,
+.chat-form button,
+.user-card button {
+  font-family: inherit;
+  text-decoration: none;
+}
+
+button,
+.primary-button,
+.logout-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 10px 16px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  background: #fff;
+  color: #202124;
+  font-size: 14px;
+  line-height: 1.35;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  filter: brightness(.97);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid rgba(26, 115, 232, .28);
+  outline-offset: 2px;
+}
+
+.primary-button,
+button.primary-button {
+  border-color: #1a73e8;
+  background: #1a73e8;
+  color: #fff;
+}
+
+.button,
+a.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  margin: 8px 8px 0 0;
+  padding: 10px 16px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  background: #fff;
+  color: #202124;
+  text-decoration: none;
+  line-height: 1.35;
+}
+
+/* ===== 旧 HTML レイアウトとの互換性 ===== */
+
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app > .sidebar,
+.app > .admin-sidebar {
+  display: flex;
+  flex: 0 0 240px;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 12px;
+  border-right: 1px solid var(--border-color);
+  background: #fff;
+  transition: flex-basis .2s ease, width .2s ease;
+}
+
+/* サイドバーのロゴは表示しない */
+.sidebar-header,
+.sidebar-logo,
+.sidebar-brand,
+.sidebar-header-logo {
+  display: none !important;
+}
+
+.app .sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #344054;
+  text-decoration: none;
+  line-height: 1.4;
+}
+
+.nav-link:hover {
+  background: #f2f5fa;
+  text-decoration: none;
+}
+
+.nav-link.active,
+.nav-link[aria-current="page"] {
+  background: #e8f0fe;
+  color: #174ea6;
+  font-weight: 600;
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+  padding: 0 28px 28px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 70px;
+  margin: 0 -28px 24px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border-color);
+  background: #fff;
+}
+
+.topbar > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.topbar small {
+  color: var(--muted-color);
+  font-size: 12px;
+}
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.large-card,
+.card,
+.admin-card,
+.announcement-card,
+.user-card {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.large-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin: 18px 0;
+  padding: 22px;
+  color: var(--text-color);
+  text-decoration: none;
+}
+
+.large-card:hover {
+  border-color: #9bbcf3;
+  text-decoration: none;
+}
+
+.card,
+.admin-card,
+.announcement-card,
+.user-card {
+  margin: 16px 0;
+  padding: 20px;
+}
+
+/* 認証確認中は画面を白く保つ */
+html.auth-pending body {
+  visibility: hidden !important;
+  background: #fff !important;
+}
+
+/* 権限エラー・設定エラー */
+.auth-error,
+.error-page {
+  max-width: 700px;
+  margin: 8vh auto;
+  padding: 28px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: #fff;
+  line-height: 1.75;
+}
+
+.auth-error pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #b42318;
+}
+
+.layout-error {
+  margin: 16px 0;
+  padding: 14px 16px;
+  border: 1px solid #f3c8c3;
+  border-radius: 8px;
+  background: #fff4f2;
+  color: #a12b22;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ハンバーガーはサイドバーの最上部に配置 */
+.app > .sidebar > .sidebar-toggle {
+  align-self: flex-start;
+  margin: 0 0 12px;
+}
+
+.app .topbar .sidebar-toggle {
+  display: none;
+}
+
+.app > .sidebar .logout-button {
+  width: 100%;
+  margin-top: auto;
+}
+
+/* サイドバーを折りたたむ */
+.sidebar-collapsed .app > .sidebar,
+.app.sidebar-collapsed > .sidebar {
+  flex-basis: 68px;
+  width: 68px;
+  min-width: 68px;
+}
+
+.sidebar-collapsed .app > .sidebar .nav-link,
+.app.sidebar-collapsed > .sidebar .nav-link {
+  justify-content: center;
+  padding: 10px 4px;
+  font-size: 0;
+}
+
+.sidebar-collapsed .app > .sidebar .material-symbol,
+.app.sidebar-collapsed > .sidebar .material-symbol {
+  font-size: 18px;
+}
+
+@media (max-width: 700px) {
+  .app > .sidebar,
+  .app > .admin-sidebar {
+    flex-basis: 68px;
+    width: 68px;
+    min-width: 68px;
+    padding: 8px 4px;
+  }
+
+  .app .nav-link {
+    justify-content: center;
+    padding: 10px 4px;
+    font-size: 0;
+  }
+
+  .app .nav-link .material-symbol {
+    font-size: 18px;
+  }
+
+  .main-content {
+    padding: 0 14px 20px;
+  }
+
+  .topbar {
+    margin-right: -14px;
+    margin-left: -14px;
+    padding: 12px 14px;
+  }
+}
