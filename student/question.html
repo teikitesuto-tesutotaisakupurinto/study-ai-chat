@@ -1,23 +1,403 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AI学習チャット｜学習AIチャット</title>
+  <meta name="theme-color" content="#ffffff">
+  <title>AIに質問 | 学習AIチャット</title>
+
   <link rel="stylesheet" href="../assets/css/common.css">
   <link rel="stylesheet" href="../assets/css/student.css">
+
+  <style>
+    :root {
+      --ai-primary: #2563eb;
+      --ai-border: #e5e7eb;
+      --ai-muted: #64748b;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    body {
+      background: #f7f8fa;
+    }
+
+    .app-main {
+      padding: 0;
+      min-width: 0;
+    }
+
+    .chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 24px;
+      background: #fff;
+      border-bottom: 1px solid var(--ai-border);
+    }
+
+    .chat-header h1 {
+      margin: 0;
+      font-size: 21px;
+    }
+
+    .chat-header p {
+      margin: 5px 0 0;
+      color: var(--ai-muted);
+      font-size: 13px;
+    }
+
+    .new-chat-button {
+      flex-shrink: 0;
+    }
+
+    .chat-content {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 1000px;
+      min-height: calc(100vh - 150px);
+      margin: 0 auto;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+
+    .subject-panel {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .subject-panel label {
+      flex-shrink: 0;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .subject-panel select {
+      width: 220px;
+      max-width: 100%;
+      padding: 11px 12px;
+      border: 1px solid var(--ai-border);
+      border-radius: 8px;
+      background: #fff;
+      font-size: 15px;
+    }
+
+    .conversation {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      min-height: 280px;
+      padding-bottom: 24px;
+    }
+
+    .welcome {
+      max-width: 550px;
+      margin: auto;
+      padding: 30px 10px;
+      text-align: center;
+    }
+
+    .welcome h2 {
+      margin: 0 0 12px;
+      font-size: 25px;
+      font-weight: 600;
+    }
+
+    .welcome p {
+      margin: 0;
+      color: var(--ai-muted);
+      line-height: 1.8;
+    }
+
+    .message {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-width: 85%;
+      min-width: 0;
+    }
+
+    .message.user {
+      align-self: flex-end;
+      align-items: flex-end;
+    }
+
+    .message.assistant {
+      align-self: flex-start;
+      align-items: flex-start;
+    }
+
+    .message-role {
+      color: var(--ai-muted);
+      font-size: 12px;
+    }
+
+    .message-content {
+      padding: 14px 16px;
+      border: 1px solid var(--ai-border);
+      border-radius: 12px;
+      background: #fff;
+      line-height: 1.85;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    .message.user .message-content {
+      background: #eaf2ff;
+      border-color: #d7e5ff;
+    }
+
+    .message.error .message-content {
+      background: #fff4f2;
+      border-color: #f3c8c3;
+      color: #a12b22;
+    }
+
+    .message-meta {
+      color: var(--ai-muted);
+      font-size: 11px;
+      overflow-wrap: anywhere;
+    }
+
+    .typing {
+      align-self: flex-start;
+      padding: 12px 14px;
+      border: 1px solid var(--ai-border);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--ai-muted);
+      font-size: 13px;
+    }
+
+    .composer {
+      position: sticky;
+      bottom: 0;
+      padding: 14px 0 18px;
+      background: #f7f8fa;
+    }
+
+    .composer-box {
+      padding: 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 4px 16px rgb(0 0 0 / 4%);
+    }
+
+    #questionInput {
+      display: block;
+      box-sizing: border-box;
+      width: 100%;
+      min-height: 90px;
+      max-height: 260px;
+      padding: 8px;
+      resize: vertical;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: #202124;
+      line-height: 1.7;
+    }
+
+    #questionInput:focus-visible {
+      outline: 2px solid rgb(37 99 235 / 35%);
+      outline-offset: 2px;
+    }
+
+    .composer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 4px;
+    }
+
+    .composer-hint {
+      color: var(--ai-muted);
+      font-size: 12px;
+    }
+
+    #sendButton {
+      min-width: 100px;
+      border-color: var(--ai-primary);
+      background: var(--ai-primary);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    #sendButton:hover:not(:disabled) {
+      background: #1d4ed8;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+    }
+
+    .notice {
+      margin: 12px 0 0;
+      color: var(--ai-muted);
+      font-size: 12px;
+      line-height: 1.7;
+      text-align: center;
+    }
+
+    .status-message {
+      margin: 8px 0;
+      color: #b42318;
+      font-size: 13px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .status-message[data-type="success"] {
+      color: #166534;
+    }
+
+    .app-footer {
+      padding: 18px;
+      text-align: center;
+      color: var(--ai-muted);
+      font-size: 11px;
+    }
+
+    @media (max-width: 700px) {
+      .chat-header {
+        padding: 14px;
+      }
+
+      .chat-header h1 {
+        font-size: 18px;
+      }
+
+      .chat-content {
+        padding: 14px;
+      }
+
+      .subject-panel {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .subject-panel select {
+        width: 100%;
+      }
+
+      .message {
+        max-width: 95%;
+      }
+
+      .composer-hint {
+        max-width: 60%;
+      }
+    }
+  </style>
 </head>
-<body data-role="student" data-page="question">
-  <div id="app">
-    <main class="page-content">画面を読み込んでいます。</main>
+
+<body data-role="student">
+  <div class="app-layout">
+    <aside id="appSidebar" class="sidebar"></aside>
+
+    <main id="appMain" class="app-main">
+      <header class="chat-header">
+        <div>
+          <h1>学習AIチャット</h1>
+          <p>中学校の学習をサポートします</p>
+        </div>
+
+        <button
+          id="newChatButton"
+          class="new-chat-button"
+          type="button"
+        >
+          新しい会話
+        </button>
+      </header>
+
+      <section class="chat-content">
+        <div class="subject-panel">
+          <label for="subjectSelect">質問する教科</label>
+
+          <select id="subjectSelect">
+            <option value="国語">国語</option>
+            <option value="数学" selected>数学</option>
+            <option value="英語">英語</option>
+            <option value="理科">理科</option>
+            <option value="社会">社会</option>
+            <option value="音楽">音楽</option>
+            <option value="美術">美術</option>
+            <option value="保健体育">保健体育</option>
+            <option value="技術家庭">技術家庭</option>
+          </select>
+        </div>
+
+        <div
+          id="conversation"
+          class="conversation"
+          aria-live="polite"
+          aria-relevant="additions text"
+        >
+          <div id="welcomeMessage" class="welcome">
+            <h2>何を勉強していますか？</h2>
+            <p>
+              わからない問題や授業で習った内容を入力してください。
+              中学生にもわかりやすく説明します。
+            </p>
+          </div>
+        </div>
+
+        <p
+          id="statusMessage"
+          class="status-message"
+          role="status"
+          aria-live="polite"
+          hidden
+        ></p>
+
+        <form id="questionForm" class="composer">
+          <div class="composer-box">
+            <textarea
+              id="questionInput"
+              maxlength="4000"
+              placeholder="学習について質問してください..."
+              aria-label="質問内容"
+              required
+            ></textarea>
+
+            <div class="composer-bottom">
+              <span class="composer-hint">
+                Enterで送信・Shift+Enterで改行
+              </span>
+
+              <button
+                id="sendButton"
+                class="primary-button"
+                type="submit"
+              >
+                質問する
+              </button>
+            </div>
+          </div>
+
+          <p class="notice">
+            このAIは学習専用です。学習以外の質問には対応していません。
+          </p>
+        </form>
+      </section>
+
+      <footer class="app-footer">
+        © 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.
+      </footer>
+    </main>
   </div>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="../assets/js/paths.js"></script>
-  <script src="../assets/js/firebase.js"></script>
-  <script src="../assets/js/auth.js"></script>
-  <script src="../assets/js/layout.js"></script>
-  <script src="../assets/js/page.js"></script>
+
+  <script type="module" src="../assets/js/page.js"></script>
 </body>
 </html>
