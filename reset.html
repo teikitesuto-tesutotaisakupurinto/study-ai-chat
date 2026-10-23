@@ -1,36 +1,181 @@
+
 <!doctype html>
 <html lang="ja">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>パスワード再設定｜学習AIチャット</title>
-  <link rel="stylesheet" href="./assets/css/common.css">
+  <title>パスワード再設定 | 学習AIチャット</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: #f5f7fb;
+      color: #172033;
+      font-family: Arial, "Noto Sans JP", sans-serif;
+    }
+    .card {
+      width: min(100%, 430px);
+      padding: 32px;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      box-shadow: 0 12px 40px rgba(15,23,42,.07);
+    }
+    h1 { margin-top: 0; font-size: 25px; }
+    p { line-height: 1.8; color: #475569; font-size: 14px; }
+    label { display: block; margin: 22px 0 8px; font-weight: 600; font-size: 14px; }
+    input {
+      width: 100%;
+      padding: 12px;
+      min-height: 46px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    button {
+      width: 100%;
+      margin-top: 18px;
+      padding: 13px;
+      border: 0;
+      border-radius: 8px;
+      background: #1d4ed8;
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:disabled { opacity: .6; cursor: wait; }
+    .back { display: block; margin-top: 20px; text-align: center; font-size: 14px; }
+    a { color: #1d4ed8; text-decoration: none; }
+    #message {
+      display: none;
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.7;
+      overflow-wrap: anywhere;
+    }
+    #status { min-height: 22px; font-size: 13px; }
+    footer { margin-top: 28px; text-align: center; color: #64748b; font-size: 11px; line-height: 1.6; }
+  </style>
 </head>
-<body data-page="reset">
-  <main class="auth-page">
-    <section class="auth-card">
-      <h1>パスワード再設定</h1>
-      <p class="muted">登録済みのメールアドレスを入力してください。</p>
-      <form id="resetForm" class="auth-form">
-        <label for="resetEmail">メールアドレス</label>
-        <input id="resetEmail" type="email" autocomplete="email" required>
-        <button id="resetButton" class="primary-button" type="submit">
-          再設定メールを送信
-        </button>
-      </form>
-      <div id="pageMessage" class="notice" hidden></div>
-      <p><a href="./login.html">ログイン画面へ戻る</a></p>
-      <div class="auth-footer">
-        © 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.
-      </div>
-    </section>
+<body>
+  <main class="card">
+    <h1>パスワードを再設定</h1>
+    <p>
+      登録したメールアドレスを入力してください。
+      パスワード再設定用のメールを送信します。
+    </p>
+
+    <form id="reset-form">
+      <label for="email">メールアドレス</label>
+      <input id="email" type="email" autocomplete="email"
+        maxlength="254" required placeholder="name@example.com">
+      <button id="submit-button" type="submit">再設定メールを送信</button>
+    </form>
+
+    <div id="message" role="status" aria-live="polite"></div>
+    <p id="status" aria-live="polite"></p>
+
+    <a class="back" id="login-link" href="./login.html">
+      ログイン画面に戻る
+    </a>
+
+    <footer>
+      © 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.
+    </footer>
   </main>
+
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="./assets/js/paths.js"></script>
   <script src="./assets/js/firebase.js"></script>
-  <script src="./assets/js/auth.js"></script>
-  <script src="./assets/js/page.js"></script>
+  <script>
+    (() => {
+      "use strict";
+
+      const auth = window.auth;
+      const paths = window.AppPaths || {};
+      const form = document.getElementById("reset-form");
+      const emailInput = document.getElementById("email");
+      const button = document.getElementById("submit-button");
+      const message = document.getElementById("message");
+      const status = document.getElementById("status");
+
+      document.getElementById("login-link").href =
+        paths.login || "./login.html";
+
+      function showMessage(text, isError = false) {
+        message.textContent = text;
+        message.style.display = "block";
+        message.style.background = isError ? "#fef2f2" : "#dcfce7";
+        message.style.color = isError ? "#991b1b" : "#166534";
+      }
+
+      function friendlyError(error) {
+        switch (error?.code) {
+          case "auth/invalid-email":
+            return "メールアドレスの形式を確認してください。";
+          case "auth/user-not-found":
+            return "該当するアカウントが見つかりません。入力したメールアドレスを確認してください。";
+          case "auth/too-many-requests":
+            return "試行回数が多すぎます。時間をおいて再度お試しください。";
+          case "auth/operation-not-allowed":
+            return "Firebase Consoleでメール/パスワード認証を有効にしてください。";
+          case "auth/unauthorized-continue-uri":
+            return "再設定メールの遷移先ドメインが許可されていません。Firebaseの承認済みドメインを確認してください。";
+          default:
+            return `メール送信に失敗しました。(${error?.code || "unknown"}) ${error?.message || ""}`;
+        }
+      }
+
+      if (!auth) {
+        showMessage(
+          "Firebase Authenticationを初期化できません。firebase.jsを確認してください。",
+          true
+        );
+        button.disabled = true;
+        return;
+      }
+
+      form.addEventListener("submit", async event => {
+        event.preventDefault();
+
+        message.style.display = "none";
+        status.textContent = "";
+
+        const email = emailInput.value.trim();
+        if (!email) {
+          showMessage("メールアドレスを入力してください。", true);
+          return;
+        }
+
+        button.disabled = true;
+        status.textContent = "メールを送信しています...";
+
+        try {
+          await auth.sendPasswordResetEmail(email);
+
+          showMessage(
+            "再設定メールの送信を受け付けました。メールの受信箱と迷惑メールフォルダを確認してください。"
+          );
+          status.textContent =
+            "この画面にとどまります。必要な場合は下のリンクからログイン画面へ戻れます。";
+          form.reset();
+        } catch (error) {
+          console.error("Password reset error:", error);
+          showMessage(friendlyError(error), true);
+          status.textContent = "";
+        } finally {
+          button.disabled = false;
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
