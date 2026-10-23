@@ -1,59 +1,21 @@
-.dashboard-grid,
-.status-grid {
-  display: grid;
-  grid-template-columns:
-    repeat(auto-fit, minmax(220px, 1fr));
-  gap: 18px;
+/* assets/css/admin.css */
+.admin-shell .sidebar {
+  background: #172033;
 }
 
-.admin-card span {
-  display: block;
-  color: #687386;
-  font-size: 13px;
-  margin-bottom: 8px;
+.admin-shell .brand-mark {
+  background: #e0e7ff;
+  color: #3730a3;
 }
 
-.admin-card strong {
-  font-size: 22px;
+.admin-shell .topbar {
+  border-bottom: 2px solid #dbe3ef;
 }
 
-.user-card {
-  display: grid;
-  grid-template-columns:
-    1.5fr 1.5fr 150px 150px 90px;
-  gap: 12px;
-  align-items: center;
+.admin-shell .page-content > .content-card h1 {
+  letter-spacing: -.02em;
 }
 
-.user-card input,
-.user-card select {
-  margin: 0;
-}
-
-.user-card button {
-  padding: 10px;
-  border: 0;
-  border-radius: 7px;
-  background: #1769e0;
-  color: white;
-  cursor: pointer;
-}
-
-.switch-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.switch-row input {
-  width: auto;
-  margin: 0;
-}
-
-@media (max-width: 800px) {
-
-  .user-card {
-    grid-template-columns: 1fr;
-  }
-
+.admin-shell .data-table th {
+  color: #344256;
 }
