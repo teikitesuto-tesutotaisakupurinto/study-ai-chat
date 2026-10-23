@@ -1,103 +1,27 @@
-import {
-  initializeApp,
-  getApps,
-  getApp
-} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+// assets/js/firebase.js
+(function () {
+  "use strict";
 
-import {
-  getAuth,
-  setPersistence,
-  browserLocalPersistence,
-  GoogleAuthProvider,
-  signOut,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
-  sendPasswordResetEmail,
-  createUserWithEmailAndPassword
-} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyByt8kGALyS8AU8SR6P8zWFEPXfgHY5iyn",
+    authDomain: "studychat-1b39d.firebaseapp.com",
+    projectId: "studychat-1b39d",
+    storageBucket: "studychat-1b39d.firebasestorage.app",
+    messagingSenderId: "982302014286",
+    appId: "1:982302014286:web:abf319aadb1ed919727c1f"
+  };
 
-import {
-  getFirestore,
-  doc,
-  collection,
-  getDoc,
-  getDocs,
-  setDoc,
-  updateDoc,
-  addDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  limit,
-  serverTimestamp,
-  onSnapshot
-} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
 
-/*
- * Firebase設定はこのファイルだけで管理する。
- * login.htmlなどに同じ設定を書かない。
- */
-const firebaseConfig = {
-  apiKey: "AIzaSyByt8kGALyS8AU8SR6PzWFEPXfgHY5iynk",
-  authDomain: "studychat-1b39d.firebaseapp.com",
-  projectId: "studychat-1b39d",
-  storageBucket: "studychat-1b39d.firebasestorage.app",
-  messagingSenderId: "982302014286",
-  appId: "1:982302014286:web:abf319aadb1ed919727c1f"
-};
+  window.firebaseApp = firebase.app();
+  window.auth = firebase.auth();
+  window.db = firebase.firestore();
 
-export const app = getApps().length
-  ? getApp()
-  : initializeApp(firebaseConfig);
-
-export const auth = getAuth(app);
-
-export const db = getFirestore(app);
-
-export const googleProvider =
-  new GoogleAuthProvider();
-
-/*
- * ログイン状態をブラウザに保持する。
- */
-export const persistenceReady =
-  setPersistence(
-    auth,
-    browserLocalPersistence
-  );
-
-/*
- * 必要なFirebase機能をexport
- */
-export {
-  getApps,
-  getApp,
-
-  GoogleAuthProvider,
-
-  signOut,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
-  sendPasswordResetEmail,
-  createUserWithEmailAndPassword,
-
-  doc,
-  collection,
-  getDoc,
-  getDocs,
-  setDoc,
-  updateDoc,
-  addDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  limit,
-  serverTimestamp,
-  onSnapshot
-};
+  window.auth.setPersistence(
+    firebase.auth.Auth.Persistence.LOCAL
+  ).catch(function (error) {
+    console.error("認証の保存設定に失敗しました:", error);
+  });
+})();
