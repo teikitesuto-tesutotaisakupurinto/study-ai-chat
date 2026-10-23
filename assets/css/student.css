@@ -1,98 +1,17 @@
-.chat-page {
-  max-width: 1000px;
-  margin: auto;
-  padding: 24px;
+/* assets/css/student.css */
+.student-shell .topbar {
+  background: #fafdff;
 }
 
-.chat-settings {
-  display: grid;
-  grid-template-columns: 180px 180px;
-  gap: 12px;
-  margin-bottom: 18px;
+.student-shell .welcome-panel {
+  border-left: 4px solid #3b82f6;
 }
 
-.chat-container {
-  height: calc(100vh - 280px);
-  min-height: 400px;
-  overflow-y: auto;
-  padding: 22px;
-  background: white;
-  border: 1px solid #e0e5ed;
-  border-radius: 12px;
+.student-shell .answer-output {
+  font-size: 15px;
 }
 
-.chat-message {
-  max-width: 82%;
-  padding: 13px 16px;
-  margin-bottom: 14px;
-  border-radius: 12px;
-  white-space: pre-wrap;
-  line-height: 1.7;
-}
-
-.chat-message.user {
-  margin-left: auto;
-  background: #e8f1ff;
-}
-
-.chat-message.assistant {
-  background: #f3f5f8;
-}
-
-.chat-message.error {
-  background: #fff0f0;
-  color: #b42318;
-}
-
-.chat-form {
-  display: flex;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.chat-form textarea {
-  min-height: 60px;
-  margin: 0;
-}
-
-.chat-form button {
-  width: 100px;
-  border: 0;
-  border-radius: 8px;
-  background: #1769e0;
-  color: #fff;
-  cursor: pointer;
-}
-
-.chat-form button:disabled {
-  opacity: .6;
-}
-
-.history-meta {
-  color: #1769e0;
-  font-size: 12px;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.history-card h2 {
-  font-size: 16px;
-}
-
-.history-card p {
-  color: #596477;
-  white-space: pre-wrap;
-  line-height: 1.7;
-}
-
-@media (max-width: 600px) {
-
-  .chat-settings {
-    grid-template-columns: 1fr;
-  }
-
-  .chat-message {
-    max-width: 92%;
-  }
-
+.student-shell .chat-form .primary-button {
+  justify-self: start;
+  min-width: 130px;
 }
