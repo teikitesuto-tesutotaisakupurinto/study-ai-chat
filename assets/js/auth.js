@@ -1,3 +1,4 @@
+
 import {
   auth,
   db,
@@ -10,7 +11,6 @@ import {
 
 function rootPath(file) {
   const path = location.pathname;
-
   const nested =
     path.includes("/student/") ||
     path.includes("/admin/");
@@ -18,14 +18,26 @@ function rootPath(file) {
   return nested ? `../${file}` : `./${file}`;
 }
 
+function withTimeout(promise, milliseconds, message) {
+  let timer;
+
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error(message));
+    }, milliseconds);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => {
+    clearTimeout(timer);
+  });
+}
+
 export async function getSystemSettings() {
-  const snapshot = await getDoc(
-    doc(db, "settings", "system")
-  );
+  const snapshot = await getDoc(doc(db, "settings", "system"));
 
   if (!snapshot.exists()) {
     throw new Error(
-      "Firestore に settings/system がありません。必要なシステム設定を作成してください。"
+      "Firestore に settings/system がありません。"
     );
   }
 
@@ -37,9 +49,7 @@ export async function getCurrentProfile(user) {
     throw new Error("ログイン中の利用者を確認できません。");
   }
 
-  const snapshot = await getDoc(
-    doc(db, "users", user.uid)
-  );
+  const snapshot = await getDoc(doc(db, "users", user.uid));
 
   if (!snapshot.exists()) {
     throw new Error(
@@ -55,37 +65,46 @@ export function waitForAuth() {
     let unsubscribe = null;
     let finished = false;
 
-    function cleanup() {
+    const timer = setTimeout(() => {
+      finish(
+        new Error(
+          "ログイン状態の確認が15秒以内に完了しませんでした。"
+        )
+      );
+    }, 15000);
+
+    function finish(error, user) {
+      if (finished) return;
+
+      finished = true;
+      clearTimeout(timer);
+
       if (unsubscribe) {
         unsubscribe();
         unsubscribe = null;
       }
+
+      if (error) {
+        reject(error);
+      } else {
+        resolve(user);
+      }
     }
 
-    unsubscribe = onAuthStateChanged(
-      auth,
-      (user) => {
-        if (finished) return;
-
-        finished = true;
-        cleanup();
-        resolve(user);
-      },
-      (error) => {
-        if (finished) return;
-
-        finished = true;
-        cleanup();
-        reject(error);
-      }
-    );
+    try {
+      unsubscribe = onAuthStateChanged(
+        auth,
+        (user) => finish(null, user),
+        (error) => finish(error)
+      );
+    } catch (error) {
+      finish(error);
+    }
   });
 }
 
 function showAccessError(title, message, detail = "") {
   document.documentElement.classList.remove("auth-pending");
-
-  document.body.replaceChildren();
 
   const main = document.createElement("main");
   main.className = "auth-error";
@@ -110,14 +129,7 @@ function showAccessError(title, message, detail = "") {
   retry.addEventListener("click", () => location.reload());
 
   main.append(retry);
-
-  const loginLink = document.createElement("a");
-  loginLink.href = rootPath("login.html");
-  loginLink.className = "button";
-  loginLink.textContent = "ログイン画面へ";
-
-  main.append(loginLink);
-  document.body.append(main);
+  document.body.replaceChildren(main);
 }
 
 function errorDetails(error) {
@@ -126,7 +138,10 @@ function errorDetails(error) {
   }`;
 }
 
-export async function requireRole(requiredRole, options = {}) {
+// 同じページ内での認証確認を共有する。
+const roleCheckPromises = new Map();
+
+async function runRoleCheck(requiredRole, options = {}) {
   document.documentElement.classList.add("auth-pending");
 
   if (!["student", "admin"].includes(requiredRole)) {
@@ -135,12 +150,15 @@ export async function requireRole(requiredRole, options = {}) {
       "必要な権限の設定が正しくありません。",
       `requiredRole: ${String(requiredRole)}`
     );
-
     return null;
   }
 
   try {
-    await persistenceReady;
+    await withTimeout(
+      persistenceReady,
+      15000,
+      "Firebase Authentication の初期化が15秒以内に完了しませんでした。"
+    );
 
     const user = await waitForAuth();
 
@@ -152,27 +170,33 @@ export async function requireRole(requiredRole, options = {}) {
     let profile;
 
     try {
-      profile = await getCurrentProfile(user);
+      profile = await withTimeout(
+        getCurrentProfile(user),
+        15000,
+        "ユーザープロフィールの取得がタイムアウトしました。"
+      );
     } catch (error) {
       showAccessError(
         error?.code === "permission-denied"
           ? "403 Forbidden"
           : "ユーザー情報エラー",
-        "ユーザープロフィールを確認できませんでした。Firestoreのルールとユーザー情報を確認してください。",
+        "ユーザープロフィールを取得できませんでした。Firestoreのユーザー情報とセキュリティルールを確認してください。",
         errorDetails(error)
       );
-
       return null;
     }
 
     if (profile.status !== "active") {
-      await signOut(auth);
+      try {
+        await signOut(auth);
+      } catch (error) {
+        console.error("サインアウトエラー:", error);
+      }
 
       showAccessError(
         "アカウント利用不可",
         "このアカウントは無効化されています。管理者にお問い合わせください。"
       );
-
       return null;
     }
 
@@ -182,7 +206,6 @@ export async function requireRole(requiredRole, options = {}) {
         "アカウントの権限が設定されていないか、不正です。",
         `role: ${String(profile.role)}`
       );
-
       return null;
     }
 
@@ -192,21 +215,23 @@ export async function requireRole(requiredRole, options = {}) {
         "このページを開く権限がありません。",
         `必要な権限: ${requiredRole}\n現在の権限: ${profile.role}`
       );
-
       return null;
     }
 
     let settings;
 
     try {
-      settings = await getSystemSettings();
+      settings = await withTimeout(
+        getSystemSettings(),
+        15000,
+        "システム設定の取得がタイムアウトしました。"
+      );
     } catch (error) {
       showAccessError(
         "システム設定エラー",
-        "システム設定を取得できません。Firestoreのsettings/systemとセキュリティルールを確認してください。",
+        "システム設定を取得できません。Firestoreの settings/system とセキュリティルールを確認してください。",
         errorDetails(error)
       );
-
       return null;
     }
 
@@ -242,6 +267,24 @@ export async function requireRole(requiredRole, options = {}) {
   }
 }
 
+export function requireRole(requiredRole, options = {}) {
+  // 管理者ページではメンテナンス設定による移動は発生しないため、
+  // layout.js とページ側で同じ認証確認を共有できる。
+  const allowMaintenance =
+    requiredRole === "admin" || options.allowMaintenance === true;
+
+  const key = `${requiredRole}:${allowMaintenance}`;
+
+  if (!roleCheckPromises.has(key)) {
+    roleCheckPromises.set(
+      key,
+      runRoleCheck(requiredRole, { allowMaintenance })
+    );
+  }
+
+  return roleCheckPromises.get(key);
+}
+
 export async function protectPage(requiredRole, options = {}) {
   const result = await requireRole(requiredRole, options);
 
@@ -254,7 +297,4 @@ export async function protectPage(requiredRole, options = {}) {
   return result;
 }
 
-export {
-  auth,
-  db
-};
+export { auth, db };
