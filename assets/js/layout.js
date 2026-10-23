@@ -1,669 +1,137 @@
-import {
-  requireRole,
-  auth
-} from "./auth.js";
+// assets/js/layout.js
+(function () {
+  "use strict";
 
-import {
-  signOut
-} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+  const footerText =
+    "© 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.";
 
+  const studentItems = [
+    ["ホーム", "student/index.html"],
+    ["AI学習チャット", "student/question.html"],
+    ["学習履歴", "student/history.html"],
+    ["お知らせ", "student/announcements.html"],
+    ["設定", "student/settings.html"]
+  ];
 
-const STUDENT_LINKS = [
-  {
-    label: "ホーム",
-    icon: "⌂",
-    href: "index.html"
-  },
+  const adminItems = [
+    ["管理者ホーム", "admin/index.html"],
+    ["ユーザー管理", "admin/users.html"],
+    ["お知らせ管理", "admin/announcements.html"],
+    ["メンテナンス", "admin/maintenance.html"],
+    ["AI設定", "admin/ai-settings.html"],
+    ["操作ログ", "admin/logs.html"],
+    ["システム状態", "admin/system.html"],
+    ["管理設定", "admin/settings.html"]
+  ];
 
-  {
-    label: "AIに質問",
-    icon: "?",
-    href: "question.html"
-  },
-
-  {
-    label: "学習履歴",
-    icon: "≡",
-    href: "history.html"
-  },
-
-  {
-    label: "お知らせ",
-    icon: "▤",
-    href: "announcements.html"
-  },
-
-  {
-    label: "設定",
-    icon: "⚙",
-    href: "settings.html"
-  }
-];
-
-
-const ADMIN_LINKS = [
-  {
-    label: "管理者ホーム",
-    icon: "⌂",
-    href: "index.html"
-  },
-
-  {
-    label: "ユーザー管理",
-    icon: "♙",
-    href: "users.html"
-  },
-
-  {
-    label: "お知らせ管理",
-    icon: "▤",
-    href: "announcements.html"
-  },
-
-  {
-    label: "メンテナンス",
-    icon: "⚙",
-    href: "maintenance.html"
-  },
-
-  {
-    label: "AI設定",
-    icon: "◇",
-    href: "ai-settings.html"
-  },
-
-  {
-    label: "操作ログ",
-    icon: "≡",
-    href: "logs.html"
-  },
-
-  {
-    label: "システム状態",
-    icon: "▦",
-    href: "system.html"
-  },
-
-  {
-    label: "管理者設定",
-    icon: "⚙",
-    href: "settings.html"
-  }
-];
-
-
-function makeElement(
-  tag,
-  className,
-  text
-) {
-
-  const element =
-    document.createElement(tag);
-
-
-  if (className) {
-    element.className =
-      className;
-  }
-
-
-  if (
-    text !== undefined
-  ) {
-
-    element.textContent =
-      text;
-  }
-
-
-  return element;
-}
-
-
-function showLayoutError(
-  message,
-  error
-) {
-
-  let box =
-    document.getElementById(
-      "layoutError"
-    );
-
-
-  if (!box) {
-
-    box =
-      makeElement(
-        "div",
-        "layout-error"
-      );
-
-    box.id =
-      "layoutError";
-
-
-    const main =
-      document.querySelector(
-        "main"
-      );
-
-
-    (
-      main ||
-      document.body
-    ).prepend(box);
-  }
-
-
-  box.textContent =
-    `${message} ${
-      error?.message || ""
-    }`;
-}
-
-
-function toggleSidebar() {
-
-  document.body.classList.toggle(
-    "sidebar-collapsed"
-  );
-
-
-  const expanded =
-    !document.body.classList.contains(
-      "sidebar-collapsed"
-    );
-
-
-  document
-    .querySelectorAll(
-      ".sidebar-toggle"
-    )
-    .forEach(button => {
-
-      button.setAttribute(
-        "aria-expanded",
-        String(expanded)
-      );
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, function (char) {
+      return {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[char];
     });
-}
+  }
 
+  window.escapeHtml = escapeHtml;
 
-export function setupSidebar() {
+  window.renderLayout = function (options) {
+    const config = options || {};
+    const role = config.role || "student";
+    const title = config.title || "学習AIチャット";
+    const items = role === "admin" ? adminItems : studentItems;
+    const currentPath = window.location.pathname;
 
-  document
-    .querySelectorAll(
-      ".sidebar-toggle"
-    )
-    .forEach(button => {
+    const menu = items.map(function (item) {
+      const href = window.AppPaths.url(item[1]);
+      const active = currentPath === new URL(
+        href,
+        window.location.origin
+      ).pathname;
 
-      if (
-        button.dataset.sidebarBound ===
-        "true"
-      ) {
+      return `
+        <a class="nav-link ${active ? "active" : ""}"
+           href="${escapeHtml(href)}">
+          ${escapeHtml(item[0])}
+        </a>
+      `;
+    }).join("");
 
-        return;
-      }
+    const host = document.getElementById("app");
+    if (!host) return;
 
+    host.innerHTML = `
+      <div class="app-shell ${role === "admin" ? "admin-shell" : "student-shell"}">
+        <aside class="sidebar" id="sidebar">
+          <div class="brand">
+            <div class="brand-mark">学</div>
+            <div>
+              <strong>学習AIチャット</strong>
+              <small>${role === "admin" ? "管理者コンソール" : "学習ポータル"}</small>
+            </div>
+          </div>
+          <nav class="side-nav">${menu}</nav>
+          <div class="sidebar-bottom">
+            <button class="nav-link logout-button" id="logoutButton" type="button">
+              ログアウト
+            </button>
+          </div>
+        </aside>
 
-      button.dataset.sidebarBound =
-        "true";
+        <div class="main-column">
+          <header class="topbar">
+            <button type="button" id="menuToggle"
+              class="menu-toggle" aria-label="メニューを開閉">☰</button>
+            <div class="topbar-title">${escapeHtml(title)}</div>
+            <div class="user-label" id="userLabel">読み込み中</div>
+          </header>
 
+          <main class="page-content" id="pageContent">
+            ${config.content || ""}
+          </main>
 
-      button.type =
-        "button";
+          <footer class="app-footer">${footerText}</footer>
+        </div>
+      </div>
+    `;
 
+    const menuToggle = document.getElementById("menuToggle");
+    const sidebar = document.getElementById("sidebar");
 
-      button.setAttribute(
-        "aria-label",
-        "サイドメニューを開閉"
-      );
-
-
-      button.addEventListener(
-        "click",
-        toggleSidebar
-      );
+    menuToggle.addEventListener("click", function () {
+      sidebar.classList.toggle("sidebar-open");
     });
-}
 
+    document.getElementById("logoutButton").addEventListener(
+      "click",
+      async function () {
+        const button = this;
+        button.disabled = true;
 
-export function setupLogout() {
-
-  document
-    .querySelectorAll(
-      "[data-logout], .logout-button"
-    )
-    .forEach(button => {
-
-      if (
-        button.dataset.logoutBound ===
-        "true"
-      ) {
-
-        return;
-      }
-
-
-      button.dataset.logoutBound =
-        "true";
-
-
-      button.type =
-        "button";
-
-
-      button.addEventListener(
-        "click",
-        async () => {
-
-          button.disabled =
-            true;
-
-
-          try {
-
-            await signOut(
-              auth
-            );
-
-
-            const path =
-              location.pathname;
-
-
-            const nested =
-              path.includes(
-                "/student/"
-              ) ||
-              path.includes(
-                "/admin/"
-              );
-
-
-            location.replace(
-              nested
-                ? "../login.html"
-                : "./login.html"
-            );
-
-
-          } catch (error) {
-
-            console.error(
-              "ログアウトエラー:",
-              error
-            );
-
-
-            button.disabled =
-              false;
-
-
-            showLayoutError(
-              "ログアウトに失敗しました。",
-              error
-            );
-          }
+        try {
+          await window.auth.signOut();
+          window.location.replace(window.AppPaths.login);
+        } catch (error) {
+          console.error(error);
+          alert("ログアウトできませんでした。もう一度お試しください。");
+          button.disabled = false;
         }
-      );
-    });
-}
-
-
-function renderSidebar(
-  role
-) {
-
-  const sidebar =
-    document.getElementById(
-      "appSidebar"
-    );
-
-
-  if (!sidebar) {
-    return;
-  }
-
-
-  const links =
-    role === "admin"
-      ? ADMIN_LINKS
-      : STUDENT_LINKS;
-
-
-  const currentFile =
-    location.pathname
-      .split("/")
-      .pop();
-
-
-  sidebar.replaceChildren();
-
-
-  /*
-   * トグル
-   */
-
-  const toggleRow =
-    makeElement(
-      "div",
-      "sidebar-toggle-row"
-    );
-
-
-  const toggle =
-    makeElement(
-      "button",
-      "sidebar-toggle",
-      "☰"
-    );
-
-
-  toggle.type =
-    "button";
-
-
-  toggle.setAttribute(
-    "aria-label",
-    "サイドメニューを開閉"
-  );
-
-
-  toggle.setAttribute(
-    "aria-expanded",
-    "true"
-  );
-
-
-  toggle.addEventListener(
-    "click",
-    toggleSidebar
-  );
-
-
-  toggleRow.append(
-    toggle
-  );
-
-
-  sidebar.append(
-    toggleRow
-  );
-
-
-  /*
-   * ナビゲーション
-   */
-
-  const nav =
-    makeElement(
-      "nav",
-      "sidebar-nav"
-    );
-
-
-  nav.setAttribute(
-    "aria-label",
-    "メインメニュー"
-  );
-
-
-  for (
-    const item of links
-  ) {
-
-    const link =
-      makeElement(
-        "a",
-        "sidebar-link"
-      );
-
-
-    link.href =
-      item.href;
-
-
-    if (
-      currentFile ===
-      item.href
-    ) {
-
-      link.classList.add(
-        "active"
-      );
-
-
-      link.setAttribute(
-        "aria-current",
-        "page"
-      );
-    }
-
-
-    const icon =
-      makeElement(
-        "span",
-        "sidebar-icon",
-        item.icon
-      );
-
-
-    icon.setAttribute(
-      "aria-hidden",
-      "true"
-    );
-
-
-    const label =
-      makeElement(
-        "span",
-        "sidebar-label",
-        item.label
-      );
-
-
-    link.append(
-      icon,
-      label
-    );
-
-
-    nav.append(
-      link
-    );
-  }
-
-
-  sidebar.append(
-    nav
-  );
-
-
-  /*
-   * ログアウト
-   */
-
-  const logout =
-    makeElement(
-      "button",
-      "sidebar-link logout-button",
-      "ログアウト"
-    );
-
-
-  logout.type =
-    "button";
-
-
-  logout.dataset.logout =
-    "";
-
-
-  sidebar.append(
-    logout
-  );
-
-
-  setupLogout();
-}
-
-
-async function startLayout() {
-
-  const role =
-    document.body.dataset.role;
-
-
-  /*
-   * data-roleがない旧形式ページは
-   * そのページ自身のprotectPage()を使用する。
-   */
-
-  if (!role) {
-    return;
-  }
-
-
-  /*
-   * role確認
-   */
-
-  if (
-    role !== "student" &&
-    role !== "admin"
-  ) {
-
-    showLayoutError(
-      "ページ設定エラー: data-role に student または admin を指定してください。",
-      null
-    );
-
-    return;
-  }
-
-
-  /*
-   * ここで認証確認は1回だけ。
-   */
-
-  const result =
-    await requireRole(
-      role,
-      {
-        allowMaintenance:
-          role === "admin"
       }
     );
 
+    window.getCurrentProfile().then(function (profile) {
+      const user = window.authState.user;
+      const label = document.getElementById("userLabel");
 
-  if (!result) {
-    return;
-  }
-
-
-  /*
-   * 認証確認後にUIを作る。
-   */
-
-  renderSidebar(
-    role
-  );
-
-
-  setupSidebar();
-  setupLogout();
-
-
-  /*
-   * ユーザー名
-   */
-
-  const nameElement =
-    document.getElementById(
-      "currentUserName"
-    );
-
-
-  if (
-    nameElement
-  ) {
-
-    nameElement.textContent =
-      result.profile.displayName ||
-      result.user.displayName ||
-      result.user.email ||
-      "ユーザー";
-  }
-
-
-  /*
-   * フッター
-   */
-
-  const footer =
-    document.querySelector(
-      ".app-footer"
-    );
-
-
-  if (
-    footer
-  ) {
-
-    footer.textContent =
-      "© 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.";
-  }
-}
-
-
-/*
- * data-roleがあるページだけ
- * layout.jsが認証処理を担当する。
- *
- * これが今回の重要ポイント。
- *
- * admin/index.htmlなどでは
- *
- * HTML側 → protectPage()
- * layout.js → requireRole()
- *
- * の二重実行をしない。
- */
-
-if (
-  typeof document !== "undefined"
-) {
-
-  if (
-    document.body?.dataset?.role
-  ) {
-
-    startLayout()
-      .catch(error => {
-
-        console.error(
-          "画面初期化エラー:",
-          error
-        );
-
-
-        showLayoutError(
-          "画面を初期化できませんでした。",
-          error
-        );
-      });
-
-  } else {
-
-    /*
-     * 旧形式ページでは
-     * 認証はそのページ側が担当する。
-     */
-
-    setupSidebar();
-    setupLogout();
-  }
-}
+      if (label) {
+        label.textContent =
+          (profile && profile.displayName) ||
+          (user && user.email) ||
+          "ユーザー";
+      }
+    });
+  };
+})();
