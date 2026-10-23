@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>管理者設定 | 学習AIチャット</title>
+<link rel="stylesheet" href="../assets/css/common.css">
+<link rel="stylesheet" href="../assets/css/admin.css">
+</head>
+
+<body>
+
+<div class="app">
+
+<aside class="sidebar admin-sidebar">
+
+<div class="sidebar-header">
+<strong>運営管理コンソール</strong>
+</div>
+
+<nav>
+<a class="nav-link" href="index.html">ダッシュボード</a>
+<a class="nav-link" href="users.html">利用者管理</a>
+<a class="nav-link" href="announcements.html">お知らせ管理</a>
+<a class="nav-link" href="maintenance.html">メンテナンス</a>
+<a class="nav-link" href="ai-settings.html">AI設定</a>
+<a class="nav-link" href="logs.html">監査ログ</a>
+<a class="nav-link" href="system.html">システム状態</a>
+<a class="nav-link" href="settings.html">管理者設定</a>
+</nav>
+
+<button class="logout-button" data-logout>ログアウト</button>
+
+</aside>
+
+<main class="main-content">
+
+<header class="topbar">
+<button class="sidebar-toggle">☰</button>
+<strong>管理者設定</strong>
+</header>
+
+<section class="page">
+
+<h1>管理者設定</h1>
+
+<div class="card">
+
+<p>
+サービス：学習AIチャット
+</p>
+
+<p>
+運営：Supported by 定期テスト対策プリント運営事務局
+</p>
+
+</div>
+
+</section>
+
+</main>
+
+</div>
+
+<script type="module">
+
+import { auth, signOut }
+from "../assets/js/firebase.js";
+
+import { protectPage }
+from "../assets/js/auth.js";
+
+import {
+  setupSidebar,
+  setupLogout
+} from "../assets/js/layout.js";
+
+setupSidebar();
+setupLogout(auth, signOut);
+
+await protectPage("admin");
+
+</script>
+
+</body>
+</html>
