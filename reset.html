@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>パスワード再設定 | 学習AIチャット</title>
+
+<link rel="stylesheet" href="assets/css/common.css">
+
+</head>
+
+<body class="login-page">
+
+<div class="login-card">
+
+<h1>パスワード再設定</h1>
+
+<p>
+登録しているメールアドレスを入力してください。
+</p>
+
+<form id="reset-form">
+
+<input
+ id="email"
+ type="email"
+ placeholder="メールアドレス"
+ required
+>
+
+<button
+ class="primary-button"
+ type="submit"
+>
+再設定メールを送信
+</button>
+
+</form>
+
+<p id="message"></p>
+
+<a href="login.html">
+ログインへ戻る
+</a>
+
+</div>
+
+<script type="module">
+
+import {
+  auth,
+  sendPasswordResetEmail
+} from "./assets/js/firebase.js";
+
+document
+.getElementById("reset-form")
+.addEventListener("submit", async (event) => {
+
+  event.preventDefault();
+
+  const email =
+    document.getElementById("email")
+      .value.trim();
+
+  const message =
+    document.getElementById("message");
+
+  try {
+
+    await sendPasswordResetEmail(
+      auth,
+      email
+    );
+
+    message.textContent =
+      "パスワード再設定メールを送信しました。";
+
+  } catch (error) {
+
+    console.error(error);
+
+    message.textContent =
+      "メールを送信できませんでした。";
+
+  }
+
+});
+
+</script>
+
+</body>
+</html>
