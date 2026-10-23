@@ -1,913 +1,992 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#ffffff">
-  <title>問題演習 | 学習AIチャット</title>
+  <title>AIに質問 | 学習AIチャット</title>
+
+  <link rel="stylesheet" href="../assets/css/common.css">
 
   <style>
     :root {
-      font-family: Arial, "Noto Sans JP", sans-serif;
-      color: #202938;
-      background: #f5f7fb;
-      font-synthesis: none;
+      --ai-primary: #2563eb;
+      --ai-border: #e5e7eb;
+      --ai-muted: #64748b;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
+      background: #f7f8fa;
+      color: #202124;
+      font-family: Arial, "Noto Sans JP", sans-serif;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    .app-layout {
       min-height: 100vh;
     }
 
-    button, textarea { font: inherit; }
-    button, a { -webkit-tap-highlight-color: transparent; }
-    a { color: inherit; text-decoration: none; }
-
-    #authChecking {
-      position: fixed;
-      inset: 0;
-      background: #fff;
-      z-index: 99999;
-    }
-
-    #app { display: none; min-height: 100vh; }
-
-    .sidebar {
-      position: fixed;
-      inset: 0 auto 0 0;
-      z-index: 1000;
-      width: 258px;
+    .app-main {
       display: flex;
       flex-direction: column;
-      background: #fff;
-      border-right: 1px solid #e3e8ef;
-      transition: transform .2s ease;
-    }
-
-    .sidebar.closed { transform: translateX(-100%); }
-
-    .brand {
-      padding: 22px 18px;
-      border-bottom: 1px solid #e8ebf0;
-    }
-
-    .brand-title { font-size: 16px; font-weight: 700; }
-
-    .brand-subtitle {
-      margin-top: 7px;
-      color: #7b8495;
-      font-size: 10px;
-      line-height: 1.6;
-    }
-
-    .menu { flex: 1; overflow-y: auto; padding: 14px 10px; }
-
-    .menu-section {
-      margin: 17px 10px 8px;
-      color: #8b95a5;
-      font-size: 11px;
-      font-weight: 700;
-    }
-
-    .menu-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 4px;
-      padding: 12px;
-      border-radius: 8px;
-      color: #4b5669;
-      font-size: 13px;
-    }
-
-    .menu-item:hover { background: #f3f5f9; }
-
-    .menu-item.active {
-      background: #eaf1ff;
-      color: #1558d6;
-      font-weight: 700;
-    }
-
-    .menu-symbol {
-      width: 22px;
-      flex-shrink: 0;
-      text-align: center;
-      font-size: 14px;
-    }
-
-    .sidebar-user {
-      padding: 15px;
-      border-top: 1px solid #e8ebf0;
-    }
-
-    .user-name {
-      overflow: hidden;
-      font-size: 13px;
-      font-weight: 700;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .user-email {
-      margin-top: 5px;
-      overflow: hidden;
-      color: #858e9e;
-      font-size: 11px;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .logout {
-      width: 100%;
-      margin-top: 12px;
-      padding: 10px;
-      border: 1px solid #dce2ea;
-      border-radius: 8px;
-      background: #fff;
-      color: #4b5669;
-      cursor: pointer;
-    }
-
-    .main {
       min-height: 100vh;
-      margin-left: 258px;
-      transition: margin-left .2s ease;
-    }
-
-    .sidebar.closed ~ .main { margin-left: 0; }
-
-    .topbar {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      height: 62px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 0 22px;
-      background: #fff;
-      border-bottom: 1px solid #e3e8ef;
-    }
-
-    .menu-toggle {
-      width: 38px;
-      height: 38px;
-      border: 0;
-      border-radius: 7px;
-      background: transparent;
-      color: #364256;
-      cursor: pointer;
-      font-size: 21px;
-    }
-
-    .menu-toggle:hover { background: #f1f3f7; }
-
-    .topbar-title { font-size: 14px; font-weight: 700; }
-
-    .content { max-width: 1050px; margin: auto; padding: 28px; }
-
-    h1 { margin: 0; font-size: 25px; }
-
-    .description {
-      margin: 9px 0 22px;
-      color: #7b8495;
-      font-size: 13px;
-      line-height: 1.7;
-    }
-
-    .chat-card {
-      min-height: 600px;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      background: #fff;
-      border: 1px solid #e1e6ed;
-      border-radius: 12px;
+      padding: 0;
     }
 
     .chat-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
-      min-height: 57px;
-      padding: 0 18px;
-      border-bottom: 1px solid #edf0f4;
-    }
-
-    .chat-header strong { font-size: 14px; }
-
-    .status {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      color: #737e90;
-      font-size: 11px;
-    }
-
-    .status-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #2b9b58;
-    }
-
-    .status-dot.offline { background: #9ca3af; }
-
-    .messages {
-      flex: 1;
-      min-height: 420px;
-      padding: 22px;
-      overflow-y: auto;
-    }
-
-    .welcome {
-      max-width: 550px;
-      margin: 75px auto;
-      text-align: center;
-    }
-
-    .welcome h2 { font-size: 20px; }
-
-    .welcome p {
-      color: #7b8495;
-      font-size: 13px;
-      line-height: 1.9;
-    }
-
-    .message { display: flex; margin: 0 0 17px; }
-    .message.user { justify-content: flex-end; }
-
-    .bubble {
-      max-width: 85%;
-      padding: 12px 15px;
-      border-radius: 11px;
-      font-size: 14px;
-      line-height: 1.8;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-    }
-
-    .message.assistant .bubble {
-      background: #f0f3f7;
-      color: #202938;
-    }
-
-    .message.user .bubble {
-      background: #2463eb;
-      color: #fff;
-    }
-
-    .input-area {
-      padding: 14px;
-      border-top: 1px solid #edf0f4;
-    }
-
-    .input-row { display: flex; align-items: flex-end; gap: 9px; }
-
-    #questionInput {
-      flex: 1;
-      min-width: 0;
-      min-height: 48px;
-      max-height: 180px;
-      resize: vertical;
-      padding: 12px;
-      border: 1px solid #d7dee8;
-      border-radius: 9px;
-      outline: none;
-      color: #202938;
+      gap: 16px;
+      padding: 18px 24px;
       background: #fff;
-      font-size: 14px;
-      line-height: 1.5;
+      border-bottom: 1px solid var(--ai-border);
     }
 
-    #questionInput:focus {
-      border-color: #4a7fea;
-      box-shadow: 0 0 0 3px #2463eb14;
+    .chat-header h1 {
+      margin: 0;
+      font-size: 21px;
     }
 
-    #sendButton {
-      min-width: 78px;
-      height: 48px;
-      border: 0;
-      border-radius: 9px;
-      background: #2463eb;
-      color: #fff;
+    .chat-header p {
+      margin: 5px 0 0;
+      color: var(--ai-muted);
       font-size: 13px;
-      font-weight: 700;
+    }
+
+    .new-chat-button {
+      flex-shrink: 0;
+      padding: 10px 14px;
+      background: #fff;
+      border: 1px solid var(--ai-border);
+      border-radius: 8px;
+      color: #202124;
       cursor: pointer;
     }
 
-    #sendButton:disabled { opacity: .5; cursor: not-allowed; }
-
-    .input-note {
-      margin-top: 8px;
-      color: #929baa;
-      font-size: 10px;
-      line-height: 1.6;
+    .new-chat-button:hover {
+      background: #f3f4f6;
     }
 
-    .error {
-      display: none;
-      margin-top: 10px;
-      padding: 11px;
-      border: 1px solid #efcaca;
+    .chat-content {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .subject-panel {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .subject-panel label {
+      flex-shrink: 0;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .subject-panel select {
+      width: 220px;
+      max-width: 100%;
+      padding: 11px 12px;
+      background: #fff;
+      border: 1px solid #d1d5db;
       border-radius: 8px;
-      background: #fff5f5;
-      color: #a32323;
+      font-size: 15px;
+    }
+
+    .conversation {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 18px;
+      min-height: 280px;
+      padding-bottom: 24px;
+    }
+
+    .welcome {
+      margin: auto;
+      max-width: 550px;
+      padding: 30px 10px;
+      text-align: center;
+    }
+
+    .welcome h2 {
+      margin: 0 0 12px;
+      font-size: 25px;
+      font-weight: 600;
+    }
+
+    .welcome p {
+      margin: 0;
+      color: var(--ai-muted);
+      line-height: 1.8;
+    }
+
+    .message {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-width: 85%;
+    }
+
+    .message.user {
+      align-self: flex-end;
+      align-items: flex-end;
+    }
+
+    .message.assistant {
+      align-self: flex-start;
+      align-items: flex-start;
+    }
+
+    .message-role {
+      color: var(--ai-muted);
+      font-size: 12px;
+    }
+
+    .message-content {
+      padding: 14px 16px;
+      border: 1px solid var(--ai-border);
+      border-radius: 12px;
+      background: #fff;
+      line-height: 1.85;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    .message.user .message-content {
+      background: #eaf2ff;
+      border-color: #d7e5ff;
+    }
+
+    .message.error .message-content {
+      background: #fff4f2;
+      border-color: #f3c8c3;
+      color: #a12b22;
+    }
+
+    .typing {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 14px;
+      border: 1px solid var(--ai-border);
+      border-radius: 10px;
+      background: white;
+      color: var(--ai-muted);
+      font-size: 13px;
+    }
+
+    .composer {
+      position: sticky;
+      bottom: 0;
+      padding: 14px 0 18px;
+      background: #f7f8fa;
+    }
+
+    .composer-box {
+      padding: 12px;
+      background: white;
+      border: 1px solid #d1d5db;
+      border-radius: 14px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, .04);
+    }
+
+    #questionInput {
+      display: block;
+      width: 100%;
+      min-height: 90px;
+      max-height: 260px;
+      padding: 8px;
+      resize: vertical;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: #202124;
+      font: inherit;
+      line-height: 1.7;
+    }
+
+    .composer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 4px 4px 0;
+    }
+
+    .composer-hint {
+      color: var(--ai-muted);
+      font-size: 12px;
+    }
+
+    #sendButton {
+      min-width: 100px;
+      padding: 11px 18px;
+      background: var(--ai-primary);
+      border: 0;
+      border-radius: 8px;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    #sendButton:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .notice {
+      margin: 12px 0 0;
+      color: var(--ai-muted);
       font-size: 12px;
       line-height: 1.7;
+      text-align: center;
+    }
+
+    .status-message {
+      margin: 8px 0;
+      color: #b42318;
+      font-size: 13px;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
     }
 
-    #maintenanceScreen {
-      position: fixed;
-      inset: 0;
-      z-index: 90000;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      background: #f5f7fb;
-    }
-
-    .maintenance-box {
-      width: min(520px, 100%);
-      padding: 38px 28px;
-      border: 1px solid #e1e6ed;
-      border-radius: 13px;
-      background: #fff;
+    .app-footer {
+      padding: 18px;
       text-align: center;
+      color: var(--ai-muted);
+      font-size: 11px;
     }
 
-    .maintenance-mark {
-      width: 46px;
-      height: 46px;
-      display: grid;
-      place-items: center;
-      margin: 0 auto 18px;
-      border-radius: 50%;
-      background: #edf0f5;
-      color: #4b5669;
-      font-weight: 700;
-      font-size: 20px;
-    }
+    @media (max-width: 700px) {
+      .chat-header {
+        padding: 14px;
+      }
 
-    .maintenance-box h2 { margin: 0; font-size: 22px; }
+      .chat-header h1 {
+        font-size: 18px;
+      }
 
-    .maintenance-box p {
-      margin-top: 15px;
-      color: #737e90;
-      font-size: 13px;
-      line-height: 1.9;
-      white-space: pre-wrap;
-    }
+      .chat-content {
+        padding: 14px;
+      }
 
-    .footer {
-      margin-top: 22px;
-      color: #929baa;
-      text-align: center;
-      font-size: 10px;
-      line-height: 1.7;
-    }
+      .subject-panel {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+      }
 
-    @media (max-width: 800px) {
-      .sidebar { box-shadow: 8px 0 24px #14203a12; }
-      .main { margin-left: 0; }
-      .content { padding: 18px; }
-      .chat-card { min-height: calc(100vh - 155px); }
-    }
+      .subject-panel select {
+        width: 100%;
+      }
 
-    @media (max-width: 520px) {
-      .content { padding: 12px; }
-      h1 { font-size: 21px; }
-      .messages { padding: 14px; }
-      .bubble { max-width: 92%; }
-      .input-area { padding: 10px; }
-      #sendButton { min-width: 65px; }
+      .message {
+        max-width: 95%;
+      }
+
+      .composer-hint {
+        max-width: 60%;
+      }
     }
   </style>
 </head>
 
-<body>
-  <div id="authChecking"></div>
+<body data-role="student">
 
-  <div id="app">
-    <aside id="sidebar" class="sidebar">
-      <div class="brand">
-        <div class="brand-title">学習AIチャット</div>
-        <div class="brand-subtitle">Supported by 定期テスト対策プリント運営事務局</div>
-      </div>
+  <div class="app-layout">
 
-      <nav class="menu" aria-label="メインメニュー">
-        <div class="menu-section">学習</div>
+    <aside id="appSidebar" class="sidebar"></aside>
 
-        <a href="./index.html" class="menu-item">
-          <span class="menu-symbol" aria-hidden="true">⌂</span>
-          <span>ホーム</span>
-        </a>
+    <main id="appMain" class="app-main">
 
-        <a href="./question.html" class="menu-item active" aria-current="page">
-          <span class="menu-symbol" aria-hidden="true">□</span>
-          <span>AIで質問する</span>
-        </a>
+      <header class="chat-header">
+        <div>
+          <h1>学習AIチャット</h1>
+          <p>中学校の学習をサポートします</p>
+        </div>
 
-        <a href="./history.html" class="menu-item">
-          <span class="menu-symbol" aria-hidden="true">履</span>
-          <span>学習履歴</span>
-        </a>
-
-        <a href="./announcements.html" class="menu-item">
-          <span class="menu-symbol" aria-hidden="true">告</span>
-          <span>お知らせ</span>
-        </a>
-
-        <div class="menu-section">アカウント</div>
-
-        <a href="./settings.html" class="menu-item">
-          <span class="menu-symbol" aria-hidden="true">設</span>
-          <span>設定</span>
-        </a>
-      </nav>
-
-      <div class="sidebar-user">
-        <div id="userName" class="user-name">ユーザー</div>
-        <div id="userEmail" class="user-email"></div>
-        <button id="logoutButton" class="logout" type="button">ログアウト</button>
-      </div>
-    </aside>
-
-    <main class="main">
-      <header class="topbar">
-        <button id="openMenuButton" class="menu-toggle" type="button"
-          aria-label="メニューを開く">☰</button>
-        <div class="topbar-title">AIで質問する</div>
+        <button id="newChatButton" class="new-chat-button" type="button">
+          新しい質問
+        </button>
       </header>
 
-      <section class="content">
-        <h1>学習AIチャット</h1>
-        <p class="description">中学校の学習内容について質問できます。</p>
+      <section class="chat-content">
 
-        <section class="chat-card" aria-label="AIチャット">
-          <div class="chat-header">
-            <strong>学習AI</strong>
-            <div class="status">
-              <span id="statusDot" class="status-dot offline"></span>
-              <span id="statusText">接続確認中</span>
-            </div>
-          </div>
+        <div class="subject-panel">
+          <label for="subjectSelect">質問する教科</label>
 
-          <div id="messages" class="messages" aria-live="polite">
-            <div id="welcome" class="welcome">
-              <h2>学習について質問してください</h2>
-              <p>数学・英語・国語・理科・社会など、学校の学習内容を分かりやすく説明します。</p>
-            </div>
-          </div>
-
-          <div class="input-area">
-            <div class="input-row">
-              <textarea id="questionInput" maxlength="4000"
-                placeholder="質問を入力してください。Enterで送信、Shift+Enterで改行できます。"></textarea>
-              <button id="sendButton" type="button">送信</button>
-            </div>
-            <div class="input-note">このAIは学習専用です。学習以外の質問はできません。</div>
-            <div id="errorMessage" class="error" role="alert"></div>
-          </div>
-        </section>
-
-        <div class="footer">
-          © 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.
+          <select id="subjectSelect">
+            <option value="国語">国語</option>
+            <option value="数学" selected>数学</option>
+            <option value="英語">英語</option>
+            <option value="理科">理科</option>
+            <option value="社会">社会</option>
+            <option value="音楽">音楽</option>
+            <option value="美術">美術</option>
+            <option value="保健体育">保健体育</option>
+            <option value="技術家庭">技術家庭</option>
+          </select>
         </div>
+
+        <div id="conversation" class="conversation" aria-live="polite">
+          <div id="welcomeMessage" class="welcome">
+            <h2>何を勉強していますか？</h2>
+            <p>
+              わからない問題や授業で習った内容を入力してください。<br>
+              中学生にもわかりやすく説明します。
+            </p>
+          </div>
+        </div>
+
+        <p id="statusMessage" class="status-message" role="alert" hidden></p>
+
+        <form id="questionForm" class="composer">
+          <div class="composer-box">
+            <textarea
+              id="questionInput"
+              maxlength="5000"
+              placeholder="学習について質問してください..."
+              aria-label="質問内容"
+              required
+            ></textarea>
+
+            <div class="composer-bottom">
+              <span class="composer-hint">
+                Enterで改行できます
+              </span>
+
+              <button id="sendButton" type="submit">
+                質問する
+              </button>
+            </div>
+          </div>
+
+          <p class="notice">
+            このAIは学習専用です。学習以外の質問には対応していません。
+          </p>
+        </form>
+
       </section>
+
+      <footer class="app-footer">
+        © 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.
+      </footer>
+
     </main>
   </div>
 
-  <section id="maintenanceScreen" aria-live="polite">
-    <div class="maintenance-box">
-      <div class="maintenance-mark">!</div>
-      <h2>メンテナンス中です</h2>
-      <p id="maintenanceMessage">ただいまメンテナンスを実施しています。しばらくお待ちください。</p>
-      <div class="footer">学習AIチャット<br>Supported by 定期テスト対策プリント運営事務局</div>
-    </div>
-  </section>
-
   <script type="module">
-    import { initializeApp } from
-      "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+    import {
+      auth,
+      db,
+      persistenceReady
+    } from "../assets/js/firebase.js";
 
     import {
-      getAuth,
-      onAuthStateChanged,
-      signOut
-    } from
-      "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
     import {
-      getFirestore,
+      collection,
       doc,
       getDoc,
-      onSnapshot
-    } from
-      "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+      setDoc,
+      updateDoc,
+      query,
+      where,
+      getDocs,
+      limit,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyByt8kGALyS8AU8SR8P6zWFEPXfgHY5iynk",
-      authDomain: "studychat-1b39d.firebaseapp.com",
-      projectId: "studychat-1b39d",
-      storageBucket: "studychat-1b39d.firebasestorage.app",
-      messagingSenderId: "982302014286",
-      appId: "1:982302014286:web:abf319aadb1ed919727c1f"
-    };
-
-    const appFirebase = initializeApp(firebaseConfig);
-    const auth = getAuth(appFirebase);
-    const db = getFirestore(appFirebase);
-
-    const SUPABASE_URL =
-      "https://fjqobjcvejhkevyfsoxt.supabase.co";
+    /*
+     * Supabase Edge Function
+     *
+     * Groq API キーはブラウザに絶対に置かない。
+     * API キーは Supabase の Secrets に保存する。
+     */
+    const SUPABASE_FUNCTION_URL =
+      "https://fjqobjcvejhkevyfsoxt.supabase.co/functions/v1/study-chat";
 
     const SUPABASE_PUBLISHABLE_KEY =
       "sb_publishable_j6QpWj-1v86qkWHmXM8F3Q_Ieipaa3q";
 
-    const AI_FUNCTION_URL =
-      `${SUPABASE_URL}/functions/v1/study-chat`;
+    const $ = id => document.getElementById(id);
 
-    const $ = (id) => document.getElementById(id);
+    const conversation = $("conversation");
+    const welcomeMessage = $("welcomeMessage");
+    const questionForm = $("questionForm");
+    const questionInput = $("questionInput");
+    const subjectSelect = $("subjectSelect");
+    const sendButton = $("sendButton");
+    const statusMessage = $("statusMessage");
 
     let currentUser = null;
-    let userProfile = null;
-    let isSending = false;
+    let currentProfile = null;
+    let currentHistoryId = null;
+    let messages = [];
+    let sending = false;
     let maintenanceActive = false;
-    let unsubscribeMaintenance = null;
-    let chatHistory = [];
 
-    function showError(message) {
-      $("errorMessage").textContent = message;
-      $("errorMessage").style.display = "block";
-    }
+    const ALLOWED_SUBJECTS = [
+      "国語",
+      "数学",
+      "英語",
+      "理科",
+      "社会",
+      "音楽",
+      "美術",
+      "保健体育",
+      "技術家庭"
+    ];
 
-    function clearError() {
-      $("errorMessage").textContent = "";
-      $("errorMessage").style.display = "none";
-    }
+    /*
+     * ログイン状態と生徒権限を確認。
+     * ログイン確認が完了する前に質問機能を有効にしない。
+     */
+    function waitForFirstAuthState() {
+      return new Promise((resolve, reject) => {
+        let unsubscribe = () => {};
 
-    function setStatus(online, label) {
-      $("statusDot").classList.toggle("offline", !online);
-      $("statusText").textContent = label;
-    }
-
-    function setMaintenance(active, message = "") {
-      maintenanceActive = active;
-      $("maintenanceScreen").style.display = active ? "flex" : "none";
-      $("maintenanceMessage").textContent = message ||
-        "ただいまメンテナンスを実施しています。\nしばらくお待ちください。";
-
-      $("questionInput").disabled = active || isSending;
-      $("sendButton").disabled = active || isSending;
-
-      if (active) setStatus(false, "メンテナンス中");
-      else if (!isSending) setStatus(true, "接続準備完了");
-    }
-
-    function startMaintenanceListener() {
-      if (unsubscribeMaintenance) unsubscribeMaintenance();
-
-      /*
-       * Firestoreの settings/system を監視。
-       * 管理画面は次の形式で保存する必要があります:
-       * { maintenance: true, message: "メンテナンス案内" }
-       */
-      unsubscribeMaintenance = onSnapshot(
-        doc(db, "settings", "system"),
-        (snapshot) => {
-          if (!snapshot.exists()) {
-            setMaintenance(false);
-            return;
+        unsubscribe = onAuthStateChanged(
+          auth,
+          user => {
+            unsubscribe();
+            resolve(user);
+          },
+          error => {
+            unsubscribe();
+            reject(error);
           }
-
-          const settings = snapshot.data();
-          setMaintenance(
-            settings.maintenance === true,
-            typeof settings.message === "string"
-              ? settings.message
-              : ""
-          );
-        },
-        (error) => {
-          console.error("Maintenance listener:", error);
-          /*
-           * 設定の読み取りに失敗したときは
-           * メンテナンス解除を勝手に推定しない。
-           */
-          setStatus(false, "設定を確認できません");
-          showError(
-            "メンテナンス設定を読み取れません。Firestoreの settings/system の読み取りルールを確認してください。"
-          );
-        }
-      );
+        );
+      });
     }
 
-    function addMessage(role, content) {
-      $("welcome")?.remove();
+    async function checkAccess() {
+      await persistenceReady;
 
-      const row = document.createElement("div");
-      row.className = `message ${role}`;
+      currentUser = await waitForFirstAuthState();
 
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
-      bubble.textContent = content;
+      if (!currentUser) {
+        location.replace("../login.html");
+        return false;
+      }
 
-      row.appendChild(bubble);
-      $("messages").appendChild(row);
-      $("messages").scrollTop = $("messages").scrollHeight;
+      const userRef = doc(db, "users", currentUser.uid);
+      const userSnapshot = await getDoc(userRef);
 
-      return row;
+      if (!userSnapshot.exists()) {
+        location.replace("../login.html");
+        return false;
+      }
+
+      currentProfile = userSnapshot.data();
+
+      if (
+        currentProfile.role !== "student" ||
+        currentProfile.status !== "active"
+      ) {
+        location.replace(
+          currentProfile.role === "admin"
+            ? "../admin/index.html"
+            : "../login.html"
+        );
+        return false;
+      }
+
+      const systemSnapshot = await getDoc(
+        doc(db, "settings", "system")
+      );
+
+      if (!systemSnapshot.exists()) {
+        throw new Error(
+          "Firestore に settings/system がありません。"
+        );
+      }
+
+      maintenanceActive =
+        systemSnapshot.data().maintenance === true;
+
+      if (maintenanceActive) {
+        location.replace("../login.html");
+        return false;
+      }
+
+      return true;
+    }
+
+    function showStatus(message) {
+      statusMessage.textContent = message;
+      statusMessage.hidden = !message;
+    }
+
+    function renderMessage(role, content, isError = false) {
+      welcomeMessage.hidden = true;
+
+      const wrapper = document.createElement("div");
+      wrapper.className = `message ${role}`;
+
+      if (isError) {
+        wrapper.classList.add("error");
+      }
+
+      const roleLabel = document.createElement("div");
+      roleLabel.className = "message-role";
+      roleLabel.textContent =
+        role === "user" ? "あなた" : "学習AI";
+
+      const body = document.createElement("div");
+      body.className = "message-content";
+
+      // AI の回答は HTML として実行せず、テキストとして表示する。
+      body.textContent = content;
+
+      wrapper.append(roleLabel, body);
+      conversation.append(wrapper);
+
+      wrapper.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest"
+      });
+
+      return wrapper;
     }
 
     function showTyping() {
-      const row = addMessage("assistant", "AIが回答を作成しています…");
-      row.id = "typingMessage";
+      const element = document.createElement("div");
+      element.className = "typing";
+      element.id = "typingIndicator";
+      element.textContent = "回答を作成しています...";
+      conversation.append(element);
+      element.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
 
-    function removeTyping() {
-      $("typingMessage")?.remove();
+    function hideTyping() {
+      $("typingIndicator")?.remove();
     }
 
-    function isLearningQuestion(question) {
-      const text = question.toLowerCase();
-
-      const nonLearningPatterns = [
-        /^(こんにちは|こんばんは|おはよう|やあ|元気\??)[。！!？?]*$/,
-        /(今日の天気|近くの店|ニュースを教えて|ゲームをして|恋愛相談|政治について|雑談しよう)/
-      ];
-
-      return !nonLearningPatterns.some((pattern) => pattern.test(text));
+    function setSending(value) {
+      sending = value;
+      sendButton.disabled = value;
+      subjectSelect.disabled = value;
+      questionInput.disabled = value;
+      sendButton.textContent = value ? "回答中..." : "質問する";
     }
 
-    async function callAI(question) {
-      if (maintenanceActive) {
-        throw new Error("現在メンテナンス中のため、AIを利用できません。");
+    function normalizeAnswer(data) {
+      if (typeof data === "string") {
+        return data;
       }
 
-      if (!currentUser || !userProfile) {
-        throw new Error("ログイン状態を確認できません。再度ログインしてください。");
+      if (data && typeof data.answer === "string") {
+        return data.answer;
       }
 
-      /*
-       * Firebase IDトークンを付ける。
-       * Edge Function側でこのトークンを検証する実装が必要です。
-       */
-      const firebaseToken = await currentUser.getIdToken();
+      if (data && typeof data.response === "string") {
+        return data.response;
+      }
 
-      let response;
+      if (data && typeof data.message === "string") {
+        return data.message;
+      }
+
+      return "";
+    }
+
+    /*
+     * 学習以外の質問を画面側でも確認する。
+     * 最終的な制限は必ず Edge Function 側にも実装する。
+     */
+    const NON_STUDY_RESPONSE =
+      "このAIは学習専用です。学習以外の質問はできません。";
+
+    function looksLikeNonStudyRequest(text) {
+      const value = text.trim();
+
+      const studyTerms =
+        /数学|算数|国語|英語|理科|社会|音楽|美術|保健体育|技術家庭|勉強|学習|問題|宿題|テスト|定期試験|定期テスト|解説|説明して|教えて|計算|方程式|関数|図形|英文|文法|単語|漢字|歴史|地理|公民|化学|物理|生物|地学|レポート|作文|読解|一次関数|連立方程式|比例|反比例|因数分解|平方根|中学|中学生|公式|用語|覚え方|答え合わせ|採点|添削|翻訳|和訳|英訳|要約|文の成分|品詞|古文|漢文|電流|天気|地層|植物|人体|日本国憲法|鎌倉時代|江戸時代|明治時代|世界地理|日本地理|実験|観察|自由研究|発音|リスニング|長文|読解問題|記述問題/;
+
+      const nonStudyTerms =
+        /ゲームを作|ゲームして|恋愛相談|占って|雑談し|今日の天気|株価|投資|政治家の支持|おすすめの店|レストラン|旅行プラン|買い物|商品を買|動画を探|音楽を流|パスワードを教|ハッキング|ウイルスを作|勉強と関係ない/;
+
+      if (nonStudyTerms.test(value) && !studyTerms.test(value)) {
+        return true;
+      }
+
+      return false;
+    }
+
+    async function getFirebaseIdToken() {
+      if (!currentUser) {
+        throw new Error("ログイン状態を確認できません。");
+      }
+
+      return await currentUser.getIdToken();
+    }
+
+    /*
+     * AI 呼び出し。
+     * Authorization に Firebase ID トークンを送る。
+     *
+     * 注意:
+     * Supabase 側で Firebase ID トークンを検証する実装が必要。
+     * Supabase の通常の JWT 検証だけでは Firebase トークンを
+     * そのまま認証できない構成がある。
+     */
+    async function callAI(message, subject) {
+      const firebaseToken = await getFirebaseIdToken();
+
+      const response = await fetch(SUPABASE_FUNCTION_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_PUBLISHABLE_KEY,
+          "Authorization": `Bearer ${firebaseToken}`
+        },
+        body: JSON.stringify({
+          message,
+          grade: currentProfile.grade || "中学生",
+          subject,
+          history: messages.slice(-12).map(item => ({
+            role: item.role,
+            content: item.content
+          }))
+        })
+      });
+
+      const responseText = await response.text();
+
+      let data;
 
       try {
-        response = await fetch(AI_FUNCTION_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": SUPABASE_PUBLISHABLE_KEY,
-            "Authorization": `Bearer ${firebaseToken}`
-          },
-          body: JSON.stringify({
-            message: question,
-            grade: userProfile.grade || "中学生",
-            subject: "学習全般",
-            history: chatHistory.slice(-10)
-          })
-        });
-      } catch (error) {
-        console.error("AI network error:", error);
-        throw new Error(
-          "Supabaseに接続できません。インターネット接続、Function URL、CORS設定を確認してください。"
-        );
-      }
-
-      const raw = await response.text();
-      let data = {};
-
-      try {
-        data = raw ? JSON.parse(raw) : {};
+        data = JSON.parse(responseText);
       } catch {
-        data = { message: raw };
+        data = { message: responseText };
       }
 
       if (!response.ok) {
-        console.error("AI HTTP error:", response.status, data);
-
-        if (response.status === 401) {
-          throw new Error(
-            "認証エラー（401）。Supabase Edge FunctionがFirebase IDトークンを検証できていない可能性があります。Supabaseの標準JWT検証はFirebaseのトークンをそのまま受け付けません。"
-          );
-        }
-
-        if (response.status === 403) {
-          throw new Error("アクセス拒否（403）。アカウントの状態とFunctionの権限を確認してください。");
-        }
-
-        if (response.status === 404) {
-          throw new Error("Functionが見つかりません。study-chatがデプロイされているか確認してください。");
-        }
+        const detail =
+          data.message ||
+          data.error ||
+          data.msg ||
+          `HTTP ${response.status}`;
 
         throw new Error(
-          data.error || data.message ||
-          `AI接続エラー（HTTP ${response.status}）`
+          `AI サーバーでエラーが発生しました。\n${detail}`
         );
       }
 
-      if (typeof data.reply !== "string" || !data.reply.trim()) {
-        throw new Error("AIから回答が返されませんでした。Edge Functionのレスポンス形式を確認してください。");
+      const answer = normalizeAnswer(data);
+
+      if (!answer) {
+        throw new Error(
+          "AI サーバーから回答を取得できませんでした。Edge Function のレスポンス形式を確認してください。"
+        );
       }
 
-      return data.reply.trim();
+      return answer;
     }
 
-    async function sendQuestion() {
-      if (isSending || maintenanceActive) return;
+    /*
+     * 会話履歴を Firestore に保存。
+     * ドキュメントには必ず userId を含める。
+     */
+    async function saveConversation() {
+      if (!currentUser || !currentHistoryId) return;
 
-      const question = $("questionInput").value.trim();
+      const historyRef = doc(
+        db,
+        "chatHistories",
+        currentHistoryId
+      );
+
+      const payload = {
+        userId: currentUser.uid,
+        subject: subjectSelect.value,
+        grade: currentProfile.grade || "中学生",
+        messages: messages,
+        updatedAt: serverTimestamp()
+      };
+
+      const snapshot = await getDoc(historyRef);
+
+      if (snapshot.exists()) {
+        await updateDoc(historyRef, payload);
+      } else {
+        await setDoc(historyRef, {
+          ...payload,
+          createdAt: serverTimestamp()
+        });
+      }
+    }
+
+    async function createConversation() {
+      if (!currentUser) return;
+
+      const historyRef = doc(collection(db, "chatHistories"));
+
+      currentHistoryId = historyRef.id;
+      messages = [];
+
+      try {
+        await setDoc(historyRef, {
+          userId: currentUser.uid,
+          subject: subjectSelect.value,
+          grade: currentProfile.grade || "中学生",
+          messages: [],
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+
+        localStorage.setItem(
+          `studyAIConversation:${currentUser.uid}`,
+          currentHistoryId
+        );
+      } catch (error) {
+        console.error("会話の作成エラー:", error);
+        currentHistoryId = null;
+        throw error;
+      }
+    }
+
+    async function restoreConversation() {
+      const storedId = localStorage.getItem(
+        `studyAIConversation:${currentUser.uid}`
+      );
+
+      if (!storedId) {
+        await createConversation();
+        return;
+      }
+
+      const historyRef = doc(db, "chatHistories", storedId);
+      const snapshot = await getDoc(historyRef);
+
+      if (
+        !snapshot.exists() ||
+        snapshot.data().userId !== currentUser.uid
+      ) {
+        await createConversation();
+        return;
+      }
+
+      currentHistoryId = storedId;
+      const data = snapshot.data();
+
+      messages = Array.isArray(data.messages)
+        ? data.messages
+        : [];
+
+      if (ALLOWED_SUBJECTS.includes(data.subject)) {
+        subjectSelect.value = data.subject;
+      }
+
+      conversation.replaceChildren();
+      conversation.append(welcomeMessage);
+      welcomeMessage.hidden = messages.length > 0;
+
+      for (const item of messages) {
+        if (
+          item &&
+          ["user", "assistant"].includes(item.role) &&
+          typeof item.content === "string"
+        ) {
+          renderMessage(item.role, item.content);
+        }
+      }
+    }
+
+    async function submitQuestion(event) {
+      event.preventDefault();
+
+      if (sending) return;
+
+      showStatus("");
+
+      const question = questionInput.value.trim();
+      const subject = subjectSelect.value;
 
       if (!question) {
-        showError("質問を入力してください。");
+        showStatus("質問内容を入力してください。");
         return;
       }
 
-      clearError();
-
-      if (!isLearningQuestion(question)) {
-        addMessage(
-          "assistant",
-          "このAIは学習専用です。学習以外の質問はできません。"
-        );
-        $("questionInput").value = "";
+      if (!ALLOWED_SUBJECTS.includes(subject)) {
+        showStatus("正しい教科を選択してください。");
         return;
       }
 
-      isSending = true;
-      $("sendButton").disabled = true;
-      $("questionInput").disabled = true;
-
-      addMessage("user", question);
-      $("questionInput").value = "";
-      showTyping();
+      setSending(true);
 
       try {
-        const reply = await callAI(question);
-        removeTyping();
-        addMessage("assistant", reply);
+        renderMessage("user", question);
 
-        chatHistory.push(
-          { role: "user", content: question },
-          { role: "assistant", content: reply }
-        );
+        messages.push({
+          role: "user",
+          content: question
+        });
 
-        chatHistory = chatHistory.slice(-10);
-        setStatus(true, "接続済み");
-      } catch (error) {
-        removeTyping();
-        console.error("AI request failed:", error);
-        showError(error.message || "AIへの接続に失敗しました。");
-        setStatus(false, "接続エラー");
-      } finally {
-        isSending = false;
-        $("sendButton").disabled = maintenanceActive;
-        $("questionInput").disabled = maintenanceActive;
-      }
-    }
+        questionInput.value = "";
 
-    $("sendButton").addEventListener("click", sendQuestion);
+        if (looksLikeNonStudyRequest(question)) {
+          renderMessage("assistant", NON_STUDY_RESPONSE);
 
-    $("questionInput").addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-        sendQuestion();
-      }
-    });
+          messages.push({
+            role: "assistant",
+            content: NON_STUDY_RESPONSE
+          });
 
-    $("openMenuButton").addEventListener("click", () => {
-      $("sidebar").classList.remove("closed");
-    });
-
-    /*
-     * デスクトップでは閉じた状態でも、
-     * メニューボタンから再び開ける。
-     */
-    document.querySelector(".main").addEventListener("click", (event) => {
-      if (
-        window.innerWidth <= 800 &&
-        !$("sidebar").classList.contains("closed") &&
-        !event.target.closest("#openMenuButton")
-      ) {
-        // メイン領域を押しただけでは閉じない。
-      }
-    });
-
-    /*
-     * メニューのブランド領域に閉じるボタンを用意する。
-     */
-    const brand = document.querySelector(".brand");
-    const closeButton = document.createElement("button");
-    closeButton.type = "button";
-    closeButton.textContent = "メニューを閉じる";
-    closeButton.style.cssText =
-      "margin-top:12px;padding:6px 0;border:0;background:transparent;color:#657084;font-size:11px;cursor:pointer;";
-    closeButton.addEventListener("click", () => {
-      $("sidebar").classList.add("closed");
-    });
-    brand.appendChild(closeButton);
-
-    $("logoutButton").addEventListener("click", async () => {
-      $("logoutButton").disabled = true;
-      try {
-        await signOut(auth);
-        /*
-         * question.html からルート直下へ戻る相対パス。
-         */
-        location.replace("../login.html");
-      } catch (error) {
-        console.error("Sign out failed:", error);
-        showError("ログアウトに失敗しました。通信状態を確認してください。");
-        $("logoutButton").disabled = false;
-      }
-    });
-
-    onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!firebaseUser) {
-        location.replace("../login.html");
-        return;
-      }
-
-      try {
-        const profileRef = doc(db, "users", firebaseUser.uid);
-        const profileSnapshot = await getDoc(profileRef);
-
-        if (!profileSnapshot.exists()) {
-          throw new Error("ユーザープロフィールが見つかりません。管理者に確認してください。");
-        }
-
-        const profile = profileSnapshot.data();
-
-        if (profile.status !== "active") {
-          throw new Error("このアカウントは現在利用できません。");
-        }
-
-        if (profile.role === "admin") {
-          location.replace("../admin/index.html");
+          await saveConversation();
           return;
         }
 
-        if (profile.role !== "student") {
-          throw new Error("このページを利用できる権限がありません。");
-        }
+        showTyping();
 
-        currentUser = firebaseUser;
-        userProfile = profile;
+        const answer = await callAI(question, subject);
 
-        $("userName").textContent =
-          profile.displayName ||
-          profile.name ||
-          firebaseUser.displayName ||
-          "ユーザー";
+        hideTyping();
+        renderMessage("assistant", answer);
 
-        $("userEmail").textContent = firebaseUser.email || "";
+        messages.push({
+          role: "assistant",
+          content: answer
+        });
 
-        $("authChecking").style.display = "none";
-        $("app").style.display = "block";
-
-        startMaintenanceListener();
-        setStatus(true, "接続準備完了");
+        await saveConversation();
       } catch (error) {
-        console.error("Authentication/profile check failed:", error);
-        $("authChecking").style.display = "none";
-        $("app").style.display = "block";
+        hideTyping();
 
-        document.querySelector(".content").innerHTML = "";
+        console.error("AI 質問エラー:", error);
 
-        const errorBox = document.createElement("div");
-        errorBox.style.cssText =
-          "max-width:650px;margin:70px auto;padding:28px;background:white;border:1px solid #e1e6ed;border-radius:12px;line-height:1.8;";
-        errorBox.textContent =
-          `${error.message || "アカウントを確認できません。"} ログインし直すか、管理者に確認してください。`;
+        renderMessage(
+          "assistant",
+          error.message ||
+            "回答を取得できませんでした。時間をおいて再度お試しください。",
+          true
+        );
 
-        const loginLink = document.createElement("a");
-        loginLink.href = "../login.html";
-        loginLink.textContent = "ログイン画面へ";
-        loginLink.style.cssText =
-          "display:inline-block;margin-top:16px;color:#1558d6;text-decoration:underline;";
+        /*
+         * エラー時は会話内容を可能な限り保存する。
+         * 保存自体が失敗しても、元のエラーを隠さない。
+         */
+        try {
+          await saveConversation();
+        } catch (saveError) {
+          console.error("会話履歴保存エラー:", saveError);
+          showStatus(
+            "会話履歴を保存できませんでした。Firestore のルールを確認してください。"
+          );
+        }
+      } finally {
+        hideTyping();
+        setSending(false);
+        questionInput.focus();
+      }
+    }
 
-        errorBox.appendChild(document.createElement("br"));
-        errorBox.appendChild(loginLink);
-        document.querySelector(".content").appendChild(errorBox);
+    $("newChatButton").addEventListener("click", async () => {
+      if (sending) return;
+
+      showStatus("");
+
+      try {
+        await createConversation();
+
+        conversation.replaceChildren();
+        conversation.append(welcomeMessage);
+        welcomeMessage.hidden = false;
+
+        questionInput.value = "";
+        questionInput.focus();
+      } catch (error) {
+        console.error(error);
+        showStatus(
+          "新しい会話を作成できませんでした。\n" +
+          (error.message || String(error))
+        );
       }
     });
 
-    window.addEventListener("pagehide", () => {
-      if (unsubscribeMaintenance) unsubscribeMaintenance();
+    questionInput.addEventListener("keydown", event => {
+      if (
+        event.key === "Enter" &&
+        !event.shiftKey &&
+        !event.isComposing
+      ) {
+        event.preventDefault();
+
+        if (questionForm.requestSubmit) {
+          questionForm.requestSubmit();
+        }
+      }
     });
+
+    questionForm.addEventListener("submit", submitQuestion);
+
+    /*
+     * 初期化中は認証が確定するまで画面を見せない。
+     */
+    document.documentElement.classList.add("auth-pending");
+
+    async function initializePage() {
+      try {
+        const allowed = await checkAccess();
+
+        if (!allowed) return;
+
+        await restoreConversation();
+
+        document.documentElement.classList.remove("auth-pending");
+      } catch (error) {
+        console.error("AI 画面初期化エラー:", error);
+
+        document.documentElement.classList.remove("auth-pending");
+
+        document.body.innerHTML = `
+          <main style="
+            max-width:650px;
+            margin:60px auto;
+            padding:24px;
+            font-family:Arial,sans-serif;
+            line-height:1.8
+          ">
+            <h1>AI画面を開けません</h1>
+            <p>認証状態、Firestore の設定、会話履歴のアクセス権限を確認してください。</p>
+            <pre id="initError" style="
+              white-space:pre-wrap;
+              overflow-wrap:anywhere;
+              color:#b42318
+            "></pre>
+            <a href="../login.html">ログイン画面へ戻る</a>
+          </main>
+        `;
+
+        document.getElementById("initError").textContent =
+          error.message || String(error);
+      }
+    }
+
+    initializePage();
   </script>
+
+  <script type="module" src="../assets/js/layout.js"></script>
+
 </body>
 </html>
