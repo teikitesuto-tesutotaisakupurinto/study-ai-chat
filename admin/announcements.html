@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>お知らせ管理 | 学習AIチャット</title>
+
+<link rel="stylesheet" href="../assets/css/common.css">
+<link rel="stylesheet" href="../assets/css/admin.css">
+
+</head>
+
+<body>
+
+<div class="app">
+
+<aside class="sidebar admin-sidebar">
+
+<div class="sidebar-header">
+<strong>運営管理コンソール</strong>
+</div>
+
+<nav>
+
+<a class="nav-link" href="index.html">ダッシュボード</a>
+<a class="nav-link" href="users.html">利用者管理</a>
+<a class="nav-link" href="announcements.html">お知らせ管理</a>
+<a class="nav-link" href="maintenance.html">メンテナンス</a>
+<a class="nav-link" href="ai-settings.html">AI設定</a>
+<a class="nav-link" href="logs.html">監査ログ</a>
+<a class="nav-link" href="system.html">システム状態</a>
+<a class="nav-link" href="settings.html">管理者設定</a>
+
+</nav>
+
+<button class="logout-button" data-logout>
+ログアウト
+</button>
+
+</aside>
+
+<main class="main-content">
+
+<header class="topbar">
+<button class="sidebar-toggle">☰</button>
+<strong>お知らせ管理</strong>
+</header>
+
+<section class="page">
+
+<h1>お知らせ管理</h1>
+
+<div class="card">
+
+<label>
+タイトル
+<input id="title">
+</label>
+
+<label>
+本文
+<textarea id="body"></textarea>
+</label>
+
+<label>
+<input id="visible" type="checkbox" checked>
+公開する
+</label>
+
+<button id="publish" class="primary-button">
+お知らせを公開
+</button>
+
+<p id="message"></p>
+
+</div>
+
+</section>
+
+</main>
+
+</div>
+
+<script type="module">
+
+import {
+  auth,
+  db,
+  collection,
+  addDoc,
+  serverTimestamp,
+  signOut
+} from "../assets/js/firebase.js";
+
+import { protectPage }
+from "../assets/js/auth.js";
+
+import {
+  setupSidebar,
+  setupLogout
+} from "../assets/js/layout.js";
+
+setupSidebar();
+setupLogout(auth, signOut);
+
+const result =
+  await protectPage("admin");
+
+document.getElementById("publish")
+.addEventListener("click", async () => {
+
+  const title =
+    document.getElementById("title").value.trim();
+
+  const body =
+    document.getElementById("body").value.trim();
+
+  if (!title || !body) {
+
+    document.getElementById(
+      "message"
+    ).textContent =
+      "タイトルと本文を入力してください。";
+
+    return;
+
+  }
+
+  await addDoc(
+    collection(db, "announcements"),
+    {
+      title,
+      body,
+      visible:
+        document.getElementById("visible").checked,
+      createdBy:
+        result.user.uid,
+      publishedAt:
+        serverTimestamp()
+    }
+  );
+
+  document.getElementById(
+    "message"
+  ).textContent =
+    "お知らせを公開しました。";
+
+});
+
+</script>
+
+</body>
+</html>
