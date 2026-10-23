@@ -1,4 +1,8 @@
-import { requireRole, auth } from "./auth.js";
+
+import {
+  requireRole,
+  auth
+} from "./auth.js";
 
 import {
   signOut
@@ -23,61 +27,219 @@ const ADMIN_LINKS = [
   { label: "管理者設定", icon: "⚙", href: "settings.html" }
 ];
 
-function createElement(tag, className, text) {
+function makeElement(tag, className, text) {
   const element = document.createElement(tag);
-  if (className) element.className = className;
-  if (text !== undefined) element.textContent = text;
+
+  if (className) {
+    element.className = className;
+  }
+
+  if (text !== undefined) {
+    element.textContent = text;
+  }
+
   return element;
 }
 
-function renderSidebar(role) {
-  const sidebar = document.querySelector("#appSidebar");
-  const main = document.querySelector("#appMain");
+function showLayoutError(message, error) {
+  let box = document.getElementById("layoutError");
 
-  if (!sidebar || !main) {
-    throw new Error("ページに #appSidebar と #appMain が必要です。");
+  if (!box) {
+    box = makeElement("div", "layout-error");
+    box.id = "layoutError";
+
+    const main = document.querySelector(
+      "main"
+    );
+
+    (main || document.body).prepend(box);
   }
 
-  const links = role === "admin" ? ADMIN_LINKS : STUDENT_LINKS;
-  const currentFile = location.pathname.split("/").pop();
+  box.textContent =
+    `${message} ${error?.message || ""}`;
+}
+
+function toggleSidebar() {
+  document.body.classList.toggle(
+    "sidebar-collapsed"
+  );
+
+  const expanded =
+    !document.body.classList.contains(
+      "sidebar-collapsed"
+    );
+
+  document
+    .querySelectorAll(".sidebar-toggle")
+    .forEach(button => {
+      button.setAttribute(
+        "aria-expanded",
+        String(expanded)
+      );
+    });
+}
+
+// 旧 HTML のサイドバーにも対応。
+export function setupSidebar() {
+  document
+    .querySelectorAll(".sidebar-toggle")
+    .forEach(button => {
+      if (button.dataset.sidebarBound === "true") {
+        return;
+      }
+
+      button.dataset.sidebarBound = "true";
+      button.type = "button";
+      button.setAttribute(
+        "aria-label",
+        "サイドメニューを開閉"
+      );
+
+      button.addEventListener(
+        "click",
+        toggleSidebar
+      );
+    });
+}
+
+export function setupLogout() {
+  document
+    .querySelectorAll(
+      "[data-logout], .logout-button"
+    )
+    .forEach(button => {
+      if (button.dataset.logoutBound === "true") {
+        return;
+      }
+
+      button.dataset.logoutBound = "true";
+      button.type = "button";
+
+      button.addEventListener(
+        "click",
+        async () => {
+          button.disabled = true;
+
+          try {
+            await signOut(auth);
+
+            const path = location.pathname;
+            const nested =
+              path.includes("/student/") ||
+              path.includes("/admin/");
+
+            location.replace(
+              nested
+                ? "../login.html"
+                : "./login.html"
+            );
+          } catch (error) {
+            console.error(
+              "ログアウトエラー:",
+              error
+            );
+
+            button.disabled = false;
+
+            showLayoutError(
+              "ログアウトに失敗しました。",
+              error
+            );
+          }
+        }
+      );
+    });
+}
+
+function renderSidebar(role) {
+  const sidebar =
+    document.getElementById("appSidebar");
+
+  if (!sidebar) {
+    return;
+  }
+
+  const links =
+    role === "admin"
+      ? ADMIN_LINKS
+      : STUDENT_LINKS;
+
+  const currentFile =
+    location.pathname.split("/").pop();
 
   sidebar.replaceChildren();
 
-  const toggleRow = createElement("div", "sidebar-toggle-row");
-  const toggle = createElement("button", "sidebar-toggle", "☰");
+  const toggleRow = makeElement(
+    "div",
+    "sidebar-toggle-row"
+  );
+
+  const toggle = makeElement(
+    "button",
+    "sidebar-toggle",
+    "☰"
+  );
 
   toggle.type = "button";
-  toggle.setAttribute("aria-label", "サイドメニューを開閉");
-  toggle.setAttribute("aria-expanded", "true");
+  toggle.setAttribute(
+    "aria-label",
+    "サイドメニューを開閉"
+  );
+  toggle.setAttribute(
+    "aria-expanded",
+    "true"
+  );
 
-  toggle.addEventListener("click", () => {
-    document.body.classList.toggle("sidebar-collapsed");
-
-    const expanded =
-      !document.body.classList.contains("sidebar-collapsed");
-
-    toggle.setAttribute("aria-expanded", String(expanded));
-  });
+  toggle.addEventListener(
+    "click",
+    toggleSidebar
+  );
 
   toggleRow.append(toggle);
   sidebar.append(toggleRow);
 
-  const nav = createElement("nav", "sidebar-nav");
-  nav.setAttribute("aria-label", "メインメニュー");
+  const nav = makeElement(
+    "nav",
+    "sidebar-nav"
+  );
+
+  nav.setAttribute(
+    "aria-label",
+    "メインメニュー"
+  );
 
   for (const item of links) {
-    const link = createElement("a", "sidebar-link");
+    const link = makeElement(
+      "a",
+      "sidebar-link"
+    );
+
     link.href = item.href;
 
     if (currentFile === item.href) {
       link.classList.add("active");
-      link.setAttribute("aria-current", "page");
+      link.setAttribute(
+        "aria-current",
+        "page"
+      );
     }
 
-    const icon = createElement("span", "sidebar-icon", item.icon);
-    icon.setAttribute("aria-hidden", "true");
+    const icon = makeElement(
+      "span",
+      "sidebar-icon",
+      item.icon
+    );
 
-    const label = createElement("span", "sidebar-label", item.label);
+    icon.setAttribute(
+      "aria-hidden",
+      "true"
+    );
+
+    const label = makeElement(
+      "span",
+      "sidebar-label",
+      item.label
+    );
 
     link.append(icon, label);
     nav.append(link);
@@ -85,47 +247,59 @@ function renderSidebar(role) {
 
   sidebar.append(nav);
 
-  const logout = createElement("button", "sidebar-link", "ログアウト");
+  const logout = makeElement(
+    "button",
+    "sidebar-link logout-button",
+    "ログアウト"
+  );
+
   logout.type = "button";
-  logout.style.margin = "auto 8px 12px";
-  logout.style.width = "calc(100% - 16px)";
-  logout.style.border = "0";
-  logout.style.background = "transparent";
-
-  logout.addEventListener("click", async () => {
-    logout.disabled = true;
-
-    try {
-      await signOut(auth);
-      location.replace("../login.html");
-    } catch (error) {
-      console.error("ログアウトエラー:", error);
-      logout.disabled = false;
-      alert("ログアウトに失敗しました。再度お試しください。");
-    }
-  });
+  logout.dataset.logout = "";
 
   sidebar.append(logout);
+
+  setupLogout();
 }
 
 async function startLayout() {
   const role = document.body.dataset.role;
 
-  if (role !== "student" && role !== "admin") {
-    document.body.innerHTML =
-      "<main class='auth-error'><h1>ページ設定エラー</h1><p>data-role に student または admin を指定してください。</p></main>";
+  // data-role がない旧形式のページは、
+  // そのページ内の protectPage() が認証を担当する。
+  if (!role) {
     return;
   }
 
-  const result = await requireRole(role, {
-    allowMaintenance: role === "admin"
-  });
+  if (
+    role !== "student" &&
+    role !== "admin"
+  ) {
+    showLayoutError(
+      "ページ設定エラー: data-role に student または admin を指定してください。",
+      null
+    );
+    return;
+  }
 
-  if (!result) return;
+  const result = await requireRole(
+    role,
+    {
+      allowMaintenance: role === "admin"
+    }
+  );
+
+  if (!result) {
+    return;
+  }
 
   renderSidebar(role);
+  setupSidebar();
+  setupLogout();
 
-  const nameElement = document.querySelector("#currentUserName");
+  const nameElement =
+    document.getElementById(
+      "currentUserName"
+    );
 
   if (nameElement) {
     nameElement.textContent =
@@ -135,7 +309,8 @@ async function startLayout() {
       "ユーザー";
   }
 
-  const footer = document.querySelector(".app-footer");
+  const footer =
+    document.querySelector(".app-footer");
 
   if (footer) {
     footer.textContent =
@@ -143,6 +318,23 @@ async function startLayout() {
   }
 }
 
-startLayout().catch(error => {
-  console.error("画面初期化エラー:", error);
-});
+// 新形式のページだけ自動で初期化する。
+if (
+  typeof document !== "undefined" &&
+  document.body?.dataset?.role
+) {
+  startLayout().catch(error => {
+    console.error(
+      "画面初期化エラー:",
+      error
+    );
+
+    showLayoutError(
+      "画面を初期化できませんでした。",
+      error
+    );
+  });
+} else if (typeof document !== "undefined") {
+  setupSidebar();
+  setupLogout();
+}
