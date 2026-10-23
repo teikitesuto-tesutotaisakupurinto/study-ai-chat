@@ -1,491 +1,171 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>メンテナンス設定 | 学習AIチャット</title>
+  <title>メンテナンス管理 | 学習AIチャット</title>
+  <link rel="stylesheet" href="../assets/css/common.css">
   <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: #f4f6fa;
-      color: #172033;
-      font-family: Arial, "Noto Sans JP", sans-serif;
+    .form-row {
+      margin: 20px 0;
     }
-    #app { display: none; min-height: 100vh; }
-    .sidebar {
-      position: fixed;
-      inset: 0 auto 0 0;
-      width: 230px;
-      padding: 24px 14px;
-      background: #fff;
-      border-right: 1px solid #e1e6ef;
-    }
-    .brand {
-      padding: 0 12px 24px;
-      font-weight: 750;
-      font-size: 18px;
-    }
-    .nav-link {
+
+    .form-row label {
       display: block;
-      padding: 12px;
-      margin: 4px 0;
-      color: #4b5567;
-      text-decoration: none;
-      border-radius: 7px;
-      font-size: 14px;
+      margin-bottom: 8px;
+      font-weight: 600;
     }
-    .nav-link:hover, .nav-link.active {
-      background: #edf3ff;
-      color: #245ac7;
-    }
-    .main {
-      margin-left: 230px;
-      padding: 34px;
-      max-width: 1050px;
-    }
-    h1 { margin: 0 0 8px; font-size: 27px; }
-    .description {
-      margin: 0 0 28px;
-      color: #667085;
-      font-size: 14px;
-      line-height: 1.8;
-    }
-    .panel {
-      padding: 26px;
-      background: #fff;
-      border: 1px solid #e1e6ef;
-      border-radius: 12px;
-      margin-bottom: 20px;
-    }
-    .panel h2 { margin: 0 0 22px; font-size: 18px; }
-    .field-label {
-      display: block;
-      margin: 18px 0 8px;
-      font-size: 14px;
-      font-weight: 650;
-    }
-    input[type="text"], textarea {
-      display: block;
+
+    .form-row input[type="text"],
+    .form-row textarea {
       width: 100%;
       padding: 12px;
-      border: 1px solid #cfd6e2;
-      border-radius: 7px;
-      background: #fff;
-      color: #172033;
-      font: inherit;
+      border: 1px solid #c8ced8;
+      border-radius: 8px;
     }
-    textarea { min-height: 150px; resize: vertical; line-height: 1.8; }
-    input:focus, textarea:focus {
-      outline: 2px solid #b8cdfb;
-      border-color: #245ac7;
+
+    .form-row textarea {
+      min-height: 130px;
+      resize: vertical;
     }
+
     .switch-row {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 16px;
-      background: #f7f9fc;
-      border: 1px solid #e1e6ef;
-      border-radius: 8px;
-    }
-    .switch-row input { width: 19px; height: 19px; }
-    .switch-title { font-weight: 700; }
-    .switch-help {
-      margin-top: 5px;
-      color: #667085;
-      font-size: 12px;
-      line-height: 1.7;
-    }
-    .actions {
-      display: flex;
-      flex-wrap: wrap;
       gap: 10px;
-      margin-top: 22px;
     }
-    button {
-      min-height: 43px;
-      padding: 10px 18px;
-      border-radius: 7px;
-      font: inherit;
-      font-size: 14px;
-      font-weight: 650;
-      cursor: pointer;
-    }
-    button:disabled { opacity: .55; cursor: not-allowed; }
-    .save {
-      color: #fff;
-      background: #245ac7;
-      border: 1px solid #245ac7;
-    }
-    .save:hover { background: #1948a9; }
-    .secondary {
-      color: #344054;
-      background: #fff;
-      border: 1px solid #cfd6e2;
-    }
-    #status {
-      min-height: 24px;
-      margin-top: 16px;
-      font-size: 13px;
-      line-height: 1.8;
-      white-space: pre-wrap;
-    }
-    .preview {
-      padding: 20px;
-      background: #f7f9fc;
-      border: 1px solid #e1e6ef;
+
+    .primary-button {
+      padding: 12px 20px;
+      background: #1a73e8;
+      color: white;
+      border: 0;
       border-radius: 8px;
     }
-    .preview h3 { margin: 0 0 10px; font-size: 19px; }
-    .preview p {
-      margin: 0;
-      color: #667085;
+
+    #statusMessage {
+      margin-top: 16px;
       white-space: pre-wrap;
-      line-height: 1.9;
-      overflow-wrap: anywhere;
-    }
-    footer {
-      margin-top: 34px;
-      color: #8993a3;
-      font-size: 11px;
-      line-height: 1.8;
-    }
-    #denied {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      background: #fff;
-      padding: 12vh 24px;
-      text-align: center;
-    }
-    #denied h1 { font-size: 30px; }
-    #denied p { color: #667085; line-height: 1.9; }
-    #denied a { color: #245ac7; }
-    @media (max-width: 760px) {
-      .sidebar {
-        position: static;
-        width: auto;
-        padding: 14px;
-        border-right: 0;
-        border-bottom: 1px solid #e1e6ef;
-      }
-      .brand { padding: 4px 8px 12px; }
-      .nav-link { display: inline-block; padding: 9px; }
-      .main { margin-left: 0; padding: 22px 14px; }
-      .panel { padding: 19px; }
-      h1 { font-size: 23px; }
     }
   </style>
 </head>
-<body>
+<body data-role="admin">
+  <div class="app-layout">
+    <aside id="appSidebar" class="sidebar"></aside>
 
-  <!-- 認証・権限確認が完了するまで白い画面 -->
-  <div id="app">
-    <aside class="sidebar">
-      <div class="brand">学習AIチャット<br>管理画面</div>
-      <nav>
-        <a class="nav-link" href="./index.html">管理トップ</a>
-        <a class="nav-link" href="./users.html">ユーザー管理</a>
-        <a class="nav-link" href="./announcements.html">お知らせ管理</a>
-        <a class="nav-link active" href="./maintenance.html">メンテナンス設定</a>
-        <a class="nav-link" href="./ai-settings.html">AI設定</a>
-        <a class="nav-link" href="./logs.html">操作ログ</a>
-        <a class="nav-link" href="./system.html">システム状態</a>
-        <a class="nav-link" href="./settings.html">管理者設定</a>
-      </nav>
-    </aside>
+    <main id="appMain" class="app-main">
+      <header class="page-header">
+        <h1 class="page-title">メンテナンス管理</h1>
+        <p>システムのメンテナンス表示を設定します。</p>
+      </header>
 
-    <main class="main">
-      <h1>メンテナンス設定</h1>
-      <p class="description">
-        ログイン画面に表示するタイトルとメッセージを管理します。
-        メンテナンスを有効にすると、新しいログインを停止します。
-      </p>
+      <section class="page-card">
+        <form id="maintenanceForm">
+          <div class="form-row switch-row">
+            <input id="maintenance" type="checkbox">
+            <label for="maintenance">メンテナンスを有効にする</label>
+          </div>
 
-      <section class="panel">
-        <h2>公開状態</h2>
-        <label class="switch-row" for="maintenance">
-          <input id="maintenance" type="checkbox">
-          <span>
-            <span class="switch-title">メンテナンスを有効にする</span>
-            <div class="switch-help">
-              有効にすると、ログイン画面にメンテナンス表示を出します。
-            </div>
-          </span>
-        </label>
+          <div class="form-row">
+            <label for="maintenanceTitle">表示タイトル</label>
+            <input id="maintenanceTitle" type="text" maxlength="100"
+                   required>
+          </div>
 
-        <label class="field-label" for="title">表示タイトル</label>
-        <input
-          id="title"
-          type="text"
-          maxlength="120"
-          placeholder="システムメンテナンスのお知らせ"
-        >
+          <div class="form-row">
+            <label for="maintenanceMessage">表示メッセージ</label>
+            <textarea id="maintenanceMessage" maxlength="2000"
+                      required></textarea>
+          </div>
 
-        <label class="field-label" for="message">表示メッセージ</label>
-        <textarea
-          id="message"
-          maxlength="3000"
-          placeholder="メンテナンスの内容や終了予定などを入力してください。"
-        ></textarea>
+          <button id="saveButton" class="primary-button" type="submit">
+            設定を保存
+          </button>
 
-        <div class="actions">
-          <button class="save" id="save" type="button">設定を保存</button>
-          <button class="secondary" id="reload" type="button">保存済み設定を再読み込み</button>
-          <button class="secondary" id="logout" type="button">ログアウト</button>
-        </div>
-        <div id="status" role="status" aria-live="polite"></div>
+          <p id="statusMessage" role="status"></p>
+        </form>
       </section>
 
-      <section class="panel">
-        <h2>ログイン画面のプレビュー</h2>
-        <div class="preview">
-          <h3 id="previewTitle">システムメンテナンスのお知らせ</h3>
-          <p id="previewMessage">メンテナンスのメッセージがここに表示されます。</p>
-        </div>
-      </section>
-
-      <footer>
-        Supported by 定期テスト対策プリント運営事務局<br>
-        © 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.
-      </footer>
+      <footer class="app-footer"></footer>
     </main>
   </div>
 
-  <section id="denied">
-    <h1>403 Forbidden</h1>
-    <p>このページを閲覧する権限がありません。</p>
-    <p><a href="../login.html">ログイン画面へ戻る</a></p>
-  </section>
-
   <script type="module">
-    import { initializeApp } from
-      "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+    import { db } from "../assets/js/firebase.js";
+
     import {
-      getAuth,
-      onAuthStateChanged,
-      signOut
-    } from
-      "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
-    import {
-      getFirestore,
       doc,
       getDoc,
       setDoc,
-      onSnapshot,
       serverTimestamp
-    } from
-      "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+    } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyByt8kGALyS8AU8SR8P6zWFEPXfgHY5iynk",
-      authDomain: "studychat-1b39d.firebaseapp.com",
-      projectId: "studychat-1b39d",
-      storageBucket: "studychat-1b39d.firebasestorage.app",
-      messagingSenderId: "982302014286",
-      appId: "1:982302014286:web:abf319aadb1ed919727c1f"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    const appElement = document.getElementById("app");
-    const deniedElement = document.getElementById("denied");
-    const maintenanceInput = document.getElementById("maintenance");
-    const titleInput = document.getElementById("title");
-    const messageInput = document.getElementById("message");
-    const saveButton = document.getElementById("save");
-    const reloadButton = document.getElementById("reload");
-    const logoutButton = document.getElementById("logout");
-    const statusElement = document.getElementById("status");
-    const previewTitle = document.getElementById("previewTitle");
-    const previewMessage = document.getElementById("previewMessage");
+    const form = document.querySelector("#maintenanceForm");
+    const checkbox = document.querySelector("#maintenance");
+    const titleInput = document.querySelector("#maintenanceTitle");
+    const messageInput = document.querySelector("#maintenanceMessage");
+    const saveButton = document.querySelector("#saveButton");
+    const statusMessage = document.querySelector("#statusMessage");
 
     const settingsRef = doc(db, "settings", "system");
 
-    let authorized = false;
-    let saving = false;
-    let unsubscribeSettings = null;
-    let loadedInitialSettings = false;
-
-    function status(text, isError = false) {
-      statusElement.textContent = text;
-      statusElement.style.color = isError ? "#b42318" : "#067647";
-    }
-
-    function updatePreview() {
-      previewTitle.textContent =
-        titleInput.value.trim() || "メンテナンス中です";
-      previewMessage.textContent =
-        messageInput.value || "ただいまメンテナンスを実施しています。";
-    }
-
-    titleInput.addEventListener("input", updatePreview);
-    messageInput.addEventListener("input", updatePreview);
-
-    function showDenied() {
-      appElement.style.display = "none";
-      deniedElement.style.display = "block";
-    }
-
     async function loadSettings() {
-      if (!authorized) return;
-
-      reloadButton.disabled = true;
-      status("設定を読み込んでいます。");
+      statusMessage.textContent = "設定を読み込んでいます。";
 
       try {
         const snapshot = await getDoc(settingsRef);
 
-        if (snapshot.exists()) {
-          const data = snapshot.data();
-          maintenanceInput.checked = data.maintenance === true;
-          titleInput.value =
-            data.maintenanceTitle || data.title || "システムメンテナンスのお知らせ";
-          messageInput.value =
-            data.maintenanceMessage || data.message ||
-            "現在、システムメンテナンスを実施しています。";
-        } else {
-          maintenanceInput.checked = false;
-          titleInput.value = "システムメンテナンスのお知らせ";
-          messageInput.value = "現在、システムメンテナンスを実施しています。";
+        if (!snapshot.exists()) {
+          throw new Error("settings/system がありません。");
         }
 
-        loadedInitialSettings = true;
-        updatePreview();
-        status("設定を読み込みました。");
+        const data = snapshot.data();
+
+        checkbox.checked = data.maintenance === true;
+        titleInput.value =
+          data.maintenanceTitle || "システムメンテナンス中";
+        messageInput.value =
+          data.maintenanceMessage ||
+          "現在、システムメンテナンスを実施しています。しばらくお待ちください。";
+
+        statusMessage.textContent = "設定を読み込みました。";
       } catch (error) {
         console.error(error);
-        status(
-          "設定を読み込めませんでした。Firestoreルールと接続状態を確認してください。",
-          true
-        );
-      } finally {
-        reloadButton.disabled = false;
+        statusMessage.textContent =
+          "設定を読み込めませんでした。\n" +
+          (error.message || String(error));
       }
     }
 
-    saveButton.addEventListener("click", async () => {
-      if (!authorized || saving || !loadedInitialSettings) return;
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
 
-      const title = titleInput.value.trim();
-      const message = messageInput.value.trim();
-
-      if (!title) {
-        status("タイトルを入力してください。", true);
-        titleInput.focus();
-        return;
-      }
-
-      if (!message) {
-        status("メッセージを入力してください。", true);
-        messageInput.focus();
-        return;
-      }
-
-      saving = true;
       saveButton.disabled = true;
-      reloadButton.disabled = true;
-      status("設定を保存しています。");
+      statusMessage.textContent = "保存しています。";
 
       try {
         await setDoc(settingsRef, {
-          maintenance: maintenanceInput.checked,
-          maintenanceTitle: title,
-          maintenanceMessage: message,
-          updatedAt: serverTimestamp(),
-          updatedBy: auth.currentUser.uid
+          maintenance: checkbox.checked,
+          maintenanceTitle: titleInput.value.trim(),
+          maintenanceMessage: messageInput.value.trim(),
+          updatedAt: serverTimestamp()
         }, { merge: true });
 
-        status(
-          maintenanceInput.checked
-            ? "保存しました。メンテナンス表示が有効です。"
-            : "保存しました。メンテナンス表示を解除しました。"
-        );
+        statusMessage.textContent = "設定を保存しました。";
       } catch (error) {
         console.error(error);
-        status(
-          "保存できませんでした。管理者権限とFirestoreルールを確認してください。",
-          true
-        );
+        statusMessage.textContent =
+          "保存できませんでした。\n" +
+          (error.message || String(error)) +
+          "\n管理者の Firebase 権限設定を確認してください。";
       } finally {
-        saving = false;
         saveButton.disabled = false;
-        reloadButton.disabled = false;
       }
     });
 
-    reloadButton.addEventListener("click", loadSettings);
-
-    logoutButton.addEventListener("click", async () => {
-      await signOut(auth);
-      location.replace("../login.html");
-    });
-
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        location.replace("../login.html");
-        return;
-      }
-
-      try {
-        const profileSnapshot = await getDoc(doc(db, "users", user.uid));
-
-        if (!profileSnapshot.exists()) {
-          showDenied();
-          return;
-        }
-
-        const profile = profileSnapshot.data();
-
-        if (profile.role !== "admin" || profile.status !== "active") {
-          showDenied();
-          return;
-        }
-
-        authorized = true;
-        appElement.style.display = "block";
-        await loadSettings();
-
-        // 他の管理者が設定を変更した場合も画面に反映する。
-        // 未保存の入力を勝手に上書きしないよう、初回読込後は監視だけ行う。
-        unsubscribeSettings = onSnapshot(settingsRef, (snapshot) => {
-          if (!snapshot.exists()) return;
-          const data = snapshot.data();
-
-          if (saving) return;
-
-          // フォームにフォーカス中なら編集中の内容を保護する。
-          const active = document.activeElement;
-          const editing =
-            active === titleInput || active === messageInput;
-
-          if (!editing) {
-            maintenanceInput.checked = data.maintenance === true;
-            titleInput.value =
-              data.maintenanceTitle || data.title ||
-              "システムメンテナンスのお知らせ";
-            messageInput.value =
-              data.maintenanceMessage || data.message ||
-              "現在、システムメンテナンスを実施しています。";
-            updatePreview();
-          }
-        }, (error) => {
-          console.error("Settings listener failed:", error);
-        });
-      } catch (error) {
-        console.error("Admin authorization check failed:", error);
-        showDenied();
-      }
-    });
-
-    window.addEventListener("pagehide", () => {
-      if (unsubscribeSettings) unsubscribeSettings();
-    });
+    loadSettings();
   </script>
+
+  <script type="module" src="../assets/js/layout.js"></script>
 </body>
 </html>
