@@ -1,4 +1,5 @@
-// assets/js/auth.js
+
+/* assets/js/auth.js */
 (function () {
   "use strict";
 
@@ -7,57 +8,137 @@
   let authReady = false;
   let resolveReady;
 
+  let authEventVersion = 0;
+
   const ready = new Promise(function (resolve) {
     resolveReady = resolve;
   });
 
+  function getPaths() {
+    return window.AppPaths || {};
+  }
+
+  function getPath() {
+    return window.location.pathname;
+  }
+
+  function isPage(name) {
+    return new RegExp("/" + name.replace(".", "\\.") + "$").test(getPath());
+  }
+
+  function isLoginPage() {
+    return isPage("login.html");
+  }
+
+  function isResetPage() {
+    return isPage("reset.html");
+  }
+
+  function isForbiddenPage() {
+    return isPage("403.html");
+  }
+
+  function is404Page() {
+    return isPage("404.html");
+  }
+
+  function isPublicPage() {
+    return isLoginPage() ||
+      isResetPage() ||
+      isForbiddenPage() ||
+      is404Page();
+  }
+
+  function isAdminPage() {
+    return getPath().includes("/admin/");
+  }
+
+  function isStudentPage() {
+    return getPath().includes("/student/");
+  }
+
+  function forbiddenUrl() {
+    const paths = getPaths();
+    return paths.forbidden || "./403.html";
+  }
+
+  function loginUrl() {
+    const paths = getPaths();
+    return paths.login || "./login.html";
+  }
+
+  function redirectTo(url) {
+    if (!url) {
+      console.error("リダイレクト先URLが定義されていません。");
+      return;
+    }
+
+    const target = new URL(url, window.location.href);
+
+    if (target.origin !== window.location.origin) {
+      console.error("不正なリダイレクト先を拒否しました。");
+      return;
+    }
+
+    if (target.href !== window.location.href) {
+      window.location.replace(target.href);
+    }
+  }
+
   async function loadProfile(user) {
+    if (!window.db || !user) return null;
+
     const snapshot = await window.db
       .collection("users")
       .doc(user.uid)
       .get();
 
-    if (!snapshot.exists) {
-      return null;
-    }
+    if (!snapshot.exists) return null;
 
     return snapshot.data();
   }
 
   function destinationFor(profile) {
+    const paths = getPaths();
+
     if (!profile || profile.status !== "active") {
-      return window.AppPaths.forbidden;
+      return forbiddenUrl();
     }
 
     if (profile.role === "admin") {
-      return window.AppPaths.url("admin/index.html");
+      return paths.adminHome || paths.url?.("admin/index.html") ||
+        "./admin/index.html";
     }
 
     if (profile.role === "student") {
-      return window.AppPaths.url("student/index.html");
+      return paths.studentHome || paths.url?.("student/index.html") ||
+        "./student/index.html";
     }
 
-    return window.AppPaths.forbidden;
+    return forbiddenUrl();
   }
 
-  function isAdminPage() {
-    return window.location.pathname.includes("/admin/");
+  function isValidProfile(profile) {
+    return Boolean(
+      profile &&
+      profile.status === "active" &&
+      ["admin", "student"].includes(profile.role)
+    );
   }
 
-  function isStudentPage() {
-    return window.location.pathname.includes("/student/");
+  function settleReady() {
+    if (authReady) return;
+
+    authReady = true;
+    resolveReady();
   }
 
-  function redirectTo(url) {
-    const target = new URL(url, window.location.origin);
-    const current = window.location.pathname + window.location.search;
-
-    if (target.pathname !== window.location.pathname ||
-        target.search !== window.location.search) {
-      if (target.pathname + target.search !== current) {
-        window.location.replace(target.href);
-      }
-    }
+  function getState() {
+    return {
+      user: currentUser,
+      profile: currentProfile,
+      isReady: authReady
+    };
   }
 
   window.authState = {
@@ -75,16 +156,20 @@
     }
   };
 
+  /*
+   * 既存ページとの互換性を維持する。
+   * 戻り値は boolean。
+   */
   window.requireAuth = async function (requiredRole) {
     await ready;
 
     if (!currentUser) {
-      redirectTo(window.AppPaths.login);
+      redirectTo(loginUrl());
       return false;
     }
 
-    if (!currentProfile || currentProfile.status !== "active") {
-      redirectTo(window.AppPaths.forbidden);
+    if (!isValidProfile(currentProfile)) {
+      redirectTo(forbiddenUrl());
       return false;
     }
 
@@ -101,8 +186,32 @@
     return currentProfile;
   };
 
+  window.getCurrentUser = async function () {
+    await ready;
+    return currentUser;
+  };
+
+  /*
+   * ページ起動側が boolean の戻り値とプロフィールを
+   * 別々に取得できるようにする。
+   */
+  window.getAuthState = async function () {
+    await ready;
+    return getState();
+  };
+
+  if (!window.auth) {
+    console.error(
+      "Firebase Authenticationが初期化されていません。firebase.jsを確認してください。"
+    );
+    settleReady();
+    return;
+  }
+
   window.auth.onAuthStateChanged(async function (user) {
-    currentUser = user;
+    const thisVersion = ++authEventVersion;
+
+    currentUser = user || null;
     currentProfile = null;
 
     if (user) {
@@ -110,38 +219,64 @@
         currentProfile = await loadProfile(user);
       } catch (error) {
         console.error("ユーザープロフィールの取得に失敗:", error);
+        currentProfile = null;
       }
     }
 
-    authReady = true;
-    resolveReady();
+    /*
+     * 古い非同期プロフィール取得が後から完了しても、
+     * 新しい認証状態を上書きしない。
+     */
+    if (thisVersion !== authEventVersion) return;
 
-    const path = window.location.pathname;
-    const isLoginPage = /\/login\.html$/.test(path);
-    const isResetPage = /\/reset\.html$/.test(path);
-    const isForbiddenPage = /\/403\.html$/.test(path);
+    settleReady();
 
+    /*
+     * 公開ページでは自動リダイレクトしない。
+     * とくにreset.htmlは未ログインでも利用可能。
+     */
+    if (isPublicPage()) {
+      /*
+       * ログイン画面では、有効なプロフィールが確認できた場合のみ
+       * 対応する画面へ移動する。プロフィール未登録ならログイン画面に
+       * とどまり、登録状態を確認できるようにする。
+       */
+      if (
+        isLoginPage() &&
+        user &&
+        isValidProfile(currentProfile)
+      ) {
+        redirectTo(destinationFor(currentProfile));
+      }
+
+      return;
+    }
+
+    /*
+     * 保護対象ページでは未ログイン時のみログインへ誘導する。
+     */
     if (!user) {
-      if (!isLoginPage && !isResetPage && !isForbiddenPage) {
-        redirectTo(window.AppPaths.login);
-      }
+      redirectTo(loginUrl());
       return;
     }
 
-    if (isLoginPage || path.endsWith("/index.html") &&
-        !isAdminPage() && !isStudentPage()) {
+    /*
+     * 未登録または停止アカウントは403へ。
+     */
+    if (!isValidProfile(currentProfile)) {
+      redirectTo(forbiddenUrl());
+      return;
+    }
+
+    /*
+     * 管理者と生徒の領域を分離する。
+     */
+    if (isAdminPage() && currentProfile.role !== "admin") {
       redirectTo(destinationFor(currentProfile));
       return;
     }
 
-    if (isAdminPage() &&
-        (!currentProfile || currentProfile.role !== "admin")) {
-      redirectTo(destinationFor(currentProfile));
-      return;
-    }
-
-    if (isStudentPage() &&
-        (!currentProfile || currentProfile.role !== "student")) {
+    if (isStudentPage() && currentProfile.role !== "student") {
       redirectTo(destinationFor(currentProfile));
     }
   });
