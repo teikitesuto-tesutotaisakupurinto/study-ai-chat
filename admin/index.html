@@ -1,165 +1,109 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <title>管理ダッシュボード | 学習AIチャット</title>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+  <script>
+    document.documentElement.classList.add("auth-pending");
+  </script>
 
-<title>管理ダッシュボード | 学習AIチャット</title>
-
-<link rel="stylesheet" href="../assets/css/common.css">
-<link rel="stylesheet" href="../assets/css/admin.css">
-
+  <link rel="stylesheet" href="../assets/css/common.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
 </head>
 
-<body>
+<body data-role="admin">
+  <div class="app-layout">
+    <aside id="appSidebar" class="sidebar"></aside>
 
-<div class="app">
+    <main id="appMain" class="app-main">
+      <header class="page-header">
+        <h1 class="page-title">運営管理コンソール</h1>
+        <p>学習AIチャットの運用状況を確認します。</p>
+      </header>
 
-<aside class="sidebar admin-sidebar">
+      <section class="page">
+        <div class="dashboard-grid">
+          <div class="admin-card">
+            <span>サービス</span>
+            <strong>学習AIチャット</strong>
+          </div>
 
-<div class="sidebar-header">
-<strong>学習AIチャット</strong>
-<small>運営管理コンソール</small>
-</div>
+          <div class="admin-card">
+            <span>AI接続先</span>
+            <strong id="ai-status">Supabase / Groq</strong>
+            <p>接続状態は AI 質問テストで確認してください。</p>
+          </div>
 
-<nav>
+          <div class="admin-card">
+            <span>メンテナンス</span>
+            <strong id="maintenance-status">確認中</strong>
+          </div>
+        </div>
 
-<a class="nav-link" href="index.html">
-ダッシュボード
-</a>
+        <section class="page-card" style="margin-top:20px">
+          <h2>管理メニュー</h2>
+          <p>
+            左側のメニューからユーザー、お知らせ、メンテナンス、
+            AI設定、監査ログ、システム状態を管理できます。
+          </p>
+          <p id="dashboard-error" role="alert" style="color:#b42318;white-space:pre-wrap"></p>
+        </section>
+      </section>
 
-<a class="nav-link" href="users.html">
-利用者管理
-</a>
+      <footer class="app-footer">
+        © 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.
+      </footer>
+    </main>
+  </div>
 
-<a class="nav-link" href="announcements.html">
-お知らせ管理
-</a>
-
-<a class="nav-link" href="maintenance.html">
-メンテナンス
-</a>
-
-<a class="nav-link" href="ai-settings.html">
-AI設定
-</a>
-
-<a class="nav-link" href="logs.html">
-監査ログ
-</a>
-
-<a class="nav-link" href="system.html">
-システム状態
-</a>
-
-<a class="nav-link" href="settings.html">
-管理者設定
-</a>
-
-</nav>
-
-<button class="logout-button" data-logout>
-ログアウト
-</button>
-
-</aside>
-
-<main class="main-content">
-
-<header class="topbar">
-
-<button class="sidebar-toggle">
-☰
-</button>
-
-<div>
-<strong>運営管理コンソール</strong>
-<small>
-学習AIチャット
-</small>
-</div>
-
-</header>
-
-<section class="page">
-
-<h1>ダッシュボード</h1>
-
-<div class="dashboard-grid">
-
-<div class="admin-card">
-<span>サービス</span>
-<strong>学習AIチャット</strong>
-</div>
-
-<div class="admin-card">
-<span>AI接続</span>
-<strong id="ai-status">確認中</strong>
-</div>
-
-<div class="admin-card">
-<span>メンテナンス</span>
-<strong id="maintenance-status">
-確認中
-</strong>
-</div>
-
-</div>
-
-</section>
-
-</main>
-
-</div>
-
-<script type="module">
-
-import {
-  auth,
-  db,
-  doc,
-  getDoc,
-  signOut
-} from "../assets/js/firebase.js";
-
-import {
-  protectPage
-} from "../assets/js/auth.js";
-
-import {
-  setupSidebar,
-  setupLogout
-} from "../assets/js/layout.js";
-
-setupSidebar();
-setupLogout(auth, signOut);
-
-await protectPage("admin");
-
-const maintenance =
-  await getDoc(
-    doc(
+  <script type="module">
+    import {
       db,
-      "systemStatus",
-      "main"
-    )
-  );
+      doc,
+      getDoc
+    } from "../assets/js/firebase.js";
 
-document.getElementById(
-  "maintenance-status"
-).textContent =
-  maintenance.exists() &&
-  maintenance.data().maintenance
-    ? "メンテナンス中"
-    : "通常稼働";
+    const maintenanceStatus =
+      document.getElementById("maintenance-status");
 
-document.getElementById(
-  "ai-status"
-).textContent =
-  "Supabase / Groq";
+    const dashboardError =
+      document.getElementById("dashboard-error");
 
-</script>
+    async function loadDashboard() {
+      try {
+        const snapshot = await getDoc(
+          doc(db, "settings", "system")
+        );
 
+        if (!snapshot.exists()) {
+          maintenanceStatus.textContent = "設定なし";
+          dashboardError.textContent =
+            "Firestore の settings/system がありません。Firebase Console で作成してください。";
+          return;
+        }
+
+        const settings = snapshot.data();
+
+        maintenanceStatus.textContent =
+          settings.maintenance === true
+            ? "メンテナンス中"
+            : "通常稼働";
+      } catch (error) {
+        console.error("ダッシュボード取得エラー:", error);
+
+        maintenanceStatus.textContent = "取得エラー";
+        dashboardError.textContent =
+          `${error.code || "error"}: ${error.message || String(error)}`;
+      }
+    }
+
+    loadDashboard();
+  </script>
+
+  <script type="module" src="../assets/js/layout.js"></script>
 </body>
 </html>
