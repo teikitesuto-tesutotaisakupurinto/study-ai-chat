@@ -1,166 +1,23 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-
-<title>学習履歴 | 学習AIチャット</title>
-
-<link rel="stylesheet" href="../assets/css/common.css">
-<link rel="stylesheet" href="../assets/css/student.css">
-
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>学習履歴｜学習AIチャット</title>
+  <link rel="stylesheet" href="../assets/css/common.css">
+  <link rel="stylesheet" href="../assets/css/student.css">
 </head>
-
-<body>
-
-<div class="app">
-
-<aside class="sidebar">
-
-<div class="sidebar-header">
-<strong>学習AIチャット</strong>
-</div>
-
-<nav>
-
-<a class="nav-link" href="index.html">ホーム</a>
-<a class="nav-link" href="question.html">AI学習チャット</a>
-<a class="nav-link" href="history.html">学習履歴</a>
-<a class="nav-link" href="announcements.html">お知らせ</a>
-<a class="nav-link" href="settings.html">設定</a>
-
-</nav>
-
-<button class="logout-button" data-logout>
-ログアウト
-</button>
-
-</aside>
-
-<main class="main-content">
-
-<header class="topbar">
-<button class="sidebar-toggle">☰</button>
-<div>
-<strong>学習履歴</strong>
-<small>学習AIチャット</small>
-</div>
-</header>
-
-<section class="page">
-
-<h1>学習履歴</h1>
-
-<div id="history-list">
-読み込み中...
-</div>
-
-</section>
-
-</main>
-
-</div>
-
-<script type="module">
-
-import {
-  auth,
-  db,
-  collection,
-  query,
-  where,
-  orderBy,
-  limit,
-  getDocs,
-  signOut
-} from "../assets/js/firebase.js";
-
-import { protectPage }
-from "../assets/js/auth.js";
-
-import {
-  setupSidebar,
-  setupLogout
-} from "../assets/js/layout.js";
-
-setupSidebar();
-setupLogout(auth, signOut);
-
-const result =
-  await protectPage("student");
-
-const list =
-  document.getElementById("history-list");
-
-try {
-
-  const q =
-    query(
-      collection(db, "chatHistories"),
-      where(
-        "userId",
-        "==",
-        result.user.uid
-      ),
-      orderBy(
-        "createdAt",
-        "desc"
-      ),
-      limit(50)
-    );
-
-  const snap =
-    await getDocs(q);
-
-  list.innerHTML = "";
-
-  if (snap.empty) {
-
-    list.textContent =
-      "まだ学習履歴はありません。";
-
-  } else {
-
-    snap.forEach((item) => {
-
-      const data = item.data();
-
-      const card =
-        document.createElement("article");
-
-      card.className = "history-card";
-
-      card.innerHTML = `
-        <div class="history-meta">
-          ${data.subject || "学習"}
-        </div>
-        <h2></h2>
-        <p></p>
-      `;
-
-      card.querySelector("h2")
-        .textContent = data.question || "";
-
-      card.querySelector("p")
-        .textContent = data.answer || "";
-
-      list.appendChild(card);
-
-    });
-
-  }
-
-} catch (error) {
-
-  console.error(error);
-
-  list.textContent =
-    "履歴を取得できませんでした。";
-
-}
-
-</script>
-
+<body data-role="student" data-page="history">
+  <div id="app">
+    <main class="page-content">画面を読み込んでいます。</main>
+  </div>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="../assets/js/paths.js"></script>
+  <script src="../assets/js/firebase.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/layout.js"></script>
+  <script src="../assets/js/page.js"></script>
 </body>
 </html>
