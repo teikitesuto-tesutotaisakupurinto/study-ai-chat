@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>管理ダッシュボード | 学習AIチャット</title>
+
+<link rel="stylesheet" href="../assets/css/common.css">
+<link rel="stylesheet" href="../assets/css/admin.css">
+
+</head>
+
+<body>
+
+<div class="app">
+
+<aside class="sidebar admin-sidebar">
+
+<div class="sidebar-header">
+<strong>学習AIチャット</strong>
+<small>運営管理コンソール</small>
+</div>
+
+<nav>
+
+<a class="nav-link" href="index.html">
+ダッシュボード
+</a>
+
+<a class="nav-link" href="users.html">
+利用者管理
+</a>
+
+<a class="nav-link" href="announcements.html">
+お知らせ管理
+</a>
+
+<a class="nav-link" href="maintenance.html">
+メンテナンス
+</a>
+
+<a class="nav-link" href="ai-settings.html">
+AI設定
+</a>
+
+<a class="nav-link" href="logs.html">
+監査ログ
+</a>
+
+<a class="nav-link" href="system.html">
+システム状態
+</a>
+
+<a class="nav-link" href="settings.html">
+管理者設定
+</a>
+
+</nav>
+
+<button class="logout-button" data-logout>
+ログアウト
+</button>
+
+</aside>
+
+<main class="main-content">
+
+<header class="topbar">
+
+<button class="sidebar-toggle">
+☰
+</button>
+
+<div>
+<strong>運営管理コンソール</strong>
+<small>
+学習AIチャット
+</small>
+</div>
+
+</header>
+
+<section class="page">
+
+<h1>ダッシュボード</h1>
+
+<div class="dashboard-grid">
+
+<div class="admin-card">
+<span>サービス</span>
+<strong>学習AIチャット</strong>
+</div>
+
+<div class="admin-card">
+<span>AI接続</span>
+<strong id="ai-status">確認中</strong>
+</div>
+
+<div class="admin-card">
+<span>メンテナンス</span>
+<strong id="maintenance-status">
+確認中
+</strong>
+</div>
+
+</div>
+
+</section>
+
+</main>
+
+</div>
+
+<script type="module">
+
+import {
+  auth,
+  db,
+  doc,
+  getDoc,
+  signOut
+} from "../assets/js/firebase.js";
+
+import {
+  protectPage
+} from "../assets/js/auth.js";
+
+import {
+  setupSidebar,
+  setupLogout
+} from "../assets/js/layout.js";
+
+setupSidebar();
+setupLogout(auth, signOut);
+
+await protectPage("admin");
+
+const maintenance =
+  await getDoc(
+    doc(
+      db,
+      "systemStatus",
+      "main"
+    )
+  );
+
+document.getElementById(
+  "maintenance-status"
+).textContent =
+  maintenance.exists() &&
+  maintenance.data().maintenance
+    ? "メンテナンス中"
+    : "通常稼働";
+
+document.getElementById(
+  "ai-status"
+).textContent =
+  "Supabase / Groq";
+
+</script>
+
+</body>
+</html>
