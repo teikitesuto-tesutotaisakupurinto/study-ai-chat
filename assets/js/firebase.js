@@ -16,7 +16,8 @@ import {
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  createUserWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
 import {
@@ -60,6 +61,8 @@ export const persistenceReady = setPersistence(
 );
 
 export {
+  getApps,
+  getApp,
   GoogleAuthProvider,
   onAuthStateChanged,
   signOut,
@@ -68,6 +71,7 @@ export {
   signInWithRedirect,
   getRedirectResult,
   sendPasswordResetEmail,
+  createUserWithEmailAndPassword,
   doc,
   collection,
   getDoc,
