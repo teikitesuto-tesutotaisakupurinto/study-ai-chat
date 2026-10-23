@@ -1,283 +1,260 @@
+import {
+  auth,
+  db,
+  persistenceReady,
+  onAuthStateChanged,
+  signOut,
+  doc,
+  getDoc
+} from "./firebase.js";
 
-/* assets/js/auth.js */
-(function () {
-  "use strict";
+function rootPath(file) {
+  const path = location.pathname;
 
-  let currentUser = null;
-  let currentProfile = null;
-  let authReady = false;
-  let resolveReady;
+  const nested =
+    path.includes("/student/") ||
+    path.includes("/admin/");
 
-  let authEventVersion = 0;
+  return nested ? `../${file}` : `./${file}`;
+}
 
-  const ready = new Promise(function (resolve) {
-    resolveReady = resolve;
+export async function getSystemSettings() {
+  const snapshot = await getDoc(
+    doc(db, "settings", "system")
+  );
+
+  if (!snapshot.exists()) {
+    throw new Error(
+      "Firestore に settings/system がありません。必要なシステム設定を作成してください。"
+    );
+  }
+
+  return snapshot.data();
+}
+
+export async function getCurrentProfile(user) {
+  if (!user?.uid) {
+    throw new Error("ログイン中の利用者を確認できません。");
+  }
+
+  const snapshot = await getDoc(
+    doc(db, "users", user.uid)
+  );
+
+  if (!snapshot.exists()) {
+    throw new Error(
+      `ユーザープロフィールがありません。users/${user.uid} を確認してください。`
+    );
+  }
+
+  return snapshot.data();
+}
+
+export function waitForAuth() {
+  return new Promise((resolve, reject) => {
+    let unsubscribe = null;
+    let finished = false;
+
+    function cleanup() {
+      if (unsubscribe) {
+        unsubscribe();
+        unsubscribe = null;
+      }
+    }
+
+    unsubscribe = onAuthStateChanged(
+      auth,
+      (user) => {
+        if (finished) return;
+
+        finished = true;
+        cleanup();
+        resolve(user);
+      },
+      (error) => {
+        if (finished) return;
+
+        finished = true;
+        cleanup();
+        reject(error);
+      }
+    );
   });
+}
 
-  function getPaths() {
-    return window.AppPaths || {};
+function showAccessError(title, message, detail = "") {
+  document.documentElement.classList.remove("auth-pending");
+
+  document.body.replaceChildren();
+
+  const main = document.createElement("main");
+  main.className = "auth-error";
+
+  const heading = document.createElement("h1");
+  heading.textContent = title;
+
+  const description = document.createElement("p");
+  description.textContent = message;
+
+  main.append(heading, description);
+
+  if (detail) {
+    const pre = document.createElement("pre");
+    pre.textContent = detail;
+    main.append(pre);
   }
 
-  function getPath() {
-    return window.location.pathname;
-  }
+  const retry = document.createElement("button");
+  retry.type = "button";
+  retry.textContent = "再読み込み";
+  retry.addEventListener("click", () => location.reload());
 
-  function isPage(name) {
-    return new RegExp("/" + name.replace(".", "\\.") + "$").test(getPath());
-  }
+  main.append(retry);
 
-  function isLoginPage() {
-    return isPage("login.html");
-  }
+  const loginLink = document.createElement("a");
+  loginLink.href = rootPath("login.html");
+  loginLink.className = "button";
+  loginLink.textContent = "ログイン画面へ";
 
-  function isResetPage() {
-    return isPage("reset.html");
-  }
+  main.append(loginLink);
+  document.body.append(main);
+}
 
-  function isForbiddenPage() {
-    return isPage("403.html");
-  }
+function errorDetails(error) {
+  return `${error?.code || "error"}: ${
+    error?.message || String(error)
+  }`;
+}
 
-  function is404Page() {
-    return isPage("404.html");
-  }
+export async function requireRole(requiredRole, options = {}) {
+  document.documentElement.classList.add("auth-pending");
 
-  function isPublicPage() {
-    return isLoginPage() ||
-      isResetPage() ||
-      isForbiddenPage() ||
-      is404Page();
-  }
-
-  function isAdminPage() {
-    return getPath().includes("/admin/");
-  }
-
-  function isStudentPage() {
-    return getPath().includes("/student/");
-  }
-
-  function forbiddenUrl() {
-    const paths = getPaths();
-    return paths.forbidden || "./403.html";
-  }
-
-  function loginUrl() {
-    const paths = getPaths();
-    return paths.login || "./login.html";
-  }
-
-  function redirectTo(url) {
-    if (!url) {
-      console.error("リダイレクト先URLが定義されていません。");
-      return;
-    }
-
-    const target = new URL(url, window.location.href);
-
-    if (target.origin !== window.location.origin) {
-      console.error("不正なリダイレクト先を拒否しました。");
-      return;
-    }
-
-    if (target.href !== window.location.href) {
-      window.location.replace(target.href);
-    }
-  }
-
-  async function loadProfile(user) {
-    if (!window.db || !user) return null;
-
-    const snapshot = await window.db
-      .collection("users")
-      .doc(user.uid)
-      .get();
-
-    if (!snapshot.exists) return null;
-
-    return snapshot.data();
-  }
-
-  function destinationFor(profile) {
-    const paths = getPaths();
-
-    if (!profile || profile.status !== "active") {
-      return forbiddenUrl();
-    }
-
-    if (profile.role === "admin") {
-      return paths.adminHome || paths.url?.("admin/index.html") ||
-        "./admin/index.html";
-    }
-
-    if (profile.role === "student") {
-      return paths.studentHome || paths.url?.("student/index.html") ||
-        "./student/index.html";
-    }
-
-    return forbiddenUrl();
-  }
-
-  function isValidProfile(profile) {
-    return Boolean(
-      profile &&
-      profile.status === "active" &&
-      ["admin", "student"].includes(profile.role)
+  if (!["student", "admin"].includes(requiredRole)) {
+    showAccessError(
+      "ページ設定エラー",
+      "必要な権限の設定が正しくありません。",
+      `requiredRole: ${String(requiredRole)}`
     );
+
+    return null;
   }
 
-  function settleReady() {
-    if (authReady) return;
+  try {
+    await persistenceReady;
 
-    authReady = true;
-    resolveReady();
-  }
+    const user = await waitForAuth();
 
-  function getState() {
-    return {
-      user: currentUser,
-      profile: currentProfile,
-      isReady: authReady
-    };
-  }
-
-  window.authState = {
-    get user() {
-      return currentUser;
-    },
-    get profile() {
-      return currentProfile;
-    },
-    get ready() {
-      return ready;
-    },
-    get isReady() {
-      return authReady;
-    }
-  };
-
-  /*
-   * 既存ページとの互換性を維持する。
-   * 戻り値は boolean。
-   */
-  window.requireAuth = async function (requiredRole) {
-    await ready;
-
-    if (!currentUser) {
-      redirectTo(loginUrl());
-      return false;
-    }
-
-    if (!isValidProfile(currentProfile)) {
-      redirectTo(forbiddenUrl());
-      return false;
-    }
-
-    if (requiredRole && currentProfile.role !== requiredRole) {
-      redirectTo(destinationFor(currentProfile));
-      return false;
-    }
-
-    return true;
-  };
-
-  window.getCurrentProfile = async function () {
-    await ready;
-    return currentProfile;
-  };
-
-  window.getCurrentUser = async function () {
-    await ready;
-    return currentUser;
-  };
-
-  /*
-   * ページ起動側が boolean の戻り値とプロフィールを
-   * 別々に取得できるようにする。
-   */
-  window.getAuthState = async function () {
-    await ready;
-    return getState();
-  };
-
-  if (!window.auth) {
-    console.error(
-      "Firebase Authenticationが初期化されていません。firebase.jsを確認してください。"
-    );
-    settleReady();
-    return;
-  }
-
-  window.auth.onAuthStateChanged(async function (user) {
-    const thisVersion = ++authEventVersion;
-
-    currentUser = user || null;
-    currentProfile = null;
-
-    if (user) {
-      try {
-        currentProfile = await loadProfile(user);
-      } catch (error) {
-        console.error("ユーザープロフィールの取得に失敗:", error);
-        currentProfile = null;
-      }
-    }
-
-    /*
-     * 古い非同期プロフィール取得が後から完了しても、
-     * 新しい認証状態を上書きしない。
-     */
-    if (thisVersion !== authEventVersion) return;
-
-    settleReady();
-
-    /*
-     * 公開ページでは自動リダイレクトしない。
-     * とくにreset.htmlは未ログインでも利用可能。
-     */
-    if (isPublicPage()) {
-      /*
-       * ログイン画面では、有効なプロフィールが確認できた場合のみ
-       * 対応する画面へ移動する。プロフィール未登録ならログイン画面に
-       * とどまり、登録状態を確認できるようにする。
-       */
-      if (
-        isLoginPage() &&
-        user &&
-        isValidProfile(currentProfile)
-      ) {
-        redirectTo(destinationFor(currentProfile));
-      }
-
-      return;
-    }
-
-    /*
-     * 保護対象ページでは未ログイン時のみログインへ誘導する。
-     */
     if (!user) {
-      redirectTo(loginUrl());
-      return;
+      location.replace(rootPath("login.html"));
+      return null;
     }
 
-    /*
-     * 未登録または停止アカウントは403へ。
-     */
-    if (!isValidProfile(currentProfile)) {
-      redirectTo(forbiddenUrl());
-      return;
+    let profile;
+
+    try {
+      profile = await getCurrentProfile(user);
+    } catch (error) {
+      showAccessError(
+        error?.code === "permission-denied"
+          ? "403 Forbidden"
+          : "ユーザー情報エラー",
+        "ユーザープロフィールを確認できませんでした。Firestoreのルールとユーザー情報を確認してください。",
+        errorDetails(error)
+      );
+
+      return null;
     }
 
-    /*
-     * 管理者と生徒の領域を分離する。
-     */
-    if (isAdminPage() && currentProfile.role !== "admin") {
-      redirectTo(destinationFor(currentProfile));
-      return;
+    if (profile.status !== "active") {
+      await signOut(auth);
+
+      showAccessError(
+        "アカウント利用不可",
+        "このアカウントは無効化されています。管理者にお問い合わせください。"
+      );
+
+      return null;
     }
 
-    if (isStudentPage() && currentProfile.role !== "student") {
-      redirectTo(destinationFor(currentProfile));
+    if (!["student", "admin"].includes(profile.role)) {
+      showAccessError(
+        "403 Forbidden",
+        "アカウントの権限が設定されていないか、不正です。",
+        `role: ${String(profile.role)}`
+      );
+
+      return null;
     }
-  });
-})();
+
+    if (profile.role !== requiredRole) {
+      showAccessError(
+        "403 Forbidden",
+        "このページを開く権限がありません。",
+        `必要な権限: ${requiredRole}\n現在の権限: ${profile.role}`
+      );
+
+      return null;
+    }
+
+    let settings;
+
+    try {
+      settings = await getSystemSettings();
+    } catch (error) {
+      showAccessError(
+        "システム設定エラー",
+        "システム設定を取得できません。Firestoreのsettings/systemとセキュリティルールを確認してください。",
+        errorDetails(error)
+      );
+
+      return null;
+    }
+
+    if (
+      settings.maintenance === true &&
+      requiredRole === "student" &&
+      options.allowMaintenance !== true
+    ) {
+      location.replace(rootPath("maintenance.html"));
+      return null;
+    }
+
+    document.documentElement.classList.remove("auth-pending");
+
+    return {
+      user,
+      profile,
+      data: profile,
+      settings
+    };
+  } catch (error) {
+    console.error("認証・権限チェックエラー:", error);
+
+    showAccessError(
+      error?.code === "permission-denied"
+        ? "403 Forbidden"
+        : "認証・権限の確認に失敗しました",
+      "安全にページを開けませんでした。以下のエラー内容を確認してください。",
+      errorDetails(error)
+    );
+
+    return null;
+  }
+}
+
+export async function protectPage(requiredRole, options = {}) {
+  const result = await requireRole(requiredRole, options);
+
+  if (!result) {
+    throw new Error(
+      "権限確認に失敗したため、ページの初期化を中止しました。"
+    );
+  }
+
+  return result;
+}
+
+export {
+  auth,
+  db
+};
