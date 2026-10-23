@@ -1,3 +1,4 @@
+
 import {
   auth,
   db,
@@ -9,82 +10,134 @@ import {
   updateDoc,
   query,
   orderBy,
-  limit,
   serverTimestamp
 } from "./firebase.js";
 
 import { protectPage } from "./auth.js";
-import {
-  setupSidebar,
-  setupLogout
-} from "./layout.js";
+import { setupSidebar, setupLogout } from "./layout.js";
 
 const AI_ENDPOINT =
   "https://fjqobjcvejhkevyfsoxt.supabase.co/functions/v1/study-chat";
 
+const SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_j6QpWj-1v86qkWHmXM8F3Q_Ieipaa3q";
+
 const ALLOWED_SUBJECTS = [
-  "国語",
-  "数学",
-  "英語",
-  "理科",
-  "社会",
-  "音楽",
-  "美術",
-  "保健体育",
-  "技術家庭"
+  "国語", "数学", "英語", "理科", "社会",
+  "音楽", "美術", "保健体育", "技術家庭"
 ];
+
+const NON_STUDY_RESPONSE =
+  "このAIは学習専用です。学習以外の質問はできません。";
 
 const $ = (id) => document.getElementById(id);
 
-const conversationElement = $("conversation");
-const welcomeElement = $("welcomeMessage");
-const formElement = $("questionForm");
-const inputElement = $("questionInput");
-const subjectElement = $("subjectSelect");
+const conversation = $("conversation");
+const welcomeMessage = $("welcomeMessage");
+const questionForm = $("questionForm");
+const questionInput = $("questionInput");
+const subjectSelect = $("subjectSelect");
 const sendButton = $("sendButton");
-const statusElement = $("statusMessage");
 const newChatButton = $("newChatButton");
+const statusMessage = $("statusMessage");
 
 let currentUser = null;
 let currentProfile = null;
-let conversationId = null;
+let currentConversationId = null;
 let turns = [];
 let sending = false;
-
-const requestedConversationId =
-  new URLSearchParams(location.search).get("conversationId");
-
-function createId() {
-  if (typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
-}
+let typingElement = null;
+let initializationStarted = false;
 
 function showStatus(message = "", type = "error") {
-  statusElement.textContent = message;
-  statusElement.dataset.type = type;
-  statusElement.hidden = !message;
+  if (!statusMessage) return;
+
+  statusMessage.textContent = message;
+  statusMessage.dataset.type = type;
+  statusMessage.hidden = !message;
 }
 
 function setSending(value) {
   sending = value;
-  inputElement.disabled = value;
-  subjectElement.disabled = value;
-  sendButton.disabled = value;
-  newChatButton.disabled = value;
 
-  sendButton.textContent = value
-    ? "回答中..."
-    : "質問する";
+  if (sendButton) {
+    sendButton.disabled = value;
+    sendButton.textContent = value ? "回答を生成中..." : "質問する";
+  }
+
+  if (newChatButton) {
+    newChatButton.disabled = value;
+  }
+
+  if (questionInput) {
+    questionInput.disabled = value;
+  }
+
+  if (subjectSelect) {
+    subjectSelect.disabled = value;
+  }
 }
 
-function setWelcomeVisible(visible) {
-  welcomeElement.hidden = !visible;
+function showWelcome() {
+  if (!conversation || !welcomeMessage) return;
+
+  conversation.replaceChildren(welcomeMessage);
+  welcomeMessage.hidden = false;
 }
 
-function updateUrl() {
+function createMessageElement(role, text, options = {}) {
+  const article = document.createElement("article");
+  article.className = `message ${role}`;
+
+  if (options.error) {
+    article.classList.add("error");
+  }
+
+  const label = document.createElement("span");
+  label.className = "message-role";
+  label.textContent =
+    role === "user" ? "あなた" :
+    role === "assistant" ? "学習AI" : "システム";
+
+  const content = document.createElement("div");
+  content.className = "message-content";
+  content.textContent = text;
+
+  article.append(label, content);
+  return article;
+}
+
+function renderMessage(role, text, options = {}) {
+  if (!conversation) return;
+
+  if (welcomeMessage && !welcomeMessage.hidden) {
+    welcomeMessage.hidden = true;
+  }
+
+  const element = createMessageElement(role, text, options);
+  conversation.append(element);
+  element.scrollIntoView({ block: "nearest", behavior: "auto" });
+
+  return element;
+}
+
+function showTyping() {
+  hideTyping();
+
+  typingElement = document.createElement("div");
+  typingElement.className = "typing";
+  typingElement.textContent = "学習AIが回答を作成しています...";
+
+  conversation.append(typingElement);
+  typingElement.scrollIntoView({ block: "nearest", behavior: "auto" });
+}
+
+function hideTyping() {
+  typingElement?.remove();
+  typingElement = null;
+}
+
+function updateAddressForConversation(conversationId) {
   const url = new URL(location.href);
 
   if (conversationId) {
@@ -93,392 +146,320 @@ function updateUrl() {
     url.searchParams.delete("conversationId");
   }
 
-  history.replaceState({}, "", url);
+  history.replaceState(null, "", url.pathname + url.search + url.hash);
 }
 
-function getConversationRef(id = conversationId) {
+function normalizeTurn(data) {
+  return {
+    questionId: data.questionId || "",
+    answerId: data.answerId || "",
+    subject: data.subject || "数学",
+    question: typeof data.question === "string" ? data.question : "",
+    answer: typeof data.answer === "string" ? data.answer : "",
+    status: data.status || "completed",
+    createdAt: data.createdAt || null
+  };
+}
+
+function makeConversationTitle(question) {
+  const compact = question.replace(/\s+/g, " ").trim();
+  return compact.length > 40
+    ? `${compact.slice(0, 40)}…`
+    : compact || "新しい会話";
+}
+
+function conversationRef(id) {
   return doc(db, "chatHistories", id);
 }
 
-function getTurnsRef(id = conversationId) {
+function turnsCollectionRef(id) {
   return collection(db, "chatHistories", id, "turns");
 }
 
-function getTurnRef(questionId, id = conversationId) {
-  return doc(db, "chatHistories", id, "turns", questionId);
-}
-
-function createMessageElement(turn, role, content) {
-  const wrapper = document.createElement("article");
-
-  wrapper.className = `message ${role}`;
-  wrapper.dataset.questionId = turn.questionId;
-  wrapper.dataset.messageRole = role;
-
-  const roleLabel = document.createElement("div");
-  roleLabel.className = "message-role";
-  roleLabel.textContent =
-    role === "user" ? "あなた" : "学習AI";
-
-  const body = document.createElement("div");
-  body.className = "message-content";
-  body.textContent = content || "";
-
-  wrapper.append(roleLabel, body);
-
-  if (role === "assistant") {
-    const meta = document.createElement("div");
-    meta.className = "message-meta";
-
-    meta.textContent = turn.answerId
-      ? `質問ID：${turn.questionId} ／ 回答ID：${turn.answerId}`
-      : `質問ID：${turn.questionId}`;
-
-    wrapper.append(meta);
-  }
-
-  return wrapper;
-}
-
-function renderTurn(turn) {
-  setWelcomeVisible(false);
-
-  conversationElement.append(
-    createMessageElement(turn, "user", turn.question)
-  );
-
-  const answer = turn.answer || (
-    turn.status === "error"
-      ? "回答を取得できませんでした。質問を再送信してください。"
-      : "回答を作成しています..."
-  );
-
-  const assistantMessage =
-    createMessageElement(turn, "assistant", answer);
-
-  if (turn.status === "error") {
-    assistantMessage.classList.add("error");
-  }
-
-  conversationElement.append(assistantMessage);
-  assistantMessage.scrollIntoView({
-    behavior: "smooth",
-    block: "nearest"
-  });
-}
-
-function renderAllTurns() {
-  conversationElement.replaceChildren();
-
-  conversationElement.append(welcomeElement);
-  setWelcomeVisible(turns.length === 0);
-
-  for (const turn of turns) {
-    renderTurn(turn);
-  }
-}
-
-function updateRenderedTurn(turn) {
-  const existing = conversationElement.querySelectorAll(
-    `[data-question-id="${CSS.escape(turn.questionId)}"]`
-  );
-
-  existing.forEach((element) => element.remove());
-
-  const temporaryWelcome = welcomeElement.hidden;
-
-  const userMessage =
-    createMessageElement(turn, "user", turn.question);
-
-  const answer = turn.answer || (
-    turn.status === "error"
-      ? "回答を取得できませんでした。もう一度お試しください。"
-      : "回答を作成しています..."
-  );
-
-  const assistantMessage =
-    createMessageElement(turn, "assistant", answer);
-
-  if (turn.status === "error") {
-    assistantMessage.classList.add("error");
-  }
-
-  conversationElement.append(userMessage, assistantMessage);
-  setWelcomeVisible(false);
-
-  assistantMessage.scrollIntoView({
-    behavior: "smooth",
-    block: "nearest"
-  });
-}
-
-async function createConversation(firstQuestion = "") {
+async function createConversation(question, subject) {
   const ref = doc(collection(db, "chatHistories"));
 
-  const newId = ref.id;
-
   await setDoc(ref, {
-    conversationId: newId,
     userId: currentUser.uid,
-    title: firstQuestion.slice(0, 80) || "新しい会話",
-    lastQuestion: firstQuestion,
+    conversationId: ref.id,
+    title: makeConversationTitle(question),
+    subject,
+    lastQuestion: question,
     lastAnswer: "",
     turnCount: 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   });
 
-  conversationId = newId;
-  turns = [];
-  updateUrl();
+  currentConversationId = ref.id;
+  updateAddressForConversation(ref.id);
 
-  return newId;
+  return ref.id;
 }
 
-async function verifyConversationOwnership(id) {
-  const snapshot = await getDoc(getConversationRef(id));
+async function ensureConversation(question, subject) {
+  if (!currentConversationId) {
+    return createConversation(question, subject);
+  }
+
+  const ref = conversationRef(currentConversationId);
+  const snapshot = await getDoc(ref);
 
   if (!snapshot.exists()) {
-    throw new Error("指定された会話履歴が見つかりません。");
+    throw new Error("この会話履歴は見つかりません。新しい質問を開始してください。");
   }
 
-  const data = snapshot.data();
-
-  if (data.userId !== currentUser.uid) {
-    throw new Error("この会話を開く権限がありません。");
+  if (snapshot.data().userId !== currentUser.uid) {
+    throw new Error("この会話履歴を開く権限がありません。");
   }
 
-  return data;
+  return currentConversationId;
 }
 
-async function loadConversation(id) {
-  const parentData = await verifyConversationOwnership(id);
+async function savePendingTurn(question, subject) {
+  const id = await ensureConversation(question, subject);
+  const turnRef = doc(turnsCollectionRef(id));
+  const answerId = doc(collection(db, "_generatedIds")).id;
 
-  conversationId = id;
-
-  const turnsQuery = query(
-    getTurnsRef(id),
-    orderBy("createdAt", "asc"),
-    limit(200)
-  );
-
-  const snapshot = await getDocs(turnsQuery);
-
-  turns = snapshot.docs.map((item) => {
-    const data = item.data();
-
-    return {
-      ...data,
-      questionId: data.questionId || item.id,
-      answerId: data.answerId || "",
-      question: data.question || "",
-      answer: data.answer || "",
-      status: data.status || "completed"
-    };
-  });
-
-  // 古い形式の履歴も、質問・回答配列がある場合は復元する。
-  if (
-    turns.length === 0 &&
-    Array.isArray(parentData.messages)
-  ) {
-    const legacyMessages = parentData.messages;
-    const converted = [];
-
-    for (let i = 0; i < legacyMessages.length; i++) {
-      const message = legacyMessages[i];
-
-      if (
-        message?.role !== "user" ||
-        typeof message.content !== "string"
-      ) {
-        continue;
-      }
-
-      const next = legacyMessages[i + 1];
-
-      if (
-        next?.role !== "assistant" ||
-        typeof next.content !== "string"
-      ) {
-        continue;
-      }
-
-      converted.push({
-        questionId: createId(),
-        answerId: createId(),
-        subject: parentData.subject || "指定なし",
-        question: message.content,
-        answer: next.content,
-        status: "completed",
-        legacy: true
-      });
-
-      i++;
-    }
-
-    turns = converted;
-  }
-
-  updateUrl();
-  renderAllTurns();
-
-  if (ALLOWED_SUBJECTS.includes(parentData.subject)) {
-    subjectElement.value = parentData.subject;
-  }
-
-  showStatus("", "success");
-}
-
-async function savePendingTurn(turn) {
-  const parentRef = getConversationRef();
-  const parentSnapshot = await getDoc(parentRef);
-
-  if (
-    !parentSnapshot.exists() ||
-    parentSnapshot.data().userId !== currentUser.uid
-  ) {
-    throw new Error("会話の保存先を確認できません。");
-  }
-
-  await setDoc(getTurnRef(turn.questionId), {
-    conversationId,
+  const turn = {
+    questionId: turnRef.id,
+    answerId,
+    conversationId: id,
     userId: currentUser.uid,
-    questionId: turn.questionId,
-    answerId: turn.answerId,
-    subject: turn.subject,
-    question: turn.question,
+    subject,
+    question,
     answer: "",
     status: "pending",
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
-  });
+  };
 
-  await updateDoc(parentRef, {
-    title: parentSnapshot.data().title === "新しい会話"
-      ? turn.question.slice(0, 80)
-      : parentSnapshot.data().title,
-    lastQuestion: turn.question,
-    updatedAt: serverTimestamp()
-  });
+  await setDoc(turnRef, turn);
+
+  return {
+    conversationId: id,
+    questionId: turnRef.id,
+    answerId
+  };
 }
 
-async function saveCompletedAnswer(turn) {
-  await updateDoc(getTurnRef(turn.questionId), {
-    answer: turn.answer,
+async function saveCompletedTurn(saved, question, subject, answer) {
+  const ref = doc(
+    db,
+    "chatHistories",
+    saved.conversationId,
+    "turns",
+    saved.questionId
+  );
+
+  await updateDoc(ref, {
+    answer,
     status: "completed",
     updatedAt: serverTimestamp()
   });
 
-  const parentRef = getConversationRef();
+  const parentRef = conversationRef(saved.conversationId);
   const parentSnapshot = await getDoc(parentRef);
 
-  if (
-    !parentSnapshot.exists() ||
-    parentSnapshot.data().userId !== currentUser.uid
-  ) {
-    throw new Error("会話履歴を更新する権限がありません。");
+  if (!parentSnapshot.exists()) {
+    throw new Error("会話履歴の親データが見つかりません。");
+  }
+
+  if (parentSnapshot.data().userId !== currentUser.uid) {
+    throw new Error("この会話履歴を更新する権限がありません。");
   }
 
   await updateDoc(parentRef, {
-    lastQuestion: turn.question,
-    lastAnswer: turn.answer.slice(0, 500),
+    title: parentSnapshot.data().title || makeConversationTitle(question),
+    subject,
+    lastQuestion: question,
+    lastAnswer: answer,
     turnCount: turns.length,
     updatedAt: serverTimestamp()
   });
 }
 
-async function saveFailedStatus(turn, message) {
+async function markTurnFailed(saved, errorMessage) {
+  if (!saved) return;
+
   try {
-    await updateDoc(getTurnRef(turn.questionId), {
+    const ref = doc(
+      db,
+      "chatHistories",
+      saved.conversationId,
+      "turns",
+      saved.questionId
+    );
+
+    await updateDoc(ref, {
+      answer: errorMessage,
       status: "error",
-      errorMessage: String(message).slice(0, 500),
+      updatedAt: serverTimestamp()
+    });
+
+    await updateDoc(conversationRef(saved.conversationId), {
+      lastQuestion: errorMessage,
       updatedAt: serverTimestamp()
     });
   } catch (error) {
-    console.error("失敗状態の保存エラー:", error);
+    console.error("失敗した質問の履歴更新エラー:", error);
   }
 }
 
-function buildAIHistory() {
-  return turns
-    .filter((turn) =>
-      turn.status === "completed" &&
-      turn.question &&
-      turn.answer
-    )
+async function loadConversation(id) {
+  showStatus("会話履歴を読み込んでいます...", "info");
+
+  const ref = conversationRef(id);
+  const snapshot = await getDoc(ref);
+
+  if (!snapshot.exists()) {
+    throw new Error("指定された会話履歴が見つかりません。");
+  }
+
+  const parent = snapshot.data();
+
+  if (parent.userId !== currentUser.uid) {
+    throw new Error("この会話履歴を開く権限がありません。");
+  }
+
+  const turnsQuery = query(
+    turnsCollectionRef(id),
+    orderBy("createdAt", "asc")
+  );
+
+  const turnsSnapshot = await getDocs(turnsQuery);
+
+  turns = turnsSnapshot.docs
+    .map((item) => normalizeTurn(item.data()))
+    .filter((turn) => turn.status === "completed" || turn.status === "error");
+
+  currentConversationId = id;
+  updateAddressForConversation(id);
+  showWelcome();
+
+  for (const turn of turns) {
+    if (ALLOWED_SUBJECTS.includes(turn.subject)) {
+      subjectSelect.value = turn.subject;
+    }
+
+    renderMessage("user", turn.question);
+
+    if (turn.answer) {
+      renderMessage(
+        "assistant",
+        turn.answer,
+        { error: turn.status === "error" }
+      );
+    }
+  }
+
+  if (turns.length === 0) {
+    showStatus("この会話には、まだ回答済みの質問がありません。", "info");
+  } else {
+    showStatus("");
+  }
+}
+
+async function callAI(question, subject) {
+  if (!currentUser) {
+    throw new Error("ログイン状態を確認できません。再読み込みしてください。");
+  }
+
+  const idToken = await currentUser.getIdToken();
+
+  const history = turns
+    .filter((turn) => turn.status === "completed")
     .slice(-12)
     .map((turn) => ({
       question: turn.question,
       answer: turn.answer
     }));
-}
 
-async function callAI(question, subject) {
-  const token = await currentUser.getIdToken();
-
-  const response = await fetch(AI_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
-    },
-    body: JSON.stringify({
-      subject,
-      question,
-      history: buildAIHistory(),
-      conversationId
-    })
-  });
-
-  const raw = await response.text();
-
-  let payload;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
 
   try {
-    payload = JSON.parse(raw);
-  } catch {
-    throw new Error(
-      `AIサーバーの応答を読み取れませんでした（HTTP ${response.status}）。`
-    );
-  }
+    const response = await fetch(AI_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_PUBLISHABLE_KEY,
+        "Authorization": `Bearer ${idToken}`
+      },
+      body: JSON.stringify({
+        subject,
+        question,
+        userId: currentUser.uid,
+        conversationId: currentConversationId,
+        history
+      }),
+      signal: controller.signal
+    });
 
-  if (!response.ok) {
-    throw new Error(
-      payload.error ||
-      `AIとの通信に失敗しました（HTTP ${response.status}）。`
-    );
-  }
+    const data = await response.json().catch(() => ({}));
 
-  if (
-    typeof payload.answer !== "string" ||
-    !payload.answer.trim()
-  ) {
-    throw new Error("AIから回答が返されませんでした。");
-  }
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+        data.message ||
+        `AIサーバーがエラーを返しました（HTTP ${response.status}）。`
+      );
+    }
 
-  return payload.answer.trim();
+    const answer =
+      data.answer ||
+      data.reply ||
+      data.message ||
+      data.output;
+
+    if (typeof answer !== "string" || !answer.trim()) {
+      throw new Error("AIサーバーから回答が返されませんでした。");
+    }
+
+    return answer.trim();
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error("AIの回答が60秒以内に返りませんでした。もう一度お試しください。");
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function looksLikeNonStudyRequest(question) {
+  // 学習専用という注意書きは表示するが、
+  // 単語検索だけで学習質問を誤判定しない。
+  const patterns = [
+    /^今日の天気/,
+    /^明日の天気/,
+    /^ニュースを教えて/,
+    /^おすすめの(映画|ドラマ|ゲーム|レストラン)/,
+    /^暇つぶし/
+  ];
+
+  return patterns.some((pattern) => pattern.test(question.trim()));
 }
 
 async function submitQuestion(event) {
   event.preventDefault();
 
-  if (sending || !currentUser) return;
-
-  const question = inputElement.value.trim();
-  const subject = subjectElement.value;
+  if (sending) return;
 
   showStatus("");
 
+  const question = questionInput.value.trim();
+  const subject = subjectSelect.value;
+
   if (!question) {
     showStatus("質問内容を入力してください。");
-    inputElement.focus();
+    questionInput.focus();
     return;
   }
 
-  if (question.length > 4000) {
-    showStatus("質問は4000文字以内で入力してください。");
-    inputElement.focus();
+  if (question.length > 5000) {
+    showStatus("質問は5000文字以内で入力してください。");
     return;
   }
 
@@ -489,84 +470,116 @@ async function submitQuestion(event) {
 
   setSending(true);
 
-  const turn = {
-    questionId: createId(),
-    answerId: createId(),
-    subject,
-    question,
-    answer: "",
-    status: "pending"
-  };
-
-  let questionSaved = false;
+  let saved = null;
+  let questionWasRendered = false;
 
   try {
-    if (!conversationId) {
-      await createConversation(question);
+    if (looksLikeNonStudyRequest(question)) {
+      const answer = NON_STUDY_RESPONSE;
+
+      renderMessage("user", question);
+      renderMessage("assistant", answer);
+
+      turns.push({
+        questionId: "",
+        answerId: "",
+        subject,
+        question,
+        answer,
+        status: "completed",
+        createdAt: null
+      });
+
+      questionInput.value = "";
+      showStatus("学習内容に関する質問を入力してください。", "info");
+      return;
     }
 
-    // AIを呼び出す前に質問を保存する。
-    await savePendingTurn(turn);
-    questionSaved = true;
+    // 質問を先に履歴に保存し、AI側でエラーが起きても質問を失わない。
+    saved = await savePendingTurn(question, subject);
 
-    turns.push(turn);
-    renderTurn(turn);
+    renderMessage("user", question);
+    questionWasRendered = true;
+    questionInput.value = "";
 
-    inputElement.value = "";
-    showStatus("AIが回答を作成しています...", "info");
+    showTyping();
 
     const answer = await callAI(question, subject);
 
-    turn.answer = answer;
-    turn.status = "completed";
+    hideTyping();
 
-    // 回答を保存できなければ、保存失敗として扱う。
-    await saveCompletedAnswer(turn);
+    await saveCompletedTurn(saved, question, subject, answer);
 
-    updateRenderedTurn(turn);
-    showStatus("回答と履歴を保存しました。", "success");
+    turns.push({
+      questionId: saved.questionId,
+      answerId: saved.answerId,
+      subject,
+      question,
+      answer,
+      status: "completed",
+      createdAt: null
+    });
+
+    renderMessage("assistant", answer);
+    showStatus("");
   } catch (error) {
+    hideTyping();
     console.error("質問処理エラー:", error);
 
     const message =
-      error?.message || "処理中にエラーが発生しました。";
+      error?.message || "質問の処理中に予期しないエラーが発生しました。";
 
-    if (questionSaved) {
-      turn.status = "error";
-      turn.answer = "";
+    if (saved) {
+      await markTurnFailed(saved, message);
 
-      updateRenderedTurn(turn);
-      await saveFailedStatus(turn, message);
+      turns.push({
+        questionId: saved.questionId,
+        answerId: saved.answerId,
+        subject,
+        question,
+        answer: message,
+        status: "error",
+        createdAt: null
+      });
     }
 
+    if (!questionWasRendered) {
+      renderMessage("user", question);
+      questionInput.value = "";
+    }
+
+    renderMessage("assistant", message, { error: true });
     showStatus(
-      `処理に失敗しました：${message}`,
+      "回答の取得または履歴の保存に失敗しました。エラー内容を確認してください。",
       "error"
     );
   } finally {
+    hideTyping();
     setSending(false);
-    inputElement.focus();
   }
 }
 
 async function startNewConversation() {
   if (sending) return;
 
-  conversationId = null;
+  currentConversationId = null;
   turns = [];
-  updateUrl();
 
-  conversationElement.replaceChildren();
-  conversationElement.append(welcomeElement);
+  updateAddressForConversation(null);
+  showWelcome();
+  showStatus("新しい会話を開始しました。", "success");
 
-  setWelcomeVisible(true);
-  inputElement.value = "";
-  showStatus("新しい会話を開始できます。", "success");
-  inputElement.focus();
+  questionInput.value = "";
+  questionInput.focus();
 }
 
 async function initializePage() {
+  if (initializationStarted) return;
+  initializationStarted = true;
+
   try {
+    // layout.js 側も requireRole() を呼び出すが、
+    // auth.js が同じ権限確認の Promise を共有する。
     const result = await protectPage("student");
 
     currentUser = result.user;
@@ -575,39 +588,51 @@ async function initializePage() {
     setupSidebar();
     setupLogout();
 
+    if (questionForm) {
+      questionForm.addEventListener("submit", submitQuestion);
+    }
+
+    if (newChatButton) {
+      newChatButton.addEventListener("click", startNewConversation);
+    }
+
+    if (questionInput) {
+      questionInput.addEventListener("keydown", (event) => {
+        if (
+          event.key === "Enter" &&
+          !event.shiftKey &&
+          !event.isComposing
+        ) {
+          event.preventDefault();
+          questionForm.requestSubmit();
+        }
+      });
+    }
+
+    const params = new URLSearchParams(location.search);
+    const requestedConversationId = params.get("conversationId");
+
     if (requestedConversationId) {
       await loadConversation(requestedConversationId);
     } else {
-      conversationId = null;
-      turns = [];
-      renderAllTurns();
+      showWelcome();
+      showStatus("");
     }
 
-    formElement.addEventListener("submit", submitQuestion);
-
-    newChatButton.addEventListener(
-      "click",
-      startNewConversation
-    );
-
-    inputElement.addEventListener("keydown", (event) => {
-      if (
-        event.key === "Enter" &&
-        !event.shiftKey &&
-        !event.isComposing
-      ) {
-        event.preventDefault();
-        formElement.requestSubmit();
-      }
-    });
+    document.documentElement.classList.remove("auth-pending");
   } catch (error) {
-    console.error("AI画面初期化エラー:", error);
+    console.error("質問画面の初期化エラー:", error);
 
-    showStatus(
-      error?.message ||
-      "AI画面を開けませんでした。ログイン状態とアクセス権限を確認してください。",
-      "error"
-    );
+    document.documentElement.classList.remove("auth-pending");
+
+    // auth.js が権限エラー画面を表示している場合は、
+    // 元の画面を上書きしない。
+    if (!document.querySelector(".auth-error")) {
+      showStatus(
+        `質問画面を初期化できませんでした。\n${error?.message || String(error)}`,
+        "error"
+      );
+    }
   }
 }
 
