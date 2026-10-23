@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+  <title>ログイン | 学習AIチャット</title>
+
+  <link rel="stylesheet" href="assets/css/common.css">
+</head>
+
+<body class="login-page">
+
+<div id="auth-screen">
+
+  <div class="login-card">
+
+    <div class="brand">
+      <h1>学習AIチャット</h1>
+      <p>Supported by 定期テスト対策プリント運営事務局</p>
+    </div>
+
+    <div id="error" class="error-message"></div>
+
+    <form id="login-form">
+
+      <label>
+        メールアドレス
+        <input
+          id="email"
+          type="email"
+          autocomplete="email"
+          required
+        >
+      </label>
+
+      <label>
+        パスワード
+        <input
+          id="password"
+          type="password"
+          autocomplete="current-password"
+          required
+        >
+      </label>
+
+      <button
+        id="email-login"
+        class="primary-button"
+        type="submit"
+      >
+        メールアドレスでログイン
+      </button>
+
+    </form>
+
+    <div class="divider">
+      <span>または</span>
+    </div>
+
+    <button
+      id="google-login"
+      class="google-button"
+      type="button"
+    >
+      <span class="google-icon">G</span>
+      Googleでログイン
+    </button>
+
+    <a
+      class="reset-link"
+      href="reset.html"
+    >
+      パスワードを忘れた場合
+    </a>
+
+    <p class="copyright">
+      © 2026 Regular Test Preparation Print Office. All Rights Reserved.
+    </p>
+
+  </div>
+
+</div>
+
+<script type="module">
+
+import {
+  auth,
+  db,
+  googleProvider,
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  doc,
+  getDoc
+} from "./assets/js/firebase.js";
+
+const form =
+  document.getElementById("login-form");
+
+const googleButton =
+  document.getElementById("google-login");
+
+const error =
+  document.getElementById("error");
+
+function showError(message) {
+  error.textContent = message;
+  error.classList.add("visible");
+}
+
+async function redirectByRole(user) {
+
+  const snap =
+    await getDoc(
+      doc(db, "users", user.uid)
+    );
+
+  if (!snap.exists()) {
+    location.replace("403.html");
+    return;
+  }
+
+  const data = snap.data();
+
+  if (data.status !== "active") {
+    await import("./assets/js/firebase.js")
+      .then(({ signOut }) => signOut(auth));
+
+    showError(
+      "このアカウントは現在利用できません。"
+    );
+
+    return;
+  }
+
+  if (data.role === "admin") {
+    location.replace("admin/index.html");
+    return;
+  }
+
+  if (data.role === "student") {
+    location.replace("student/index.html");
+    return;
+  }
+
+  location.replace("403.html");
+}
+
+onAuthStateChanged(auth, async (user) => {
+
+  if (!user) return;
+
+  try {
+    await redirectByRole(user);
+  } catch (e) {
+    console.error(e);
+    showError(
+      "アカウント情報を確認できませんでした。"
+    );
+  }
+
+});
+
+form.addEventListener("submit", async (event) => {
+
+  event.preventDefault();
+
+  error.classList.remove("visible");
+
+  const email =
+    document.getElementById("email").value.trim();
+
+  const password =
+    document.getElementById("password").value;
+
+  try {
+
+    await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+  } catch (e) {
+
+    console.error(e);
+
+    showError(
+      "メールアドレスまたはパスワードが正しくありません。"
+    );
+  }
+
+});
+
+googleButton.addEventListener("click", async () => {
+
+  error.classList.remove("visible");
+
+  try {
+
+    await signInWithPopup(
+      auth,
+      googleProvider
+    );
+
+  } catch (e) {
+
+    console.error(e);
+
+    showError(
+      "Googleログインに失敗しました。"
+    );
+  }
+
+});
+
+</script>
+
+</body>
+</html>
