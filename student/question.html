@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>AI学習チャット | 学習AIチャット</title>
+
+<link rel="stylesheet" href="../assets/css/common.css">
+<link rel="stylesheet" href="../assets/css/student.css">
+
+</head>
+
+<body>
+
+<div class="app">
+
+<aside class="sidebar">
+
+  <div class="sidebar-header">
+    <strong>学習AIチャット</strong>
+  </div>
+
+  <nav>
+
+    <a class="nav-link" href="index.html">
+      <span>⌂</span>
+      <span>ホーム</span>
+    </a>
+
+    <a class="nav-link" href="question.html">
+      <span>▣</span>
+      <span>AI学習チャット</span>
+    </a>
+
+    <a class="nav-link" href="history.html">
+      <span>◷</span>
+      <span>学習履歴</span>
+    </a>
+
+    <a class="nav-link" href="announcements.html">
+      <span>▣</span>
+      <span>お知らせ</span>
+    </a>
+
+    <a class="nav-link" href="settings.html">
+      <span>⚙</span>
+      <span>設定</span>
+    </a>
+
+  </nav>
+
+  <button
+    class="logout-button"
+    data-logout
+  >
+    ログアウト
+  </button>
+
+</aside>
+
+<main class="main-content">
+
+<header class="topbar">
+
+<button
+  class="sidebar-toggle"
+>
+  ☰
+</button>
+
+<div>
+<strong>AI学習チャット</strong>
+<small>
+Supported by 定期テスト対策プリント運営事務局
+</small>
+</div>
+
+</header>
+
+<section class="chat-page">
+
+<div class="chat-settings">
+
+<select id="grade">
+<option value="中学1年生">中学1年生</option>
+<option value="中学2年生" selected>中学2年生</option>
+<option value="中学3年生">中学3年生</option>
+</select>
+
+<select id="subject">
+<option>国語</option>
+<option selected>数学</option>
+<option>英語</option>
+<option>理科</option>
+<option>社会</option>
+<option>音楽</option>
+<option>美術</option>
+<option>保健体育</option>
+<option>技術・家庭</option>
+</select>
+
+</div>
+
+<div
+  id="chat"
+  class="chat-container"
+></div>
+
+<form id="chat-form" class="chat-form">
+
+<textarea
+  id="message"
+  placeholder="学習について質問してください。"
+  maxlength="4000"
+  required
+></textarea>
+
+<button
+  id="send"
+  type="submit"
+>
+送信
+</button>
+
+</form>
+
+</section>
+
+</main>
+
+</div>
+
+<script type="module">
+
+import {
+  auth,
+  db,
+  collection,
+  addDoc,
+  serverTimestamp,
+  signOut
+} from "../assets/js/firebase.js";
+
+import {
+  protectPage
+} from "../assets/js/auth.js";
+
+import {
+  setupSidebar,
+  setupLogout
+} from "../assets/js/layout.js";
+
+import {
+  askAI
+} from "../assets/js/ai.js";
+
+setupSidebar();
+setupLogout(auth, signOut);
+
+const result =
+  await protectPage("student");
+
+const form =
+  document.getElementById("chat-form");
+
+const messageInput =
+  document.getElementById("message");
+
+const chat =
+  document.getElementById("chat");
+
+const send =
+  document.getElementById("send");
+
+const history = [];
+
+function addMessage(role, text) {
+
+  const div =
+    document.createElement("div");
+
+  div.className =
+    `chat-message ${role}`;
+
+  div.textContent = text;
+
+  chat.appendChild(div);
+
+  chat.scrollTop =
+    chat.scrollHeight;
+}
+
+form.addEventListener("submit", async (event) => {
+
+  event.preventDefault();
+
+  const message =
+    messageInput.value.trim();
+
+  if (!message) return;
+
+  const grade =
+    document.getElementById("grade").value;
+
+  const subject =
+    document.getElementById("subject").value;
+
+  addMessage("user", message);
+
+  history.push({
+    role: "user",
+    content: message
+  });
+
+  messageInput.value = "";
+
+  send.disabled = true;
+  send.textContent = "回答中...";
+
+  try {
+
+    const reply =
+      await askAI({
+        message,
+        grade,
+        subject,
+        history: history.slice(-10)
+      });
+
+    addMessage("assistant", reply);
+
+    history.push({
+      role: "assistant",
+      content: reply
+    });
+
+    await addDoc(
+      collection(
+        db,
+        "chatHistories"
+      ),
+      {
+        userId: result.user.uid,
+        question: message,
+        answer: reply,
+        grade,
+        subject,
+        createdAt: serverTimestamp()
+      }
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    addMessage(
+      "error",
+      error.message ||
+      "AIへの接続に失敗しました。"
+    );
+
+  } finally {
+
+    send.disabled = false;
+    send.textContent = "送信";
+
+  }
+
+});
+
+</script>
+
+</body>
+</html>
