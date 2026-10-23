@@ -1,4 +1,3 @@
-
 import {
   initializeApp,
   getApps,
@@ -10,7 +9,6 @@ import {
   setPersistence,
   browserLocalPersistence,
   GoogleAuthProvider,
-  onAuthStateChanged,
   signOut,
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -38,8 +36,12 @@ import {
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
+/*
+ * Firebase設定はこのファイルだけで管理する。
+ * login.htmlなどに同じ設定を書かない。
+ */
 const firebaseConfig = {
-  apiKey: "AIzaSyByt8kGALyS8AU8SR6P8zWFEPXfgHY5iynk",
+  apiKey: "AIzaSyByt8kGALyS8AU8SR6PzWFEPXfgHY5iynk",
   authDomain: "studychat-1b39d.firebaseapp.com",
   projectId: "studychat-1b39d",
   storageBucket: "studychat-1b39d.firebasestorage.app",
@@ -52,19 +54,30 @@ export const app = getApps().length
   : initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
+
 export const db = getFirestore(app);
-export const googleProvider = new GoogleAuthProvider();
 
-export const persistenceReady = setPersistence(
-  auth,
-  browserLocalPersistence
-);
+export const googleProvider =
+  new GoogleAuthProvider();
 
+/*
+ * ログイン状態をブラウザに保持する。
+ */
+export const persistenceReady =
+  setPersistence(
+    auth,
+    browserLocalPersistence
+  );
+
+/*
+ * 必要なFirebase機能をexport
+ */
 export {
   getApps,
   getApp,
+
   GoogleAuthProvider,
-  onAuthStateChanged,
+
   signOut,
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -72,6 +85,7 @@ export {
   getRedirectResult,
   sendPasswordResetEmail,
   createUserWithEmailAndPassword,
+
   doc,
   collection,
   getDoc,
