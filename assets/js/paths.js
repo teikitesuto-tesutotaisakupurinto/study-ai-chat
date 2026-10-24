@@ -8,6 +8,7 @@
 
   for (const folder of knownFolders) {
     const position = pathname.indexOf(folder);
+
     if (position >= 0) {
       basePath = pathname.slice(0, position);
       break;
@@ -15,7 +16,10 @@
   }
 
   if (!basePath) {
-    const fileMatch = pathname.match(/^(.*\/)(?:index|login|reset|maintenance|403|404)\.html$/);
+    const fileMatch = pathname.match(
+      /^(.*\/)(?:index|login|reset|maintenance|403|404)\.html$/
+    );
+
     if (fileMatch) {
       basePath = fileMatch[1].replace(/\/$/, "");
     } else if (pathname.endsWith("/")) {
