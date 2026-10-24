@@ -1,47 +1,41 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f5f7fb">
-  <title>メンテナンス中｜学習AIチャット</title>
-
+  <title>メンテナンス中 | 学習AIチャット</title>
   <style>
     *{box-sizing:border-box}
-    body{margin:0;min-height:100vh;background:#f5f7fb;color:#202124;font-family:Arial,"Noto Sans JP",sans-serif}
-    .maintenance-wrap{min-height:100vh;display:grid;place-items:center;padding:24px}
-    .maintenance-card{width:min(100%,680px);padding:36px;background:#fff;border:1px solid #e2e6ee;border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,.06);text-align:center}
-    .maintenance-card h1{margin:0 0 18px;font-size:clamp(24px,4vw,34px);color:#202124}
-    .maintenance-card p{line-height:1.9;white-space:pre-wrap;overflow-wrap:anywhere;color:#4b5563}
-    .maintenance-status{font-size:13px;color:#6b7280;margin-top:22px}
-    .maintenance-card button{margin-top:18px;padding:11px 20px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;color:#1f2937;cursor:pointer}
-    footer{margin-top:28px;font-size:11px;color:#777;line-height:1.7}
     [hidden]{display:none!important}
-    @media(max-width:480px){.maintenance-card{padding:28px 20px}}
+    body{margin:0;min-height:100vh;font-family:Arial,"Noto Sans JP",sans-serif;color:#202124;background:#f5f7fb}
+    main{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .card{width:100%;max-width:680px;padding:36px;background:#fff;border:1px solid #e2e6ee;border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,.06);text-align:center}
+    h1{font-size:30px;margin:0 0 20px}
+    p{line-height:1.9;white-space:pre-wrap;overflow-wrap:anywhere}
+    .status{font-size:13px;color:#6b7280;margin-top:24px}
+    button{margin-top:16px;padding:11px 20px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;color:#202124;cursor:pointer}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    footer{margin-top:28px;color:#777;font-size:11px;line-height:1.7}
+    @media(max-width:480px){.card{padding:26px 20px}h1{font-size:24px}}
   </style>
 </head>
-
 <body>
-  <main class="maintenance-wrap">
-    <section class="maintenance-card" aria-live="polite">
-      <h1 id="maintenanceTitle">システムメンテナンス中</h1>
-
-      <p id="maintenanceMessage">
-        ログイン状態とメンテナンス設定を確認しています。
-      </p>
-
-      <p id="maintenanceStatus" class="maintenance-status">
-        確認中...
-      </p>
-
+  <main>
+    <section class="card">
+      <h1 id="title">システムメンテナンス中</h1>
+      <p id="message">ログイン状態を確認しています。</p>
+      <p id="status" class="status">確認中...</p>
       <button id="reloadButton" type="button">再確認</button>
       <button id="logoutButton" type="button" hidden>ログアウト</button>
-
-      <footer>
-        © 2026 定期テスト対策プリント運営事務局. All Rights Reserved.
-      </footer>
+      <footer>© 2026 定期テスト対策プリント運営事務局. All Rights Reserved.</footer>
     </section>
   </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="./assets/js/firebase.js"></script>
 
   <script type="module">
     import {
@@ -49,23 +43,24 @@
       signOut, doc, getDoc, onSnapshot
     } from "./assets/js/firebase-module.js";
 
-    const title = document.getElementById("maintenanceTitle");
-    const message = document.getElementById("maintenanceMessage");
-    const status = document.getElementById("maintenanceStatus");
+    const title = document.getElementById("title");
+    const message = document.getElementById("message");
+    const status = document.getElementById("status");
     const logoutButton = document.getElementById("logoutButton");
+
     const settingsRef = doc(db, "settings", "system");
 
+    let currentUser = null;
+    let authReady = false;
+    let redirecting = false;
     let settingsUnsubscribe = null;
     let authUnsubscribe = null;
-    let redirecting = false;
-    let currentUser = null;
-    let authResolved = false;
 
-    function showError(text) {
+    function setStatus(text) {
       status.textContent = text;
     }
 
-    function render(settings = {}) {
+    function showSettings(settings) {
       title.textContent =
         settings.maintenanceTitle || "システムメンテナンス中";
 
@@ -74,16 +69,18 @@
         settings.message ||
         "現在、メンテナンスを実施しています。しばらくお待ちください。";
 
-      status.textContent =
-        "メンテナンスが終了すると、自動的に学習画面へ戻ります。";
+      setStatus("メンテナンス終了後、自動的に学習画面へ戻ります。");
     }
 
-    async function routeByUser(user) {
+    function go(url) {
       if (redirecting) return;
+      redirecting = true;
+      location.replace(url);
+    }
 
+    async function checkUser(user) {
       if (!user) {
-        redirecting = true;
-        location.replace("./login.html");
+        go("./login.html");
         return;
       }
 
@@ -97,56 +94,48 @@
 
         if (!profileSnapshot.exists()) {
           await signOut(auth);
-          redirecting = true;
-          location.replace("./login.html");
+          go("./login.html");
           return;
         }
 
-        const profile = profileSnapshot.data() || {};
+        const profile = profileSnapshot.data();
 
         if (profile.status !== "active") {
           await signOut(auth);
-          redirecting = true;
-          location.replace("./login.html");
+          go("./login.html");
           return;
         }
 
         if (profile.role === "admin") {
-          redirecting = true;
-          location.replace("./admin/index.html");
+          go("./admin/index.html");
           return;
         }
 
         if (profile.role !== "student") {
-          showError(
-            "アカウントの権限を確認できません。管理者にお問い合わせください。"
-          );
+          setStatus("アカウントの権限が正しくありません。管理者にお問い合わせください。");
           return;
         }
 
-        const snapshot = await getDoc(settingsRef);
+        const settingsSnapshot = await getDoc(settingsRef);
 
-        if (!snapshot.exists()) {
-          throw new Error(
-            "Firestore の settings/system が見つかりません。"
-          );
+        if (!settingsSnapshot.exists()) {
+          throw new Error("Firestoreの settings/system がありません。");
         }
 
-        const settings = snapshot.data() || {};
+        const settings = settingsSnapshot.data();
 
         if (settings.maintenance !== true) {
-          redirecting = true;
-          location.replace("./student/index.html");
+          go("./student/index.html");
           return;
         }
 
-        render(settings);
+        showSettings(settings);
       } catch (error) {
         console.error("メンテナンス画面の確認エラー:", error);
-
-        showError(
-          `設定を確認できませんでした。通信状態とFirestoreのアクセス権限を確認してください。
-${error.code || "error"}: ${error.message || String(error)}`
+        setStatus(
+          "設定を確認できませんでした。\n" +
+          (error.code || "error") + ": " +
+          (error.message || String(error))
         );
       }
     }
@@ -158,14 +147,12 @@ ${error.code || "error"}: ${error.message || String(error)}`
         authUnsubscribe = onAuthStateChanged(
           auth,
           user => {
-            authResolved = true;
-            void routeByUser(user);
+            authReady = true;
+            checkUser(user);
           },
           error => {
             console.error("認証状態の確認エラー:", error);
-            showError(
-              "ログイン状態を確認できません。再確認してください。"
-            );
+            setStatus("ログイン状態を確認できません。再確認してください。");
           }
         );
 
@@ -173,65 +160,54 @@ ${error.code || "error"}: ${error.message || String(error)}`
           settingsRef,
           snapshot => {
             if (!snapshot.exists()) {
-              showError(
-                "Firestore の settings/system が見つかりません。"
-              );
+              setStatus("Firestoreの settings/system が見つかりません。");
               return;
             }
 
             const settings = snapshot.data() || {};
 
-            // 認証状態が確定する前に別ページへ移動しない。
-            if (!authResolved) return;
+            if (!authReady || redirecting) return;
 
             if (settings.maintenance !== true) {
               if (currentUser) {
-                redirecting = true;
-                location.replace("./student/index.html");
+                go("./student/index.html");
               } else {
-                redirecting = true;
-                location.replace("./login.html");
+                go("./login.html");
               }
-
               return;
             }
 
-            render(settings);
+            showSettings(settings);
           },
           error => {
-            console.error("メンテナンス設定の監視エラー:", error);
-            showError(
-              "メンテナンス設定の更新を確認できません。通信状態を確認してください。"
-            );
+            console.error("メンテナンス設定監視エラー:", error);
+            setStatus("設定を取得できません。通信状態を確認してください。");
           }
         );
       } catch (error) {
-        console.error("メンテナンス画面の初期化エラー:", error);
-
-        showError(
-          `初期化できませんでした。
-${error.code || "error"}: ${error.message || String(error)}`
+        console.error("初期化エラー:", error);
+        setStatus(
+          "画面を初期化できませんでした。\n" +
+          (error.code || "error") + ": " +
+          (error.message || String(error))
         );
       }
     }
 
-    document
-      .getElementById("reloadButton")
-      .addEventListener("click", () => {
-        location.reload();
-      });
+    document.getElementById("reloadButton").addEventListener(
+      "click",
+      () => location.reload()
+    );
 
     logoutButton.addEventListener("click", async () => {
       logoutButton.disabled = true;
 
       try {
         await signOut(auth);
-        location.replace("./login.html");
+        go("./login.html");
       } catch (error) {
         logoutButton.disabled = false;
-        showError(
-          `ログアウトできませんでした: ${error.message || String(error)}`
-        );
+        setStatus("ログアウトに失敗しました: " + (error.message || String(error)));
       }
     });
 
@@ -240,7 +216,7 @@ ${error.code || "error"}: ${error.message || String(error)}`
       authUnsubscribe?.();
     });
 
-    void initialize();
+    initialize();
   </script>
 </body>
 </html>
