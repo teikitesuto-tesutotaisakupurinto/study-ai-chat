@@ -38,7 +38,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyByt8kGALyS8AU8SR6PzWFEPXfgHY5iyn",
+  apiKey: "AIzaSyByt8kGALyS8AU8SR6PzWFEPXfgHY5iynk",
   authDomain: "studychat-1b39d.firebaseapp.com",
   projectId: "studychat-1b39d",
   storageBucket: "studychat-1b39d.firebasestorage.app",
