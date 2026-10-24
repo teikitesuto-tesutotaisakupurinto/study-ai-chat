@@ -1,19 +1,21 @@
 /* assets/css/admin.css */
-.admin-stat-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
+.admin-shell .sidebar {
+  background: #172033;
 }
 
-.admin-stat {
-  padding: 20px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: white;
+.admin-shell .brand-mark {
+  background: #e0e7ff;
+  color: #3730a3;
 }
 
-.admin-stat strong {
-  display: block;
-  margin-top: 8px;
-  font-size: 28px;
+.admin-shell .topbar {
+  border-bottom: 2px solid #dbe3ef;
+}
+
+.admin-shell .page-content > .content-card h1 {
+  letter-spacing: -.02em;
+}
+
+.admin-shell .data-table th {
+  color: #344256;
 }
