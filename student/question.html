@@ -2,325 +2,1561 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f7f8fa">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="theme-color" content="#f5f7fb">
+
   <title>AIに質問 | 学習AIチャット</title>
 
-  <script>
-    document.documentElement.classList.add("auth-pending");
-
-    // モジュールの読み込みに失敗した場合も、
-    // 画面が永久に非表示にならないようにする。
-    window.setTimeout(() => {
-      document.documentElement.classList.remove("auth-pending");
-    }, 15000);
-  </script>
-
-  <link rel="stylesheet" href="../assets/css/common.css">
   <link rel="stylesheet" href="../assets/css/student.css">
 
   <style>
-    [hidden] { display: none !important; }
-    body { background: #f7f8fa; }
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+    }
 
-    .app-main {
-      min-width: 0;
+    body {
+      background: #f5f7fb;
+      color: #202124;
+      font-family:
+        Arial,
+        "Noto Sans JP",
+        sans-serif;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    .app-shell {
       min-height: 100vh;
       display: flex;
-      flex-direction: column;
     }
 
-    .chat-header {
+    .sidebar {
+      position: fixed;
+      z-index: 1000;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 250px;
+      overflow-y: auto;
+      background: #ffffff;
+      border-right: 1px solid #e2e6ee;
+      transition: transform .2s ease;
+    }
+
+    .main-area {
+      width: calc(100% - 250px);
+      min-height: 100vh;
+      margin-left: 250px;
+      transition: margin-left .2s ease;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 500;
+      min-height: 64px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 18px 24px;
-      background: #fff;
-      border-bottom: 1px solid #e5e7eb;
+      gap: 14px;
+      padding: 0 24px;
+      background: rgba(255,255,255,.96);
+      border-bottom: 1px solid #e2e6ee;
     }
 
-    .chat-header h1 { margin: 0; font-size: 21px; }
-    .chat-header p { margin: 5px 0 0; color: #64748b; font-size: 13px; }
+    .mobile-menu-button {
+      display: none;
+      width: 42px;
+      height: 42px;
+      padding: 0;
+      margin: 0;
+      border: 1px solid #d7dce5;
+      border-radius: 8px;
+      background: #fff;
+      color: #202124;
+      cursor: pointer;
+      font-size: 20px;
+    }
 
-    .chat-content {
-      display: flex;
-      flex: 1;
-      flex-direction: column;
+    .page-title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .content {
       width: 100%;
       max-width: 1000px;
       margin: 0 auto;
-      padding: 24px;
+      padding: 32px 24px 80px;
     }
 
-    .subject-panel {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .subject-panel label { font-weight: 600; font-size: 14px; }
-
-    .subject-panel select {
-      width: 220px;
-      max-width: 100%;
-      padding: 11px 12px;
-      border: 1px solid #d0d5dd;
-      border-radius: 8px;
+    .chat-card {
+      overflow: hidden;
       background: #fff;
-      font: inherit;
-    }
-
-    .conversation {
-      display: flex;
-      flex: 1;
-      flex-direction: column;
-      gap: 18px;
-      min-height: 280px;
-      padding-bottom: 24px;
-    }
-
-    .welcome {
-      max-width: 550px;
-      margin: auto;
-      padding: 30px 10px;
-      text-align: center;
-    }
-
-    .welcome h2 { margin: 0 0 12px; font-size: 25px; font-weight: 600; }
-    .welcome p { color: #64748b; line-height: 1.8; }
-
-    .message {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      max-width: 85%;
-    }
-
-    .message.user { align-self: flex-end; align-items: flex-end; }
-    .message.assistant { align-self: flex-start; align-items: flex-start; }
-    .message-role { color: #64748b; font-size: 12px; }
-
-    .message-content {
-      padding: 14px 16px;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      background: #fff;
-      line-height: 1.85;
-      overflow-wrap: anywhere;
-      white-space: pre-wrap;
-    }
-
-    .message.user .message-content {
-      background: #eaf2ff;
-      border-color: #d7e5ff;
-    }
-
-    .message.error .message-content {
-      color: #a12b22;
-      background: #fff4f2;
-      border-color: #f3c8c3;
-    }
-
-    .typing {
-      align-self: flex-start;
-      padding: 12px 14px;
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      background: #fff;
-      color: #64748b;
-      font-size: 13px;
-    }
-
-    .composer {
-      position: sticky;
-      bottom: 0;
-      padding: 14px 0 18px;
-      background: #f7f8fa;
-    }
-
-    .composer-box {
-      padding: 12px;
-      border: 1px solid #d1d5db;
+      border: 1px solid #e1e5ec;
       border-radius: 14px;
-      background: #fff;
-      box-shadow: 0 4px 16px rgba(0,0,0,.04);
+      box-shadow: 0 4px 18px rgba(0,0,0,.04);
     }
 
-    #questionInput {
-      display: block;
-      width: 100%;
-      min-height: 90px;
-      max-height: 260px;
-      padding: 8px;
-      resize: vertical;
-      border: 0;
-      outline: none;
-      background: transparent;
-      color: #202124;
-      font: inherit;
+    .chat-header {
+      padding: 22px 24px;
+      border-bottom: 1px solid #e7eaf0;
+    }
+
+    .chat-header h1 {
+      margin: 0 0 6px;
+      font-size: 22px;
+    }
+
+    .chat-header p {
+      margin: 0;
+      color: #687078;
+      font-size: 14px;
       line-height: 1.7;
     }
 
-    .composer-bottom {
+    .conversation-info {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 4px;
-    }
-
-    .composer-hint, .notice {
-      color: #64748b;
+      padding: 12px 20px;
+      background: #f8f9fb;
+      border-bottom: 1px solid #e7eaf0;
+      color: #69717a;
       font-size: 12px;
     }
 
-    #sendButton {
-      min-width: 100px;
-      border-color: #2563eb;
-      background: #2563eb;
+    .conversation-id {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .new-conversation-button {
+      flex: 0 0 auto;
+      width: auto;
+      margin: 0;
+      padding: 7px 12px;
+      border: 1px solid #cfd5de;
+      border-radius: 7px;
+      background: #fff;
+      color: #30343a;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .chat-messages {
+      min-height: 430px;
+      max-height: 65vh;
+      overflow-y: auto;
+      padding: 24px;
+      background: #fbfcfe;
+    }
+
+    .empty-message {
+      display: flex;
+      min-height: 330px;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: #747b83;
+      line-height: 1.8;
+    }
+
+    .message {
+      display: flex;
+      margin-bottom: 18px;
+    }
+
+    .message.user {
+      justify-content: flex-end;
+    }
+
+    .message.assistant {
+      justify-content: flex-start;
+    }
+
+    .message-inner {
+      max-width: min(78%, 720px);
+    }
+
+    .message-role {
+      margin-bottom: 5px;
+      color: #747b83;
+      font-size: 11px;
+    }
+
+    .message.user .message-role {
+      text-align: right;
+    }
+
+    .message-body {
+      padding: 13px 16px;
+      border-radius: 12px;
+      line-height: 1.75;
+      font-size: 14px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .message.user .message-body {
+      background: #1a73e8;
       color: #fff;
-      font-weight: 600;
+      border-bottom-right-radius: 4px;
     }
 
-    #sendButton:disabled, #newChatButton:disabled {
-      opacity: .6;
-      cursor: wait;
+    .message.assistant .message-body {
+      background: #fff;
+      color: #202124;
+      border: 1px solid #e0e4ea;
+      border-bottom-left-radius: 4px;
     }
 
-    .status-message {
-      margin: 8px 0;
-      color: #b42318;
+    .chat-input-area {
+      padding: 18px;
+      background: #fff;
+      border-top: 1px solid #e7eaf0;
+    }
+
+    .chat-form {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    .chat-input {
+      flex: 1;
+      min-height: 48px;
+      max-height: 180px;
+      resize: vertical;
+      padding: 12px 14px;
+      border: 1px solid #c9ced7;
+      border-radius: 8px;
+      background: #fff;
+      color: #202124;
+      font: inherit;
+      line-height: 1.6;
+    }
+
+    .chat-input:focus {
+      outline: 2px solid rgba(26,115,232,.18);
+      border-color: #1a73e8;
+    }
+
+    .send-button {
+      flex: 0 0 auto;
+      width: 100px;
+      min-height: 48px;
+      margin: 0;
+      border: 0;
+      border-radius: 8px;
+      background: #1a73e8;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .send-button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    .system-message {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 7px;
+      background: #fff5f3;
+      color: #b3261e;
       font-size: 13px;
       line-height: 1.7;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
     }
 
-    .status-message[data-type="success"] { color: #067647; }
-    .status-message[data-type="info"] { color: #475467; }
-
-    .notice {
-      margin: 12px 0 0;
-      line-height: 1.7;
+    .loading {
+      padding: 20px;
       text-align: center;
+      color: #69717a;
+      font-size: 14px;
+    }
+
+    .auth-error {
+      max-width: 680px;
+      margin: 80px auto;
+      padding: 32px;
+      background: #fff;
+      border: 1px solid #e1e5ec;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .auth-error h1 {
+      margin: 0 0 12px;
+      font-size: 22px;
+    }
+
+    .auth-error p {
+      color: #606870;
+      line-height: 1.8;
+      white-space: pre-wrap;
+    }
+
+    .auth-error button {
+      width: auto;
+      margin: 12px 4px 0;
+      padding: 10px 18px;
+      border: 0;
+      border-radius: 7px;
+      background: #1a73e8;
+      color: #fff;
+      cursor: pointer;
     }
 
     .app-footer {
-      padding: 18px;
+      padding: 24px;
       text-align: center;
-      color: #64748b;
+      color: #777;
       font-size: 11px;
+      line-height: 1.7;
     }
 
     @media (max-width: 700px) {
-      .chat-header { padding: 14px; }
-      .chat-header h1 { font-size: 18px; }
-      .chat-content { padding: 14px; }
-      .subject-panel {
+      .sidebar {
+        transform: translateX(-100%);
+        box-shadow: 4px 0 18px rgba(0,0,0,.12);
+      }
+
+      body.sidebar-expanded .sidebar {
+        transform: translateX(0);
+      }
+
+      .main-area {
+        width: 100%;
+        margin-left: 0;
+      }
+
+      .mobile-menu-button {
+        display: block;
+      }
+
+      .topbar {
+        padding: 0 14px;
+      }
+
+      .content {
+        padding: 18px 12px 60px;
+      }
+
+      .chat-messages {
+        min-height: 380px;
+        max-height: none;
+        padding: 16px;
+      }
+
+      .message-inner {
+        max-width: 90%;
+      }
+
+      .conversation-info {
         align-items: flex-start;
         flex-direction: column;
-        gap: 8px;
       }
-      .subject-panel select { width: 100%; }
-      .message { max-width: 95%; }
-      .composer-hint { max-width: 60%; }
+
+      .chat-form {
+        flex-direction: column;
+      }
+
+      .send-button {
+        width: 100%;
+      }
     }
   </style>
 </head>
 
-<body data-role="student">
-  <div class="app-layout">
-    <aside id="appSidebar" class="sidebar" aria-label="メインメニュー"></aside>
+<body data-role="student" class="student-page">
 
-    <main id="appMain" class="app-main">
-      <header class="chat-header">
-        <div>
-          <h1>学習AIチャット</h1>
-          <p>中学校の学習をサポートします</p>
+  <div class="app-shell">
+
+    <!-- サイドメニュー -->
+    <aside
+      id="appSidebar"
+      class="sidebar"
+      aria-label="サイドメニュー"
+    >
+      <div class="sidebar-header">
+        <strong>学習AIチャット</strong>
+      </div>
+
+      <nav class="sidebar-nav" aria-label="メインメニュー">
+        <a class="sidebar-link" href="index.html">
+          <span class="sidebar-icon" aria-hidden="true">⌂</span>
+          <span class="sidebar-label">ホーム</span>
+        </a>
+
+        <a
+          class="sidebar-link active"
+          href="question.html"
+          aria-current="page"
+        >
+          <span class="sidebar-icon" aria-hidden="true">?</span>
+          <span class="sidebar-label">AIに質問</span>
+        </a>
+
+        <a class="sidebar-link" href="history.html">
+          <span class="sidebar-icon" aria-hidden="true">≡</span>
+          <span class="sidebar-label">学習履歴</span>
+        </a>
+
+        <a class="sidebar-link" href="announcements.html">
+          <span class="sidebar-icon" aria-hidden="true">▤</span>
+          <span class="sidebar-label">お知らせ</span>
+        </a>
+
+        <a class="sidebar-link" href="settings.html">
+          <span class="sidebar-icon" aria-hidden="true">⚙</span>
+          <span class="sidebar-label">設定</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-history">
+        <h2 class="sidebar-history-heading">最近の会話</h2>
+
+        <div
+          id="sidebarRecentHistory"
+          class="sidebar-history-list"
+        >
+          読み込み中...
         </div>
+      </div>
 
-        <button id="newChatButton" class="new-chat-button" type="button">
-          新しい質問
+      <button
+        type="button"
+        class="sidebar-link logout-button"
+        data-logout
+      >
+        ログアウト
+      </button>
+    </aside>
+
+    <!-- メイン -->
+    <div class="main-area">
+
+      <header class="topbar">
+        <button
+          id="mobileMenuButton"
+          class="mobile-menu-button"
+          type="button"
+          aria-label="サイドメニューを開閉"
+          aria-expanded="false"
+        >
+          ☰
         </button>
+
+        <h1 class="page-title">AIに質問</h1>
       </header>
 
-      <section class="chat-content">
-        <div class="subject-panel">
-          <label for="subjectSelect">質問する教科</label>
-          <select id="subjectSelect">
-            <option value="国語">国語</option>
-            <option value="数学" selected>数学</option>
-            <option value="英語">英語</option>
-            <option value="理科">理科</option>
-            <option value="社会">社会</option>
-            <option value="音楽">音楽</option>
-            <option value="美術">美術</option>
-            <option value="保健体育">保健体育</option>
-            <option value="技術家庭">技術家庭</option>
-          </select>
-        </div>
+      <main class="content">
 
-        <div id="conversation" class="conversation" aria-live="polite">
-          <div id="welcomeMessage" class="welcome">
-            <h2>何を勉強していますか？</h2>
+        <section class="chat-card">
+
+          <div class="chat-header">
+            <h1>学習AIチャット</h1>
             <p>
-              わからない問題や授業で習った内容を入力してください。
-              中学生にもわかりやすく説明します。
+              学習についてAIに質問できます。
+              分からないところをそのまま入力してください。
             </p>
           </div>
-        </div>
 
-        <p
-          id="statusMessage"
-          class="status-message"
-          role="status"
-          aria-live="polite"
-          hidden
-        ></p>
+          <div class="conversation-info">
+            <span
+              id="conversationInfo"
+              class="conversation-id"
+            >
+              新しい会話
+            </span>
 
-        <form id="questionForm" class="composer">
-          <div class="composer-box">
-            <textarea
-              id="questionInput"
-              maxlength="5000"
-              placeholder="学習について質問してください..."
-              aria-label="質問内容"
-              required
-            ></textarea>
+            <button
+              id="newConversationButton"
+              class="new-conversation-button"
+              type="button"
+            >
+              新しい会話
+            </button>
+          </div>
 
-            <div class="composer-bottom">
-              <span class="composer-hint">
-                Enterで送信・Shift+Enterで改行
-              </span>
-
-              <button
-                id="sendButton"
-                class="primary-button"
-                type="submit"
-              >
-                質問する
-              </button>
+          <div
+            id="chatMessages"
+            class="chat-messages"
+            aria-live="polite"
+          >
+            <div
+              id="chatLoading"
+              class="loading"
+            >
+              会話を準備しています...
             </div>
           </div>
 
-          <p class="notice">
-            このAIは学習専用です。学習以外の質問には対応していません。
-          </p>
-        </form>
-      </section>
+          <div class="chat-input-area">
+
+            <form
+              id="chatForm"
+              class="chat-form"
+            >
+              <textarea
+                id="chatInput"
+                class="chat-input"
+                maxlength="5000"
+                placeholder="学習について質問してください"
+                aria-label="質問入力"
+              ></textarea>
+
+              <button
+                id="sendButton"
+                class="send-button"
+                type="submit"
+              >
+                送信
+              </button>
+            </form>
+
+            <div
+              id="systemMessage"
+              class="system-message"
+              hidden
+              role="alert"
+            ></div>
+
+          </div>
+
+        </section>
+
+      </main>
 
       <footer class="app-footer">
-        © 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.
+        © 2026 Regular Test Preparation Worksheet Administration Office.
+        All Rights Reserved.
       </footer>
-    </main>
+
+    </div>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="../assets/js/firebase.js"></script>
-  <script type="module" src="../assets/js/page.js"></script>
+  <script type="module">
+
+    /*
+     * ==========================================
+     * 学習AIチャット question.html
+     * ==========================================
+     *
+     * このファイル単体でも基本UIを表示する。
+     * 認証・Firestore・AI処理は別モジュールに分離。
+     *
+     * conversationId をURLで指定すると
+     * 既存会話を読み込む。
+     */
+
+    import {
+      auth,
+      db,
+      persistenceReady,
+      onAuthStateChanged,
+      signOut,
+      doc,
+      getDoc,
+      collection,
+      query,
+      where,
+      orderBy,
+      limit,
+      getDocs,
+      addDoc,
+      updateDoc,
+      serverTimestamp
+    } from "../assets/js/firebase.js";
+
+    const $ = (id) =>
+      document.getElementById(id);
+
+    const sidebar =
+      $("appSidebar");
+
+    const mobileMenuButton =
+      $("mobileMenuButton");
+
+    const chatMessages =
+      $("chatMessages");
+
+    const chatLoading =
+      $("chatLoading");
+
+    const chatForm =
+      $("chatForm");
+
+    const chatInput =
+      $("chatInput");
+
+    const sendButton =
+      $("sendButton");
+
+    const systemMessage =
+      $("systemMessage");
+
+    const conversationInfo =
+      $("conversationInfo");
+
+    const newConversationButton =
+      $("newConversationButton");
+
+    let currentUser = null;
+    let currentProfile = null;
+    let currentConversationId = null;
+    let messages = [];
+    let initialized = false;
+    let sending = false;
+
+    /*
+     * ------------------------------------------
+     * エラー表示
+     * ------------------------------------------
+     */
+
+    function showError(message) {
+      systemMessage.textContent = message;
+      systemMessage.hidden = false;
+    }
+
+    function clearError() {
+      systemMessage.textContent = "";
+      systemMessage.hidden = true;
+    }
+
+    /*
+     * ------------------------------------------
+     * サイドバー
+     * ------------------------------------------
+     */
+
+    function toggleSidebar() {
+
+      const expanded =
+        document.body.classList.toggle(
+          "sidebar-expanded"
+        );
+
+      mobileMenuButton.setAttribute(
+        "aria-expanded",
+        String(expanded)
+      );
+    }
+
+    mobileMenuButton.addEventListener(
+      "click",
+      toggleSidebar
+    );
+
+    /*
+     * ------------------------------------------
+     * URL
+     * ------------------------------------------
+     */
+
+    function getConversationIdFromUrl() {
+
+      const params =
+        new URLSearchParams(
+          window.location.search
+        );
+
+      return params.get(
+        "conversationId"
+      );
+    }
+
+    /*
+     * ------------------------------------------
+     * 会話ID
+     * ------------------------------------------
+     */
+
+    function updateConversationUrl(id) {
+
+      if (!id) return;
+
+      const url =
+        new URL(
+          window.location.href
+        );
+
+      url.searchParams.set(
+        "conversationId",
+        id
+      );
+
+      window.history.replaceState(
+        {},
+        "",
+        url
+      );
+    }
+
+    /*
+     * ------------------------------------------
+     * メッセージ表示
+     * ------------------------------------------
+     */
+
+    function renderMessages() {
+
+      chatMessages.replaceChildren();
+
+      if (!messages.length) {
+
+        const empty =
+          document.createElement("div");
+
+        empty.className =
+          "empty-message";
+
+        empty.textContent =
+          "学習について質問してください。";
+
+        chatMessages.appendChild(
+          empty
+        );
+
+        return;
+      }
+
+      for (const message of messages) {
+
+        const role =
+          message.role === "user"
+            ? "user"
+            : "assistant";
+
+        const wrapper =
+          document.createElement("div");
+
+        wrapper.className =
+          `message ${role}`;
+
+        const inner =
+          document.createElement("div");
+
+        inner.className =
+          "message-inner";
+
+        const roleLabel =
+          document.createElement("div");
+
+        roleLabel.className =
+          "message-role";
+
+        roleLabel.textContent =
+          role === "user"
+            ? "あなた"
+            : "学習AI";
+
+        const body =
+          document.createElement("div");
+
+        body.className =
+          "message-body";
+
+        body.textContent =
+          message.content || "";
+
+        inner.append(
+          roleLabel,
+          body
+        );
+
+        wrapper.appendChild(
+          inner
+        );
+
+        chatMessages.appendChild(
+          wrapper
+        );
+      }
+
+      chatMessages.scrollTop =
+        chatMessages.scrollHeight;
+    }
+
+    /*
+     * ------------------------------------------
+     * Firestore履歴読み込み
+     * ------------------------------------------
+     */
+
+    async function loadConversation(id) {
+
+      if (!id || !currentUser) {
+        return false;
+      }
+
+      const ref =
+        doc(
+          db,
+          "chatHistories",
+          id
+        );
+
+      const snapshot =
+        await getDoc(ref);
+
+      if (!snapshot.exists()) {
+        showError(
+          "指定された会話履歴が見つかりません。"
+        );
+
+        return false;
+      }
+
+      const data =
+        snapshot.data();
+
+      if (
+        data.userId !==
+        currentUser.uid
+      ) {
+        showError(
+          "この会話を開く権限がありません。"
+        );
+
+        return false;
+      }
+
+      currentConversationId =
+        snapshot.id;
+
+      messages =
+        Array.isArray(data.messages)
+          ? data.messages
+          : [];
+
+      conversationInfo.textContent =
+        data.title ||
+        data.lastQuestion ||
+        "会話";
+
+      renderMessages();
+
+      return true;
+    }
+
+    /*
+     * ------------------------------------------
+     * 最新履歴
+     * ------------------------------------------
+     */
+
+    async function loadRecentConversations() {
+
+      const list =
+        $("sidebarRecentHistory");
+
+      if (!list || !currentUser) {
+        return;
+      }
+
+      try {
+
+        const historyQuery =
+          query(
+            collection(
+              db,
+              "chatHistories"
+            ),
+            where(
+              "userId",
+              "==",
+              currentUser.uid
+            ),
+            orderBy(
+              "updatedAt",
+              "desc"
+            ),
+            limit(8)
+          );
+
+        const snapshot =
+          await getDocs(
+            historyQuery
+          );
+
+        list.replaceChildren();
+
+        if (snapshot.empty) {
+
+          list.textContent =
+            "まだ会話履歴はありません。";
+
+          return;
+        }
+
+        for (
+          const item of snapshot.docs
+        ) {
+
+          const data =
+            item.data();
+
+          const link =
+            document.createElement("a");
+
+          link.className =
+            "sidebar-history-link";
+
+          link.href =
+            `question.html?conversationId=${
+              encodeURIComponent(
+                item.id
+              )
+            }`;
+
+          const title =
+            document.createElement("span");
+
+          title.className =
+            "sidebar-history-title";
+
+          title.textContent =
+            data.title ||
+            data.lastQuestion ||
+            "会話";
+
+          link.appendChild(title);
+
+          list.appendChild(link);
+        }
+
+      } catch (error) {
+
+        console.error(
+          "履歴読み込みエラー:",
+          error
+        );
+
+        list.textContent =
+          "履歴を読み込めませんでした。";
+      }
+    }
+
+    /*
+     * ------------------------------------------
+     * 新規会話
+     * ------------------------------------------
+     */
+
+    function startNewConversation() {
+
+      currentConversationId =
+        null;
+
+      messages = [];
+
+      const url =
+        new URL(
+          window.location.href
+        );
+
+      url.searchParams.delete(
+        "conversationId"
+      );
+
+      window.history.replaceState(
+        {},
+        "",
+        url
+      );
+
+      conversationInfo.textContent =
+        "新しい会話";
+
+      clearError();
+
+      renderMessages();
+
+      chatInput.focus();
+    }
+
+    newConversationButton.addEventListener(
+      "click",
+      startNewConversation
+    );
+
+    /*
+     * ------------------------------------------
+     * AI API
+     * ------------------------------------------
+     *
+     * AIの実際のAPI処理は
+     * study-chat/index.ts 側で行う。
+     *
+     * question.htmlから直接APIキーを
+     * 公開しない。
+     * ------------------------------------------
+     */
+
+    async function requestAI(
+      question,
+      conversationMessages
+    ) {
+
+      /*
+       * 実際のバックエンドURLが設定されている
+       * 場合はこちらを使用する。
+       *
+       * 例:
+       * /api/chat
+       *
+       * 未設定の場合はエラーにする。
+       */
+
+      const endpoint =
+        window.STUDY_AI_ENDPOINT ||
+        "";
+
+      if (!endpoint) {
+
+        throw new Error(
+          "AI接続先が設定されていません。study-chat/index.ts のAPI接続設定を確認してください。"
+        );
+      }
+
+      const response =
+        await fetch(
+          endpoint,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body:
+              JSON.stringify({
+                question,
+                messages:
+                  conversationMessages,
+                subject:
+                  "学習",
+                userId:
+                  currentUser.uid
+              })
+          }
+        );
+
+      if (!response.ok) {
+
+        const text =
+          await response.text();
+
+        throw new Error(
+          `AIサーバーエラー (${response.status})${
+            text
+              ? `: ${text}`
+              : ""
+          }`
+        );
+      }
+
+      const data =
+        await response.json();
+
+      if (
+        !data ||
+        typeof data.answer !==
+          "string"
+      ) {
+
+        throw new Error(
+          "AIから正しい回答形式が返されませんでした。"
+        );
+      }
+
+      return data.answer;
+    }
+
+    /*
+     * ------------------------------------------
+     * Firestoreへ会話保存
+     * ------------------------------------------
+     */
+
+    async function saveConversation() {
+
+      if (!currentUser) {
+        throw new Error(
+          "ログイン状態を確認できません。"
+        );
+      }
+
+      if (!messages.length) {
+        return;
+      }
+
+      const lastUserMessage =
+        [...messages]
+          .reverse()
+          .find(
+            item =>
+              item.role === "user"
+          );
+
+      const title =
+        lastUserMessage?.content
+          ?.slice(0, 40) ||
+        "学習AIとの会話";
+
+      if (!currentConversationId) {
+
+        const reference =
+          await addDoc(
+            collection(
+              db,
+              "chatHistories"
+            ),
+            {
+              userId:
+                currentUser.uid,
+
+              subject:
+                "学習",
+
+              grade:
+                currentProfile?.grade ||
+                "",
+
+              title,
+
+              lastQuestion:
+                lastUserMessage?.content ||
+                "",
+
+              messages,
+
+              createdAt:
+                serverTimestamp(),
+
+              updatedAt:
+                serverTimestamp()
+            }
+          );
+
+        currentConversationId =
+          reference.id;
+
+        updateConversationUrl(
+          reference.id
+        );
+
+      } else {
+
+        await updateDoc(
+          doc(
+            db,
+            "chatHistories",
+            currentConversationId
+          ),
+          {
+            messages,
+
+            title,
+
+            lastQuestion:
+              lastUserMessage?.content ||
+              "",
+
+            updatedAt:
+              serverTimestamp()
+          }
+        );
+      }
+
+      conversationInfo.textContent =
+        title;
+
+      await loadRecentConversations();
+    }
+
+    /*
+     * ------------------------------------------
+     * 送信
+     * ------------------------------------------
+     */
+
+    async function handleSubmit(event) {
+
+      event.preventDefault();
+
+      if (
+        sending ||
+        !currentUser
+      ) {
+        return;
+      }
+
+      const question =
+        chatInput.value.trim();
+
+      if (!question) {
+        return;
+      }
+
+      clearError();
+
+      sending = true;
+
+      sendButton.disabled =
+        true;
+
+      chatInput.disabled =
+        true;
+
+      messages.push({
+        role: "user",
+        content: question
+      });
+
+      renderMessages();
+
+      chatInput.value = "";
+
+      try {
+
+        const answer =
+          await requestAI(
+            question,
+            messages
+          );
+
+        messages.push({
+          role: "assistant",
+          content: answer
+        });
+
+        renderMessages();
+
+        /*
+         * 回答単位ではなく、
+         * 現在の会話全体を1つの
+         * conversationIdに保存する。
+         *
+         * これによりサイドバーから
+         * 続きの会話を開ける。
+         */
+
+        await saveConversation();
+
+      } catch (error) {
+
+        console.error(
+          "AI送信エラー:",
+          error
+        );
+
+        showError(
+          error?.message ||
+          "回答の取得に失敗しました。"
+        );
+
+        /*
+         * Firestore保存失敗の場合、
+         * 既に画面上に表示した回答は
+         * 消さない。
+         */
+      } finally {
+
+        sending = false;
+
+        sendButton.disabled =
+          false;
+
+        chatInput.disabled =
+          false;
+
+        chatInput.focus();
+      }
+    }
+
+    chatForm.addEventListener(
+      "submit",
+      handleSubmit
+    );
+
+    /*
+     * ------------------------------------------
+     * Enter送信
+     * ------------------------------------------
+     *
+     * Shift + Enter は改行。
+     */
+
+    chatInput.addEventListener(
+      "keydown",
+      event => {
+
+        if (
+          event.key === "Enter" &&
+          !event.shiftKey
+        ) {
+
+          event.preventDefault();
+
+          chatForm.requestSubmit();
+        }
+      }
+    );
+
+    /*
+     * ------------------------------------------
+     * ログアウト
+     * ------------------------------------------
+     */
+
+    document
+      .querySelectorAll(
+        "[data-logout]"
+      )
+      .forEach(
+        button => {
+
+          button.addEventListener(
+            "click",
+            async () => {
+
+              button.disabled =
+                true;
+
+              try {
+
+                await signOut(
+                  auth
+                );
+
+                location.replace(
+                  "../login.html"
+                );
+
+              } catch (error) {
+
+                console.error(
+                  "ログアウトエラー:",
+                  error
+                );
+
+                button.disabled =
+                  false;
+
+                showError(
+                  "ログアウトに失敗しました。"
+                );
+              }
+            }
+          );
+        }
+      );
+
+    /*
+     * ------------------------------------------
+     * 認証
+     * ------------------------------------------
+     */
+
+    async function initialize() {
+
+      if (initialized) {
+        return;
+      }
+
+      initialized = true;
+
+      try {
+
+        /*
+         * Firebaseの永続化設定を待つ。
+         */
+
+        await persistenceReady;
+
+        /*
+         * 一度だけ認証状態を取得。
+         */
+
+        const user =
+          await new Promise(
+            (resolve, reject) => {
+
+              let unsubscribe;
+
+              unsubscribe =
+                onAuthStateChanged(
+                  auth,
+
+                  current => {
+
+                    if (
+                      unsubscribe
+                    ) {
+                      unsubscribe();
+                    }
+
+                    resolve(
+                      current
+                    );
+                  },
+
+                  error => {
+
+                    if (
+                      unsubscribe
+                    ) {
+                      unsubscribe();
+                    }
+
+                    reject(
+                      error
+                    );
+                  }
+                );
+            }
+          );
+
+        if (!user) {
+
+          location.replace(
+            "../login.html"
+          );
+
+          return;
+        }
+
+        currentUser =
+          user;
+
+        /*
+         * users/{uid}
+         */
+
+        const profileSnapshot =
+          await getDoc(
+            doc(
+              db,
+              "users",
+              user.uid
+            )
+          );
+
+        if (
+          !profileSnapshot.exists()
+        ) {
+
+          showError(
+            "ユーザープロフィールが見つかりません。"
+          );
+
+          chatLoading.hidden =
+            true;
+
+          return;
+        }
+
+        currentProfile =
+          profileSnapshot.data();
+
+        if (
+          currentProfile.status !==
+          "active"
+        ) {
+
+          showError(
+            "このアカウントは現在利用できません。"
+          );
+
+          chatLoading.hidden =
+            true;
+
+          return;
+        }
+
+        if (
+          currentProfile.role !==
+          "student"
+        ) {
+
+          location.replace(
+            "../admin/index.html"
+          );
+
+          return;
+        }
+
+        /*
+         * URLから会話IDを取得。
+         */
+
+        const conversationId =
+          getConversationIdFromUrl();
+
+        if (conversationId) {
+
+          await loadConversation(
+            conversationId
+          );
+
+        } else {
+
+          renderMessages();
+        }
+
+        /*
+         * サイドバー履歴。
+         */
+
+        await loadRecentConversations();
+
+        chatLoading.hidden =
+          true;
+
+      } catch (error) {
+
+        console.error(
+          "question.html 初期化エラー:",
+          error
+        );
+
+        chatLoading.hidden =
+          true;
+
+        showError(
+          `画面を初期化できませんでした。\n${
+            error?.code ||
+            "unknown"
+          }\n${
+            error?.message ||
+            String(error)
+          }`
+        );
+      }
+    }
+
+    /*
+     * DOM構築後に必ず初期化。
+     */
+
+    initialize();
+
+  </script>
+
 </body>
 </html>
