@@ -1,8 +1,6 @@
 // assets/js/firebase.js
 import {
-  initializeApp,
-  getApps,
-  getApp
+  initializeApp
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
 
 import {
@@ -15,7 +13,8 @@ import {
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
-  signOut
+  signOut,
+  sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
 import {
@@ -33,12 +32,11 @@ import {
   limit,
   getDocs,
   onSnapshot,
-  serverTimestamp,
-  Timestamp
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyByt8kGALyS8AU8SR6PzWFEPXfgHY5iynk",
+  apiKey: "AIzaSyByt8kGALyS8AU8SR6PzWFEPXfgHY5iyn",
   authDomain: "studychat-1b39d.firebaseapp.com",
   projectId: "studychat-1b39d",
   storageBucket: "studychat-1b39d.firebasestorage.app",
@@ -46,32 +44,26 @@ const firebaseConfig = {
   appId: "1:982302014286:web:abf319aadb1ed919727c1f"
 };
 
-const app = getApps().length
-  ? getApp()
-  : initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
 
-const auth = getAuth(app);
-const db = getFirestore(app);
+export const firebaseApp = app;
+export const auth = getAuth(app);
+export const db = getFirestore(app);
 
-const persistenceReady = setPersistence(
+export const persistenceReady = setPersistence(
   auth,
   browserLocalPersistence
 );
 
 export {
-  app,
-  auth,
-  db,
-  persistenceReady,
-
   onAuthStateChanged,
-
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
   signOut,
+  sendPasswordResetEmail,
 
   doc,
   getDoc,
@@ -79,7 +71,6 @@ export {
   updateDoc,
   addDoc,
   deleteDoc,
-
   collection,
   query,
   where,
@@ -87,7 +78,5 @@ export {
   limit,
   getDocs,
   onSnapshot,
-
-  serverTimestamp,
-  Timestamp
+  serverTimestamp
 };
