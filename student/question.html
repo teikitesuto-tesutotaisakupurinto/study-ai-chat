@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -9,6 +8,8 @@
 
   <script>
     document.documentElement.classList.add("auth-pending");
+    // JavaScriptモジュールの読み込み失敗時も画面が永久に非表示にならないようにする。
+    window.setTimeout(() => document.documentElement.classList.remove("auth-pending"), 15000);
   </script>
 
   <link rel="stylesheet" href="../assets/css/common.css">
