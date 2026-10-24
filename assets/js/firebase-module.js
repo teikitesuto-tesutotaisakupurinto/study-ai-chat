@@ -12,62 +12,105 @@ const firebaseConfig = {
   appId: "1:982302014286:web:abf319aadb1ed919727c1f"
 };
 
+function sdkReady(src) {
+  const fb = window.firebase;
+
+  if (src.includes("firebase-app-compat")) {
+    return !!fb && typeof fb.initializeApp === "function";
+  }
+
+  if (src.includes("firebase-auth-compat")) {
+    return !!fb && typeof fb.auth === "function";
+  }
+
+  if (src.includes("firebase-firestore-compat")) {
+    return !!fb && typeof fb.firestore === "function";
+  }
+
+  return false;
+}
+
 function loadScript(src) {
   return new Promise((resolve, reject) => {
-    const existing = [...document.scripts].find(
-      script => script.src === src
+    if (sdkReady(src)) {
+      resolve();
+      return;
+    }
+
+    let script = [...document.scripts].find(
+      item => item.src === src
     );
 
-    const alreadyAvailable =
-      (src.includes("firebase-app-compat") &&
-        !!window.firebase) ||
-      (src.includes("firebase-auth-compat") &&
-        !!window.firebase?.auth) ||
-      (src.includes("firebase-firestore-compat") &&
-        !!window.firebase?.firestore);
+    let createdHere = false;
 
-    if (existing?.dataset.loaded === "true" || alreadyAvailable) {
-      resolve();
-      return;
+    if (!script) {
+      script = document.createElement("script");
+      script.src = src;
+      script.async = false;
+      createdHere = true;
     }
 
-    if (existing) {
-      existing.addEventListener("load", resolve, { once: true });
-      existing.addEventListener(
-        "error",
-        () => reject(
-          new Error(`Firebase SDKを読み込めません: ${src}`)
-        ),
-        { once: true }
-      );
+    let finished = false;
+    let pollTimer = null;
+    let timeoutTimer = null;
 
-      return;
-    }
+    const cleanup = () => {
+      if (pollTimer !== null) clearInterval(pollTimer);
+      if (timeoutTimer !== null) clearTimeout(timeoutTimer);
 
-    const script = document.createElement("script");
-    script.src = src;
-    script.async = false;
-
-    script.onload = () => {
-      script.dataset.loaded = "true";
-      resolve();
+      script.removeEventListener("load", onLoad);
+      script.removeEventListener("error", onError);
     };
 
-    script.onerror = () => {
-      reject(
+    const finish = error => {
+      if (finished) return;
+      if (!error && !sdkReady(src)) return;
+
+      finished = true;
+      cleanup();
+
+      if (error) reject(error);
+      else resolve();
+    };
+
+    const onLoad = () => {
+      if (sdkReady(src)) {
+        finish();
+      } else {
+        finish(
+          new Error(
+            `Firebase SDKは読み込まれましたが、初期化できません: ${src}`
+          )
+        );
+      }
+    };
+
+    const onError = () => {
+      finish(
         new Error(`Firebase SDKを読み込めません: ${src}`)
       );
     };
 
-    document.head.append(script);
+    script.addEventListener("load", onLoad);
+    script.addEventListener("error", onError);
+
+    pollTimer = setInterval(() => {
+      if (sdkReady(src)) finish();
+    }, 100);
+
+    timeoutTimer = setTimeout(() => {
+      finish(
+        new Error(
+          `Firebase SDKの読み込みが12秒でタイムアウトしました: ${src}`
+        )
+      );
+    }, 12000);
+
+    if (createdHere) document.head.append(script);
   });
 }
 
 async function ensureCompatSDK() {
-  if (window.firebase?.auth && window.firebase?.firestore) {
-    return;
-  }
-
   await loadScript(
     `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app-compat.js`
   );
@@ -106,11 +149,10 @@ export const persistenceReady =
       "Firebase Authenticationの保存設定に失敗しました:",
       error
     );
-
     throw error;
   });
 
-// 旧式ページとの互換性
+// 旧式ページとの互換性を維持
 window.firebaseApp = app;
 window.auth = auth;
 window.db = db;
@@ -213,8 +255,8 @@ export function collection(dbInstance, ...segments) {
   return dbInstance.collection(segments.join("/"));
 }
 
-// compat SDK の exists は boolean プロパティ。
-// アプリ内では exists() として呼び出せるように統一する。
+// Compat SDKの exists は boolean プロパティ。
+// アプリ側の exists() 呼び出しと互換性を持たせる。
 function normalizeDocumentSnapshot(snapshot) {
   if (!snapshot || typeof snapshot.exists !== "boolean") {
     return snapshot;
