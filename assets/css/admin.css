@@ -1,23 +1,19 @@
-.admin-page {
-  min-height: 100vh;
-  background: #f5f7fb;
-}
-
-.admin-content {
-  width: min(1200px, calc(100% - 32px));
-  margin: 0 auto;
-  padding: 24px 0 48px;
-}
-
-.admin-grid {
+/* assets/css/admin.css */
+.admin-stat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px;
 }
 
-.admin-card {
+.admin-stat {
   padding: 20px;
-  border: 1px solid #e1e6ef;
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background: #fff;
+  background: white;
+}
+
+.admin-stat strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 28px;
 }
