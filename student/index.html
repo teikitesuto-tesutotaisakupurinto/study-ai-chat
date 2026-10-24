@@ -10,60 +10,156 @@
   <link rel="stylesheet" href="../assets/css/student.css">
 
   <style>
-    .home-section{margin:24px 0}
-    .home-card{display:block;padding:22px;border:1px solid #dbe3ef;border-radius:14px;background:#fff;color:inherit;text-decoration:none;transition:border-color .15s,box-shadow .15s}
-    .home-card:hover{border-color:#2563eb;box-shadow:0 5px 18px rgb(15 23 42 / 8%)}
-    .home-card h2{margin-top:0}
-    .home-card p{margin-bottom:0;color:#475569}
-    .history-list{display:grid;gap:10px;margin-top:14px}
-    .history-item{display:block;padding:14px 16px;border:1px solid #e2e8f0;border-radius:10px;color:inherit;text-decoration:none;overflow-wrap:anywhere}
-    .history-item:hover{background:#f8fafc;border-color:#94a3b8}
-    .history-title{font-weight:600;margin-bottom:5px}
-    .history-date{font-size:.85rem;color:#64748b}
-    .home-error{color:#b91c1c;white-space:pre-wrap}
+    .home-section {
+      margin: 24px 0;
+    }
+
+    .home-card {
+      display: block;
+      padding: 22px;
+      border: 1px solid #dbe3ef;
+      border-radius: 14px;
+      background: #fff;
+      color: inherit;
+      text-decoration: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+
+    .home-card:hover {
+      border-color: #2563eb;
+      box-shadow: 0 5px 18px rgb(15 23 42 / 8%);
+    }
+
+    .home-card h2 {
+      margin-top: 0;
+    }
+
+    .home-card p {
+      margin-bottom: 0;
+      color: #475569;
+    }
+
+    .history-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .history-item {
+      display: block;
+      padding: 14px 16px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      color: inherit;
+      text-decoration: none;
+      overflow-wrap: anywhere;
+      background: #fff;
+    }
+
+    .history-item:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+    }
+
+    .history-title {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .history-date {
+      font-size: .85rem;
+      color: #64748b;
+    }
+
+    .home-error {
+      color: #b91c1c;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
   </style>
 </head>
 
-<body>
+<body data-role="student">
+
   <div class="app-layout">
-    <aside id="appSidebar" class="sidebar"></aside>
+
+    <!-- layout.js がここにサイドバーを生成 -->
+    <aside
+      id="appSidebar"
+      class="sidebar"
+      aria-label="サイドメニュー"
+    ></aside>
 
     <main id="appMain" class="app-main">
+
       <header class="page-header">
         <h1 class="page-title">学習ホーム</h1>
-        <p id="welcome">学習を始めましょう。</p>
+
+        <p id="welcome">
+          学習を始めましょう。
+        </p>
       </header>
 
       <section class="home-section">
-        <a class="home-card" href="question.html">
+
+        <a
+          class="home-card"
+          href="./question.html"
+        >
           <h2>AI学習チャット</h2>
-          <p>中学生向けの学習AIに質問できます。過去の会話を続けることもできます。</p>
+
+          <p>
+            中学生向けの学習AIに質問できます。
+            過去の会話を続けることもできます。
+          </p>
         </a>
+
       </section>
 
       <section class="home-section">
+
         <div class="card">
+
           <h2>最近の学習</h2>
-          <p>過去の会話を選択すると、その会話の続きから質問できます。</p>
-          <div id="recent-history" class="history-list" aria-live="polite">
+
+          <p>
+            過去の会話を選択すると、
+            その会話の続きから質問できます。
+          </p>
+
+          <div
+            id="recent-history"
+            class="history-list"
+            aria-live="polite"
+          >
             履歴を読み込んでいます...
           </div>
-          <p id="history-error" class="home-error" hidden></p>
+
+          <p
+            id="history-error"
+            class="home-error"
+            hidden
+          ></p>
+
         </div>
+
       </section>
 
       <footer class="page-footer">
-        © 2026 定期テスト対策プリント運営事務局. All Rights Reserved.
+        © 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.
       </footer>
+
     </main>
+
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="../assets/js/firebase.js"></script>
+  <!--
+    Firebaseモジュールは firebase.js で一元管理。
+    compat版Firebaseは読み込まない。
+  -->
 
   <script type="module">
+
     import {
       auth,
       db,
@@ -74,117 +170,229 @@
       where,
       orderBy,
       limit,
-      getDocs,
-      signOut
-    } from "../assets/js/firebase-module.js";
+      getDocs
+    } from "../assets/js/firebase.js";
 
-    import { protectPage } from "../assets/js/auth.js";
-    import { setupSidebar, setupLogout } from "../assets/js/layout.js";
+    import {
+      protectPage
+    } from "../assets/js/auth.js";
 
-    const $ = selector => document.querySelector(selector);
+    const $ = selector =>
+      document.querySelector(selector);
 
     function formatDate(value) {
-      if (!value) return "日時未設定";
 
-      const date = typeof value.toDate === "function"
-        ? value.toDate()
-        : new Date(value);
+      if (!value) {
+        return "日時未設定";
+      }
 
-      if (Number.isNaN(date.getTime())) return "日時未設定";
+      let date;
 
-      return new Intl.DateTimeFormat("ja-JP", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit"
-      }).format(date);
+      try {
+
+        date =
+          typeof value.toDate === "function"
+            ? value.toDate()
+            : new Date(value);
+
+      } catch {
+
+        return "日時未設定";
+
+      }
+
+      if (
+        Number.isNaN(
+          date.getTime()
+        )
+      ) {
+        return "日時未設定";
+      }
+
+      return new Intl.DateTimeFormat(
+        "ja-JP",
+        {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        }
+      ).format(date);
     }
 
     function showHistoryError(message) {
-      const error = $("#history-error");
-      error.textContent = message;
+
+      const error =
+        $("#history-error");
+
+      if (!error) {
+        return;
+      }
+
+      error.textContent =
+        message;
+
       error.hidden = false;
     }
 
-    async function loadRecentConversations(uid) {
-      const container = $("#recent-history");
+    async function loadRecentConversations(
+      uid
+    ) {
+
+      const container =
+        $("#recent-history");
+
+      if (!container) {
+        return;
+      }
+
       container.replaceChildren();
 
       try {
-        const historyQuery = query(
-          collection(db, "chatHistories"),
-          where("userId", "==", uid),
-          orderBy("updatedAt", "desc"),
-          limit(10)
-        );
 
-        const snapshot = await getDocs(historyQuery);
+        const historyQuery =
+          query(
+            collection(
+              db,
+              "chatHistories"
+            ),
+
+            where(
+              "userId",
+              "==",
+              uid
+            ),
+
+            orderBy(
+              "updatedAt",
+              "desc"
+            ),
+
+            limit(10)
+          );
+
+        const snapshot =
+          await getDocs(
+            historyQuery
+          );
 
         if (snapshot.empty) {
-          container.textContent = "まだ会話履歴はありません。";
+
+          container.textContent =
+            "まだ会話履歴はありません。";
+
           return;
         }
 
-        for (const item of snapshot.docs) {
-          const data = item.data();
-          const link = document.createElement("a");
+        for (
+          const item of snapshot.docs
+        ) {
 
-          link.className = "history-item";
+          const data =
+            item.data();
+
+          const link =
+            document.createElement(
+              "a"
+            );
+
+          link.className =
+            "history-item";
+
           link.href =
-            `question.html?conversationId=${encodeURIComponent(item.id)}`;
+            `./question.html?conversationId=${encodeURIComponent(
+              item.id
+            )}`;
 
-          const title = document.createElement("div");
-          title.className = "history-title";
+          const title =
+            document.createElement(
+              "div"
+            );
+
+          title.className =
+            "history-title";
+
           title.textContent =
-            data.title || data.lastQuestion || "新しい会話";
+            data.title ||
+            data.lastQuestion ||
+            "新しい会話";
 
-          const date = document.createElement("div");
-          date.className = "history-date";
+          const date =
+            document.createElement(
+              "div"
+            );
+
+          date.className =
+            "history-date";
+
           date.textContent =
-            `最終更新：${formatDate(data.updatedAt)}`;
+            `最終更新：${formatDate(
+              data.updatedAt
+            )}`;
 
-          link.append(title, date);
-          container.append(link);
+          link.append(
+            title,
+            date
+          );
+
+          container.append(
+            link
+          );
         }
+
       } catch (error) {
-        console.error("会話履歴の取得に失敗しました:", error);
-        container.textContent = "履歴を読み込めませんでした。";
+
+        console.error(
+          "会話履歴の取得に失敗しました:",
+          error
+        );
+
+        container.textContent =
+          "履歴を読み込めませんでした。";
 
         showHistoryError(
-          `${error.code || "error"}: ${error.message || String(error)}`
+          `${error?.code || "error"}: ${
+            error?.message ||
+            String(error)
+          }`
         );
       }
     }
 
     async function initialize() {
+
       try {
-        // 認証・権限・メンテナンス判定を最初に行う。
-        const result = await protectPage("student");
 
-        if (!result || !result.user) {
+        /*
+         * 認証・プロフィール・権限・
+         * メンテナンス状態を確認
+         */
+        const result =
+          await protectPage(
+            "student"
+          );
+
+        if (
+          !result ||
+          !result.user
+        ) {
           return;
         }
 
-        setupSidebar();
-        setupLogout(auth, signOut);
+        const user =
+          result.user;
 
-        const user = result.user;
-        const profileSnapshot = await getDoc(
-          doc(db, "users", user.uid)
-        );
+        const profile =
+          result.profile;
 
-        if (!profileSnapshot.exists()) {
-          throw new Error("利用者プロフィールが見つかりません。");
-        }
-
-        const profile = profileSnapshot.data();
-
-        if (profile.status !== "active") {
-          await signOut(auth);
-          location.replace("../login.html");
-          return;
-        }
+        /*
+         * layout.js が自動的に
+         * サイドバーを生成する。
+         *
+         * ここでは再度setupSidebar()を
+         * 呼び出さない。
+         */
 
         const displayName =
           profile.displayName ||
@@ -192,23 +400,49 @@
           user.displayName ||
           "学習者";
 
-        $("#welcome").textContent =
-          `${displayName}さん、学習を始めましょう。`;
+        const welcome =
+          $("#welcome");
 
-        await loadRecentConversations(user.uid);
+        if (welcome) {
+
+          welcome.textContent =
+            `${displayName}さん、学習を始めましょう。`;
+
+        }
+
+        await loadRecentConversations(
+          user.uid
+        );
+
       } catch (error) {
-        console.error("ホーム画面の初期化に失敗しました:", error);
 
-        $("#welcome").textContent =
-          "ホーム画面を読み込めませんでした。";
+        console.error(
+          "ホーム画面の初期化に失敗しました:",
+          error
+        );
+
+        const welcome =
+          $("#welcome");
+
+        if (welcome) {
+
+          welcome.textContent =
+            "ホーム画面を読み込めませんでした。";
+
+        }
 
         showHistoryError(
-          `${error.code || "error"}: ${error.message || String(error)}`
+          `${error?.code || "error"}: ${
+            error?.message ||
+            String(error)
+          }`
         );
       }
     }
 
     initialize();
+
   </script>
+
 </body>
 </html>
