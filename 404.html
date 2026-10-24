@@ -9,10 +9,15 @@
 <body>
   <main class="page-error">
     <section class="content-card">
+      <p class="eyebrow">ERROR 404</p>
       <h1>ページが見つかりません</h1>
-      <p>指定されたページは存在しないか、移動した可能性があります。</p>
-      <p><a href="./login.html">ログイン画面へ</a></p>
+      <p>URLが変更されたか、ページが存在しない可能性があります。</p>
+      <p><a id="homeLink" href="./index.html">トップページへ戻る</a></p>
     </section>
   </main>
+  <script src="./assets/js/paths.js"></script>
+  <script>
+    document.getElementById("homeLink").href = window.AppPaths.home;
+  </script>
 </body>
 </html>
