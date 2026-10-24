@@ -1,4 +1,3 @@
-
 import {
   auth,
   db,
@@ -7,7 +6,7 @@ import {
   signOut,
   doc,
   getDoc
-} from "./firebase.js";
+} from "./firebase-module.js";
 
 function rootPath(file) {
   const path = location.pathname;
