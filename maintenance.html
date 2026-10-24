@@ -5,65 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f5f7fb">
   <title>メンテナンス中｜学習AIチャット</title>
-  <link rel="stylesheet" href="./assets/css/common.css">
 
   <style>
-    body {
-      background: #f5f7fb;
-    }
-
-    .maintenance-wrap {
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 24px;
-    }
-
-    .maintenance-card {
-      width: min(100%, 680px);
-      padding: 36px;
-      background: #fff;
-      border: 1px solid #e2e6ee;
-      border-radius: 14px;
-      box-shadow: 0 8px 28px rgba(0, 0, 0, .06);
-      text-align: center;
-    }
-
-    .maintenance-card h1 {
-      margin: 0 0 18px;
-      font-size: clamp(24px, 4vw, 34px);
-      color: #202124;
-    }
-
-    .maintenance-card p {
-      line-height: 1.9;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-      color: #4b5563;
-    }
-
-    .maintenance-status {
-      font-size: 13px;
-      color: #6b7280;
-      margin-top: 22px;
-    }
-
-    .maintenance-card button {
-      margin-top: 18px;
-      padding: 11px 20px;
-      border: 1px solid #cbd5e1;
-      border-radius: 7px;
-      background: #fff;
-      color: #1f2937;
-      cursor: pointer;
-    }
-
-    footer {
-      margin-top: 28px;
-      font-size: 11px;
-      color: #777;
-      line-height: 1.7;
-    }
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:#f5f7fb;color:#202124;font-family:Arial,"Noto Sans JP",sans-serif}
+    .maintenance-wrap{min-height:100vh;display:grid;place-items:center;padding:24px}
+    .maintenance-card{width:min(100%,680px);padding:36px;background:#fff;border:1px solid #e2e6ee;border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,.06);text-align:center}
+    .maintenance-card h1{margin:0 0 18px;font-size:clamp(24px,4vw,34px);color:#202124}
+    .maintenance-card p{line-height:1.9;white-space:pre-wrap;overflow-wrap:anywhere;color:#4b5563}
+    .maintenance-status{font-size:13px;color:#6b7280;margin-top:22px}
+    .maintenance-card button{margin-top:18px;padding:11px 20px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;color:#1f2937;cursor:pointer}
+    footer{margin-top:28px;font-size:11px;color:#777;line-height:1.7}
+    [hidden]{display:none!important}
+    @media(max-width:480px){.maintenance-card{padding:28px 20px}}
   </style>
 </head>
 
@@ -73,59 +27,104 @@
       <h1 id="maintenanceTitle">システムメンテナンス中</h1>
 
       <p id="maintenanceMessage">
-        メンテナンス設定を確認しています。
+        ログイン状態とメンテナンス設定を確認しています。
       </p>
 
       <p id="maintenanceStatus" class="maintenance-status">
-        接続中...
+        確認中...
       </p>
 
-      <button id="reloadButton" type="button">
-        再読み込み
-      </button>
-
-      <p>
-        <a href="./login.html">ログイン画面へ</a>
-      </p>
+      <button id="reloadButton" type="button">再確認</button>
+      <button id="logoutButton" type="button" hidden>ログアウト</button>
 
       <footer>
-        © 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.
+        © 2026 定期テスト対策プリント運営事務局. All Rights Reserved.
       </footer>
     </section>
   </main>
 
   <script type="module">
     import {
-      db,
-      doc,
-      getDoc,
-      onSnapshot
+      auth, db, persistenceReady, onAuthStateChanged,
+      signOut, doc, getDoc, onSnapshot
     } from "./assets/js/firebase-module.js";
 
     const title = document.getElementById("maintenanceTitle");
     const message = document.getElementById("maintenanceMessage");
     const status = document.getElementById("maintenanceStatus");
+    const logoutButton = document.getElementById("logoutButton");
+    const settingsRef = doc(db, "settings", "system");
 
-    const ref = doc(db, "settings", "system");
+    let settingsUnsubscribe = null;
+    let authUnsubscribe = null;
+    let redirecting = false;
+    let currentUser = null;
+    let authResolved = false;
 
-    let unsubscribe = null;
+    function showError(text) {
+      status.textContent = text;
+    }
 
-    function render(settings) {
+    function render(settings = {}) {
       title.textContent =
-        settings.maintenanceTitle ||
-        "システムメンテナンス中";
+        settings.maintenanceTitle || "システムメンテナンス中";
 
       message.textContent =
         settings.maintenanceMessage ||
         settings.message ||
         "現在、メンテナンスを実施しています。しばらくお待ちください。";
 
-      status.textContent = "メンテナンス設定を確認しました。";
+      status.textContent =
+        "メンテナンスが終了すると、自動的に学習画面へ戻ります。";
     }
 
-    async function initialize() {
+    async function routeByUser(user) {
+      if (redirecting) return;
+
+      if (!user) {
+        redirecting = true;
+        location.replace("./login.html");
+        return;
+      }
+
+      currentUser = user;
+      logoutButton.hidden = false;
+
       try {
-        const snapshot = await getDoc(ref);
+        const profileSnapshot = await getDoc(
+          doc(db, "users", user.uid)
+        );
+
+        if (!profileSnapshot.exists()) {
+          await signOut(auth);
+          redirecting = true;
+          location.replace("./login.html");
+          return;
+        }
+
+        const profile = profileSnapshot.data() || {};
+
+        if (profile.status !== "active") {
+          await signOut(auth);
+          redirecting = true;
+          location.replace("./login.html");
+          return;
+        }
+
+        if (profile.role === "admin") {
+          redirecting = true;
+          location.replace("./admin/index.html");
+          return;
+        }
+
+        if (profile.role !== "student") {
+          showError(
+            "アカウントの権限を確認できません。管理者にお問い合わせください。"
+          );
+          return;
+        }
+
+        const snapshot = await getDoc(settingsRef);
 
         if (!snapshot.exists()) {
           throw new Error(
@@ -136,60 +135,109 @@
         const settings = snapshot.data() || {};
 
         if (settings.maintenance !== true) {
-          location.replace("./login.html");
+          redirecting = true;
+          location.replace("./student/index.html");
           return;
         }
 
         render(settings);
+      } catch (error) {
+        console.error("メンテナンス画面の確認エラー:", error);
 
-        unsubscribe = onSnapshot(
-          ref,
-          liveSnapshot => {
-            if (!liveSnapshot.exists()) {
-              status.textContent =
-                "設定が見つかりません。管理者にお問い合わせください。";
-              return;
-            }
+        showError(
+          `設定を確認できませんでした。通信状態とFirestoreのアクセス権限を確認してください。
+${error.code || "error"}: ${error.message || String(error)}`
+        );
+      }
+    }
 
-            const liveSettings = liveSnapshot.data() || {};
+    async function initialize() {
+      try {
+        await persistenceReady;
 
-            if (liveSettings.maintenance !== true) {
-              location.replace("./login.html");
-              return;
-            }
-
-            render(liveSettings);
+        authUnsubscribe = onAuthStateChanged(
+          auth,
+          user => {
+            authResolved = true;
+            void routeByUser(user);
           },
           error => {
-            console.error(
-              "メンテナンス設定の監視に失敗:",
-              error
+            console.error("認証状態の確認エラー:", error);
+            showError(
+              "ログイン状態を確認できません。再確認してください。"
             );
+          }
+        );
 
-            status.textContent =
-              "設定の更新を確認できません。通信状態を確認してください。";
+        settingsUnsubscribe = onSnapshot(
+          settingsRef,
+          snapshot => {
+            if (!snapshot.exists()) {
+              showError(
+                "Firestore の settings/system が見つかりません。"
+              );
+              return;
+            }
+
+            const settings = snapshot.data() || {};
+
+            // 認証状態が確定する前に別ページへ移動しない。
+            if (!authResolved) return;
+
+            if (settings.maintenance !== true) {
+              if (currentUser) {
+                redirecting = true;
+                location.replace("./student/index.html");
+              } else {
+                redirecting = true;
+                location.replace("./login.html");
+              }
+
+              return;
+            }
+
+            render(settings);
+          },
+          error => {
+            console.error("メンテナンス設定の監視エラー:", error);
+            showError(
+              "メンテナンス設定の更新を確認できません。通信状態を確認してください。"
+            );
           }
         );
       } catch (error) {
-        console.error(
-          "メンテナンス画面の初期化エラー:",
-          error
+        console.error("メンテナンス画面の初期化エラー:", error);
+
+        showError(
+          `初期化できませんでした。
+${error.code || "error"}: ${error.message || String(error)}`
         );
-
-        message.textContent =
-          "メンテナンス設定を読み込めませんでした。通信状態とFirestoreの settings/system の読み取り権限を確認してください。";
-
-        status.textContent =
-          error.message || String(error);
       }
     }
 
     document
       .getElementById("reloadButton")
-      .addEventListener("click", () => location.reload());
+      .addEventListener("click", () => {
+        location.reload();
+      });
+
+    logoutButton.addEventListener("click", async () => {
+      logoutButton.disabled = true;
+
+      try {
+        await signOut(auth);
+        location.replace("./login.html");
+      } catch (error) {
+        logoutButton.disabled = false;
+        showError(
+          `ログアウトできませんでした: ${error.message || String(error)}`
+        );
+      }
+    });
 
     window.addEventListener("pagehide", () => {
-      unsubscribe?.();
+      settingsUnsubscribe?.();
+      authUnsubscribe?.();
     });
 
     void initialize();
