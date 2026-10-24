@@ -1,6 +1,8 @@
 
 import {
-  initializeApp
+  initializeApp,
+  getApps,
+  getApp
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
 
 import {
@@ -33,7 +35,10 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
-// Firebase設定
+/* =========================================================
+   Firebase設定
+   ========================================================= */
+
 const firebaseConfig = {
   apiKey: "AIzaSyByt8kGALyS8AU8SR6P8zWFEPXfgHY5iyn",
   authDomain: "studychat-1b39d.firebaseapp.com",
@@ -43,11 +48,15 @@ const firebaseConfig = {
   appId: "1:982302014286:web:abf319aadb1ed919727c1f"
 };
 
-// ほかのスクリプトから参照できるように公開
+// 従来のグローバル設定参照にも対応
 window.FIREBASE_CONFIG = firebaseConfig;
 
-// Firebase初期化
-const app = initializeApp(firebaseConfig);
+// Firebaseアプリを初期化
+const app = getApps().length > 0
+  ? getApp()
+  : initializeApp(firebaseConfig);
+
+// AuthenticationとFirestore
 const auth = getAuth(app);
 const db = getFirestore(app);
 
@@ -57,11 +66,15 @@ const persistenceReady = setPersistence(
   browserLocalPersistence
 );
 
-// エクスポート
+/* =========================================================
+   エクスポート
+   ========================================================= */
+
 export {
   app,
   auth,
   db,
+  firebaseConfig,
   persistenceReady,
 
   onAuthStateChanged,
