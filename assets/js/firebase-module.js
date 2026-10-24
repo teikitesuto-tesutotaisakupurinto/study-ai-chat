@@ -14,7 +14,10 @@ const FIREBASE_CONFIG = {
 
 function loadScript(src) {
   return new Promise((resolve, reject) => {
-    const existing = [...document.scripts].find(script => script.src === src);
+    const existing = [...document.scripts].find(
+      script => script.src === src
+    );
+
     const alreadyAvailable =
       (src.includes("firebase-app-compat") && !!window.firebase) ||
       (src.includes("firebase-auth-compat") && !!window.firebase?.auth) ||
@@ -38,11 +41,16 @@ function loadScript(src) {
     const script = document.createElement("script");
     script.src = src;
     script.async = false;
+
     script.onload = () => {
       script.dataset.loaded = "true";
       resolve();
     };
-    script.onerror = () => reject(new Error(`Firebase SDKを読み込めません: ${src}`));
+
+    script.onerror = () => {
+      reject(new Error(`Firebase SDKを読み込めません: ${src}`));
+    };
+
     document.head.append(script);
   });
 }
@@ -93,9 +101,14 @@ window.auth = auth;
 window.db = db;
 window.authReadyPromise = persistenceReady;
 
-export const GoogleAuthProvider = window.firebase.auth.GoogleAuthProvider;
+export const GoogleAuthProvider =
+  window.firebase.auth.GoogleAuthProvider;
 
-export function onAuthStateChanged(authInstance, callback, errorCallback) {
+export function onAuthStateChanged(
+  authInstance,
+  callback,
+  errorCallback
+) {
   return authInstance.onAuthStateChanged(callback, errorCallback);
 }
 
@@ -103,7 +116,11 @@ export function signOut(authInstance) {
   return authInstance.signOut();
 }
 
-export function signInWithEmailAndPassword(authInstance, email, password) {
+export function signInWithEmailAndPassword(
+  authInstance,
+  email,
+  password
+) {
   return authInstance.signInWithEmailAndPassword(email, password);
 }
 
@@ -119,11 +136,19 @@ export function getRedirectResult(authInstance) {
   return authInstance.getRedirectResult();
 }
 
-export function sendPasswordResetEmail(authInstance, email, settings) {
+export function sendPasswordResetEmail(
+  authInstance,
+  email,
+  settings
+) {
   return authInstance.sendPasswordResetEmail(email, settings);
 }
 
-export function createUserWithEmailAndPassword(authInstance, email, password) {
+export function createUserWithEmailAndPassword(
+  authInstance,
+  email,
+  password
+) {
   return authInstance.createUserWithEmailAndPassword(email, password);
 }
 
@@ -136,7 +161,10 @@ export function doc(dbOrCollection, ...segments) {
     return dbOrCollection.doc();
   }
 
-  if (!dbOrCollection || typeof dbOrCollection.doc !== "function") {
+  if (
+    !dbOrCollection ||
+    typeof dbOrCollection.doc !== "function"
+  ) {
     throw new Error(
       "doc() にFirestoreまたはコレクション参照が渡されていません。"
     );
@@ -146,15 +174,39 @@ export function doc(dbOrCollection, ...segments) {
 }
 
 export function collection(dbInstance, ...segments) {
-  if (!dbInstance || typeof dbInstance.collection !== "function") {
-    throw new Error("collection() にFirestore参照が渡されていません。");
+  if (
+    !dbInstance ||
+    typeof dbInstance.collection !== "function"
+  ) {
+    throw new Error(
+      "collection() にFirestore参照が渡されていません。"
+    );
   }
 
   return dbInstance.collection(segments.join("/"));
 }
 
-export function getDoc(reference) {
-  return reference.get();
+// Compat SDK の DocumentSnapshot.exists は boolean プロパティだが、
+// アプリ側は modular SDK と同じ exists() メソッドを使用している。
+// ここで統一し、全画面で同じ形式にする。
+function normalizeDocumentSnapshot(snapshot) {
+  if (!snapshot || typeof snapshot.exists !== "boolean") {
+    return snapshot;
+  }
+
+  return {
+    id: snapshot.id,
+    ref: snapshot.ref,
+    metadata: snapshot.metadata,
+    exists: () => snapshot.exists,
+    data: () => snapshot.data(),
+    get: fieldPath => snapshot.get(fieldPath)
+  };
+}
+
+export async function getDoc(reference) {
+  const snapshot = await reference.get();
+  return normalizeDocumentSnapshot(snapshot);
 }
 
 export function getDocs(reference) {
@@ -162,7 +214,9 @@ export function getDocs(reference) {
 }
 
 export function setDoc(reference, data, options) {
-  return options ? reference.set(data, options) : reference.set(data);
+  return options
+    ? reference.set(data, options)
+    : reference.set(data);
 }
 
 export function updateDoc(reference, data) {
@@ -182,15 +236,27 @@ export function serverTimestamp() {
 }
 
 export function where(field, operator, value) {
-  return { kind: "where", field, operator, value };
+  return {
+    kind: "where",
+    field,
+    operator,
+    value
+  };
 }
 
 export function orderBy(field, direction = "asc") {
-  return { kind: "orderBy", field, direction };
+  return {
+    kind: "orderBy",
+    field,
+    direction
+  };
 }
 
 export function limit(count) {
-  return { kind: "limit", count };
+  return {
+    kind: "limit",
+    count
+  };
 }
 
 export function query(reference, ...constraints) {
@@ -218,6 +284,13 @@ export function query(reference, ...constraints) {
   }, reference);
 }
 
-export function onSnapshot(reference, callback, errorCallback) {
-  return reference.onSnapshot(callback, errorCallback);
+export function onSnapshot(
+  reference,
+  callback,
+  errorCallback
+) {
+  return reference.onSnapshot(
+    snapshot => callback(normalizeDocumentSnapshot(snapshot)),
+    errorCallback
+  );
 }
