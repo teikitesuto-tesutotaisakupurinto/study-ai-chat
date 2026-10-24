@@ -1,5 +1,3 @@
-// assets/js/auth.js
-
 import {
   auth,
   db,
@@ -11,28 +9,16 @@ import {
 } from "./firebase.js";
 
 function rootPath(file) {
-  const pathname = window.location.pathname;
+  const path = window.location.pathname;
 
   if (
-    pathname.includes("/student/") ||
-    pathname.includes("/admin/")
+    path.includes("/student/") ||
+    path.includes("/admin/")
   ) {
     return `../${file}`;
   }
 
   return `./${file}`;
-}
-
-function redirectToLogin() {
-  window.location.replace(rootPath("login.html"));
-}
-
-function redirectToForbidden() {
-  window.location.replace(rootPath("403.html"));
-}
-
-function redirectToMaintenance() {
-  window.location.replace(rootPath("maintenance.html"));
 }
 
 export async function getSystemSettings() {
@@ -42,7 +28,7 @@ export async function getSystemSettings() {
 
   if (!snapshot.exists()) {
     throw new Error(
-      "Firestoreに settings/system がありません。"
+      "Firestore の settings/system が存在しません。"
     );
   }
 
@@ -52,7 +38,7 @@ export async function getSystemSettings() {
 export async function getCurrentProfile(user) {
   if (!user || !user.uid) {
     throw new Error(
-      "ログイン中のユーザーを確認できません。"
+      "ログイン中の利用者を確認できません。"
     );
   }
 
@@ -62,7 +48,7 @@ export async function getCurrentProfile(user) {
 
   if (!snapshot.exists()) {
     throw new Error(
-      `ユーザープロフィールがありません。users/${user.uid}`
+      `ユーザープロフィールがありません。users/${user.uid} を確認してください。`
     );
   }
 
@@ -74,32 +60,26 @@ export function waitForAuth() {
     let unsubscribe = null;
     let finished = false;
 
-    const cleanup = () => {
+    function finish(callback, value) {
+      if (finished) return;
+
+      finished = true;
+
       if (unsubscribe) {
         unsubscribe();
         unsubscribe = null;
       }
-    };
+
+      callback(value);
+    }
 
     unsubscribe = onAuthStateChanged(
       auth,
       user => {
-        if (finished) {
-          return;
-        }
-
-        finished = true;
-        cleanup();
-        resolve(user);
+        finish(resolve, user);
       },
       error => {
-        if (finished) {
-          return;
-        }
-
-        finished = true;
-        cleanup();
-        reject(error);
+        finish(reject, error);
       }
     );
   });
@@ -121,37 +101,53 @@ function showAccessError(
     "auth-pending"
   );
 
-  const existing =
+  let existing =
     document.getElementById("authErrorScreen");
 
   if (existing) {
     existing.remove();
   }
 
-  const main =
-    document.createElement("main");
+  const screen =
+    document.createElement("div");
 
-  main.id = "authErrorScreen";
-  main.className = "auth-error-screen";
+  screen.id = "authErrorScreen";
+  screen.style.position = "fixed";
+  screen.style.inset = "0";
+  screen.style.zIndex = "10000";
+  screen.style.display = "flex";
+  screen.style.alignItems = "center";
+  screen.style.justifyContent = "center";
+  screen.style.padding = "20px";
+  screen.style.background = "#f5f7fb";
 
-  const card =
+  const box =
     document.createElement("section");
 
-  card.className = "auth-error-card";
+  box.style.width =
+    "min(620px, 100%)";
+  box.style.padding = "32px";
+  box.style.background = "#fff";
+  box.style.border =
+    "1px solid #e2e6ee";
+  box.style.borderRadius = "14px";
+  box.style.boxShadow =
+    "0 8px 28px rgba(0,0,0,.06)";
 
   const heading =
     document.createElement("h1");
 
   heading.textContent = title;
 
-  const description =
+  const text =
     document.createElement("p");
 
-  description.textContent = message;
+  text.textContent = message;
+  text.style.lineHeight = "1.8";
 
-  card.append(
+  box.append(
     heading,
-    description
+    text
   );
 
   if (detail) {
@@ -159,25 +155,75 @@ function showAccessError(
       document.createElement("pre");
 
     pre.textContent = detail;
-    card.append(pre);
+    pre.style.whiteSpace =
+      "pre-wrap";
+    pre.style.overflowWrap =
+      "anywhere";
+    pre.style.background =
+      "#f5f7fb";
+    pre.style.padding =
+      "12px";
+    pre.style.borderRadius =
+      "8px";
+    pre.style.fontSize =
+      "12px";
+
+    box.append(pre);
   }
 
   const retry =
     document.createElement("button");
 
   retry.type = "button";
-  retry.textContent = "再読み込み";
+  retry.textContent =
+    "再読み込み";
+
+  retry.style.width =
+    "100%";
+  retry.style.padding =
+    "12px";
+  retry.style.marginTop =
+    "16px";
+  retry.style.border = "0";
+  retry.style.borderRadius =
+    "7px";
+  retry.style.background =
+    "#1a73e8";
+  retry.style.color =
+    "#fff";
+  retry.style.cursor =
+    "pointer";
 
   retry.addEventListener(
     "click",
-    () => window.location.reload()
+    () => location.reload()
   );
 
-  card.append(retry);
+  box.append(retry);
 
-  main.append(card);
+  const login =
+    document.createElement("a");
 
-  document.body.append(main);
+  login.href =
+    rootPath("login.html");
+
+  login.textContent =
+    "ログイン画面へ";
+
+  login.style.display =
+    "block";
+  login.style.marginTop =
+    "14px";
+  login.style.textAlign =
+    "center";
+  login.style.color =
+    "#1a73e8";
+
+  box.append(login);
+
+  screen.append(box);
+
+  document.body.append(screen);
 }
 
 export async function requireRole(
@@ -194,7 +240,7 @@ export async function requireRole(
   ) {
     showAccessError(
       "ページ設定エラー",
-      "ページの権限設定が正しくありません。",
+      "requiredRole が正しく設定されていません。",
       `requiredRole: ${String(requiredRole)}`
     );
 
@@ -208,7 +254,10 @@ export async function requireRole(
       await waitForAuth();
 
     if (!user) {
-      redirectToLogin();
+      window.location.replace(
+        rootPath("login.html")
+      );
+
       return null;
     }
 
@@ -218,33 +267,30 @@ export async function requireRole(
       profile =
         await getCurrentProfile(user);
     } catch (error) {
-      console.error(
-        "プロフィール取得エラー:",
-        error
-      );
-
       showAccessError(
         "ユーザー情報エラー",
-        "ユーザープロフィールを確認できませんでした。",
+        "ユーザープロフィールを取得できませんでした。",
         errorText(error)
       );
 
       return null;
     }
 
-    if (profile.status !== "active") {
+    if (
+      profile.status !== "active"
+    ) {
       try {
         await signOut(auth);
       } catch (error) {
         console.error(
-          "サインアウトエラー:",
+          "無効アカウントのサインアウトエラー:",
           error
         );
       }
 
       showAccessError(
         "アカウント利用不可",
-        "このアカウントは現在利用できません。"
+        "このアカウントは現在利用できません。管理者にお問い合わせください。"
       );
 
       return null;
@@ -266,19 +312,11 @@ export async function requireRole(
     if (
       profile.role !== requiredRole
     ) {
-      if (profile.role === "student") {
-        window.location.replace(
-          rootPath("student/index.html")
-        );
-      } else if (
-        profile.role === "admin"
-      ) {
-        window.location.replace(
-          rootPath("admin/index.html")
-        );
-      } else {
-        redirectToForbidden();
-      }
+      showAccessError(
+        "403 Forbidden",
+        "このページを開く権限がありません。",
+        `必要な権限: ${requiredRole}\n現在の権限: ${profile.role}`
+      );
 
       return null;
     }
@@ -289,32 +327,24 @@ export async function requireRole(
       settings =
         await getSystemSettings();
     } catch (error) {
-      console.error(
-        "システム設定取得エラー:",
-        error
-      );
-
       showAccessError(
         "システム設定エラー",
-        "システム設定を取得できませんでした。",
+        "Firestore の settings/system を取得できませんでした。",
         errorText(error)
       );
 
       return null;
     }
 
-    /*
-     * maintenance === true
-     *
-     * studentページではメンテナンス画面へ。
-     * adminは管理作業のため通常利用可能。
-     */
     if (
       settings.maintenance === true &&
       requiredRole === "student" &&
       options.allowMaintenance !== true
     ) {
-      redirectToMaintenance();
+      window.location.replace(
+        rootPath("maintenance.html")
+      );
+
       return null;
     }
 
@@ -331,7 +361,7 @@ export async function requireRole(
 
   } catch (error) {
     console.error(
-      "認証・権限確認エラー:",
+      "認証・権限チェックエラー:",
       error
     );
 
@@ -357,7 +387,7 @@ export async function protectPage(
 
   if (!result) {
     throw new Error(
-      "権限確認に失敗しました。"
+      "権限確認に失敗したため、ページの初期化を中止しました。"
     );
   }
 
