@@ -24,20 +24,21 @@ import {
   getDoc,
   setDoc,
   updateDoc,
+  addDoc,
+  deleteDoc,
   collection,
   query,
   where,
   orderBy,
   limit,
   getDocs,
-  addDoc,
-  serverTimestamp,
   onSnapshot,
-  deleteDoc
+  serverTimestamp,
+  Timestamp
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyByt8kGALyS8AU8SR6P8zWFEPXfgHY5iyn",
+  apiKey: "AIzaSyByt8kGALyS8AU8SR6PzWFEPXfgHY5iyn",
   authDomain: "studychat-1b39d.firebaseapp.com",
   projectId: "studychat-1b39d",
   storageBucket: "studychat-1b39d.firebasestorage.app",
@@ -45,16 +46,9 @@ const firebaseConfig = {
   appId: "1:982302014286:web:abf319aadb1ed919727c1f"
 };
 
-let app;
-
-try {
-  app = getApps().length
-    ? getApp()
-    : initializeApp(firebaseConfig);
-} catch (error) {
-  console.error("Firebase初期化エラー:", error);
-  throw error;
-}
+const app = getApps().length
+  ? getApp()
+  : initializeApp(firebaseConfig);
 
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -71,6 +65,7 @@ export {
   persistenceReady,
 
   onAuthStateChanged,
+
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
@@ -82,14 +77,17 @@ export {
   getDoc,
   setDoc,
   updateDoc,
+  addDoc,
+  deleteDoc,
+
   collection,
   query,
   where,
   orderBy,
   limit,
   getDocs,
-  addDoc,
-  serverTimestamp,
   onSnapshot,
-  deleteDoc
+
+  serverTimestamp,
+  Timestamp
 };
