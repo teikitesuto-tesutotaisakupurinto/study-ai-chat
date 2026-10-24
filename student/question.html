@@ -1,25 +1,12 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1"
-  >
-
-  <meta
-    name="theme-color"
-    content="#f5f7fb"
-  >
+  <meta name="theme-color" content="#f5f7fb">
 
   <title>AIに質問 | 学習AIチャット</title>
-
-  <link
-    rel="stylesheet"
-    href="../assets/css/student.css"
-  >
 
   <style>
     * {
@@ -30,16 +17,16 @@
     body {
       margin: 0;
       min-height: 100%;
-    }
-
-    body {
       font-family:
         Arial,
         "Noto Sans JP",
         sans-serif;
-
-      background: #f5f7fb;
       color: #202124;
+      background: #f5f7fb;
+    }
+
+    body {
+      min-height: 100vh;
     }
 
     [hidden] {
@@ -48,394 +35,131 @@
 
     .app-shell {
       min-height: 100vh;
+      display: flex;
     }
 
     .sidebar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      bottom: 0;
-
-      width: 270px;
-
-      background: #ffffff;
-
-      border-right:
-        1px solid #e1e5ec;
-
-      overflow-y: auto;
-
-      z-index: 1000;
-    }
-
-    .main-area {
-      margin-left: 270px;
-
+      width: 250px;
+      flex: 0 0 250px;
       min-height: 100vh;
-
+      background: #ffffff;
+      border-right: 1px solid #e2e6ee;
       display: flex;
       flex-direction: column;
-    }
-
-    .content {
-      width: 100%;
-      max-width: 1000px;
-
-      margin: 0 auto;
-
-      padding: 32px 24px;
-
-      flex: 1;
-    }
-
-    .page-header {
-      margin-bottom: 20px;
-    }
-
-    .page-header h1 {
-      margin: 0 0 6px;
-      font-size: 26px;
-    }
-
-    .page-header p {
-      margin: 0;
-      color: #667085;
-    }
-
-    .chat-card {
-      background: #fff;
-
-      border:
-        1px solid #e0e5ed;
-
-      border-radius: 14px;
-
-      overflow: hidden;
-
-      box-shadow:
-        0 4px 18px
-        rgba(0, 0, 0, .04);
-    }
-
-    .chat-status {
-      min-height: 42px;
-
-      padding: 12px 18px;
-
-      border-bottom:
-        1px solid #edf0f4;
-
-      color: #667085;
-
-      font-size: 13px;
-    }
-
-    .chat-status[data-type="error"] {
-      color: #b42318;
-      background: #fff6f5;
-    }
-
-    .chat-status[data-type="success"] {
-      color: #067647;
-      background: #f0fdf4;
-    }
-
-    .chat-messages {
-      min-height: 440px;
-      max-height: 62vh;
-
+      padding: 18px 12px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
       overflow-y: auto;
-
-      padding: 24px;
-    }
-
-    .chat-empty {
-      padding: 80px 20px;
-
-      text-align: center;
-
-      color: #98a2b3;
-    }
-
-    .chat-message {
-      max-width: 82%;
-
-      margin-bottom: 20px;
-
-      padding: 15px 17px;
-
-      border-radius: 12px;
-
-      line-height: 1.8;
-
-      white-space: pre-wrap;
-
-      overflow-wrap: anywhere;
-    }
-
-    .chat-message.user {
-      margin-left: auto;
-
-      background: #e8f0fe;
-    }
-
-    .chat-message.assistant {
-      margin-right: auto;
-
-      background: #f5f7fa;
-
-      border:
-        1px solid #e4e7ec;
-    }
-
-    .chat-message-role {
-      margin-bottom: 7px;
-
-      font-size: 12px;
-
-      font-weight: 700;
-
-      color: #667085;
-    }
-
-    .chat-message-content {
-      font-size: 15px;
-    }
-
-    .chat-message-time {
-      display: block;
-
-      margin-top: 8px;
-
-      font-size: 11px;
-
-      color: #98a2b3;
-    }
-
-    .question-form {
-      padding: 18px;
-
-      border-top:
-        1px solid #e7eaf0;
-
-      background: #fff;
-    }
-
-    .question-input {
-      width: 100%;
-
-      min-height: 110px;
-
-      resize: vertical;
-
-      padding: 13px 14px;
-
-      border:
-        1px solid #cbd2dc;
-
-      border-radius: 9px;
-
-      font:
-        inherit;
-
-      line-height: 1.7;
-    }
-
-    .question-input:focus {
-      outline: 2px solid #1a73e8;
-      outline-offset: 1px;
-      border-color: #1a73e8;
-    }
-
-    .question-actions {
-      display: flex;
-
-      align-items: center;
-
-      justify-content: space-between;
-
-      gap: 12px;
-
-      margin-top: 12px;
-    }
-
-    .question-help {
-      margin: 0;
-
-      color: #667085;
-
-      font-size: 12px;
-    }
-
-    .send-button {
-      min-width: 150px;
-
-      padding: 12px 18px;
-
-      border: 0;
-
-      border-radius: 8px;
-
-      background: #1a73e8;
-
-      color: #fff;
-
-      font-size: 14px;
-
-      font-weight: 600;
-
-      cursor: pointer;
-    }
-
-    .send-button:hover {
-      background: #155fc0;
-    }
-
-    .send-button:disabled {
-      opacity: .55;
-      cursor: not-allowed;
-    }
-
-    .app-footer {
-      padding: 18px;
-
-      color: #777;
-
-      text-align: center;
-
-      font-size: 11px;
+      z-index: 20;
     }
 
     .sidebar-header {
-      padding: 22px 20px 12px;
+      padding: 8px 10px 18px;
+      border-bottom: 1px solid #edf0f5;
     }
 
-    .sidebar-brand-title {
-      font-size: 18px;
+    .sidebar-header strong {
+      display: block;
+      font-size: 17px;
+      line-height: 1.5;
     }
 
     .sidebar-toggle-row {
-      padding: 0 14px 12px;
+      display: flex;
+      justify-content: flex-end;
+      padding: 10px 0;
     }
 
     .sidebar-toggle {
-      width: 100%;
-
-      padding: 8px;
-
-      border: 1px solid #dfe3ea;
-
+      width: auto;
+      min-width: 40px;
+      margin: 0;
+      padding: 8px 10px;
+      border: 1px solid #d9dee8;
       border-radius: 7px;
-
       background: #fff;
-
+      color: #202124;
       cursor: pointer;
     }
 
     .sidebar-user {
-      margin: 0 14px 12px;
-
-      padding: 11px 12px;
-
-      border-radius: 8px;
-
+      margin: 4px 6px 14px;
+      padding: 10px;
       background: #f5f7fb;
-
+      border-radius: 8px;
       font-size: 13px;
-
       overflow-wrap: anywhere;
     }
 
     .sidebar-nav {
       display: flex;
-
       flex-direction: column;
-
-      padding: 0 10px;
+      gap: 4px;
     }
 
     .sidebar-link {
       display: flex;
-
       align-items: center;
-
       gap: 10px;
-
       width: 100%;
-
-      padding: 11px 12px;
-
-      margin-bottom: 3px;
-
-      border: 0;
-
-      border-radius: 7px;
-
-      background: transparent;
-
-      color: #344054;
-
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: #3c4043;
       text-decoration: none;
-
-      text-align: left;
-
-      cursor: pointer;
-
+      border: 0;
+      background: transparent;
       font-size: 14px;
+      text-align: left;
+      cursor: pointer;
     }
 
     .sidebar-link:hover {
-      background: #f2f4f7;
+      background: #f1f3f4;
     }
 
     .sidebar-link.active {
       background: #e8f0fe;
-
       color: #174ea6;
-
       font-weight: 600;
     }
 
     .sidebar-icon {
-      width: 20px;
-
+      width: 22px;
+      flex: 0 0 22px;
       text-align: center;
+      font-size: 16px;
+    }
 
-      flex: 0 0 20px;
+    .sidebar-label {
+      min-width: 0;
     }
 
     .sidebar-history {
-      margin-top: 15px;
-
-      padding: 0 14px;
+      margin-top: 20px;
+      padding-top: 14px;
+      border-top: 1px solid #edf0f5;
     }
 
     .sidebar-history-heading {
-      margin: 0 0 8px;
-
+      margin: 0 8px 8px;
       font-size: 12px;
-
-      color: #667085;
+      color: #5f6368;
+      font-weight: 600;
     }
 
     .sidebar-history-list {
       display: flex;
-
       flex-direction: column;
-
-      gap: 3px;
+      gap: 4px;
     }
 
     .sidebar-history-link {
       display: block;
-
-      padding: 8px;
-
-      border-radius: 6px;
-
-      color: #344054;
-
+      padding: 8px 10px;
+      border-radius: 7px;
       text-decoration: none;
+      color: #3c4043;
     }
 
     .sidebar-history-link:hover {
@@ -444,79 +168,371 @@
 
     .sidebar-history-title {
       display: block;
-
       font-size: 12px;
-
-      white-space: nowrap;
-
+      line-height: 1.5;
       overflow: hidden;
-
       text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .sidebar-history-date {
       display: block;
-
-      margin-top: 3px;
-
-      color: #98a2b3;
-
+      margin-top: 2px;
+      color: #777;
       font-size: 10px;
     }
 
-    .layout-error {
-      margin: 20px;
+    .logout-button {
+      margin-top: auto;
+      color: #b3261e;
+    }
 
-      padding: 14px;
+    .main-area {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
 
-      background: #fff6f5;
+    .topbar {
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      padding: 0 26px;
+      background: #ffffff;
+      border-bottom: 1px solid #e2e6ee;
+    }
 
-      border: 1px solid #f1b8b2;
+    .topbar-title {
+      margin: 0;
+      font-size: 19px;
+      font-weight: 600;
+    }
 
+    .content {
+      width: 100%;
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 28px 22px 80px;
+      flex: 1;
+    }
+
+    .conversation-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .conversation-header h1 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.4;
+    }
+
+    .conversation-meta {
+      margin-top: 6px;
+      color: #777;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .new-conversation {
+      flex: 0 0 auto;
+      padding: 9px 13px;
+      border: 1px solid #c8ced8;
+      border-radius: 7px;
+      background: #fff;
+      color: #202124;
+      cursor: pointer;
+    }
+
+    .new-conversation:hover {
+      background: #f5f7fb;
+    }
+
+    .chat-card {
+      background: #fff;
+      border: 1px solid #e2e6ee;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .messages {
+      min-height: 360px;
+      max-height: calc(100vh - 300px);
+      overflow-y: auto;
+      padding: 22px;
+    }
+
+    .empty-message {
+      min-height: 310px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: #777;
+      line-height: 1.8;
+      padding: 30px;
+    }
+
+    .message {
+      display: flex;
+      margin-bottom: 18px;
+    }
+
+    .message.user {
+      justify-content: flex-end;
+    }
+
+    .message.assistant {
+      justify-content: flex-start;
+    }
+
+    .message-bubble {
+      max-width: min(760px, 90%);
+      padding: 13px 15px;
+      border-radius: 12px;
+      line-height: 1.8;
+      font-size: 14px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .message.user .message-bubble {
+      background: #e8f0fe;
+      color: #174ea6;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.assistant .message-bubble {
+      background: #f5f7fb;
+      color: #202124;
+      border-bottom-left-radius: 4px;
+    }
+
+    .message-info {
+      margin-top: 5px;
+      color: #777;
+      font-size: 10px;
+    }
+
+    .message.user .message-info {
+      text-align: right;
+    }
+
+    .answer-id {
+      margin-top: 6px;
+      color: #777;
+      font-size: 10px;
+      word-break: break-all;
+    }
+
+    .typing {
+      display: flex;
+      justify-content: flex-start;
+      margin-bottom: 18px;
+    }
+
+    .typing .message-bubble {
+      color: #777;
+      background: #f5f7fb;
+    }
+
+    .composer {
+      padding: 18px;
+      border-top: 1px solid #e2e6ee;
+      background: #fff;
+    }
+
+    .composer textarea {
+      width: 100%;
+      min-height: 110px;
+      resize: vertical;
+      padding: 13px;
+      border: 1px solid #c8ced8;
       border-radius: 8px;
+      font: inherit;
+      line-height: 1.7;
+      color: #202124;
+    }
 
-      color: #b42318;
+    .composer textarea:focus {
+      outline: 2px solid #1a73e8;
+      outline-offset: 1px;
+      border-color: #1a73e8;
+    }
+
+    .composer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .composer-help {
+      color: #777;
+      font-size: 11px;
+      line-height: 1.6;
+    }
+
+    .send-button {
+      width: auto;
+      min-width: 120px;
+      padding: 11px 18px;
+      border: 0;
+      border-radius: 7px;
+      background: #1a73e8;
+      color: #fff;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .send-button:hover {
+      background: #1765c1;
+    }
+
+    .send-button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    .error-box {
+      margin-bottom: 16px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      background: #fff2f0;
+      border: 1px solid #f2c5c0;
+      color: #b3261e;
+      font-size: 13px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .loading-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f7fb;
+    }
+
+    .loading-card {
+      width: min(420px, calc(100% - 32px));
+      padding: 30px;
+      background: #fff;
+      border: 1px solid #e2e6ee;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, .06);
+    }
+
+    .loading-card p {
+      margin: 0;
+      color: #5f6368;
+      line-height: 1.8;
+    }
+
+    .auth-error {
+      max-width: 620px;
+      margin: 80px auto;
+      padding: 28px;
+      background: #fff;
+      border: 1px solid #e2e6ee;
+      border-radius: 12px;
+    }
+
+    .auth-error h1 {
+      margin-top: 0;
+      font-size: 22px;
+    }
+
+    .auth-error p {
+      line-height: 1.8;
+    }
+
+    .auth-error pre {
+      padding: 12px;
+      background: #f5f7fb;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-size: 12px;
+    }
+
+    .auth-error button,
+    .auth-error .button {
+      display: inline-block;
+      padding: 10px 14px;
+      margin: 8px 8px 0 0;
+      border-radius: 7px;
+      border: 1px solid #c8ced8;
+      background: #fff;
+      color: #202124;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .app-footer {
+      padding: 18px;
+      color: #777;
+      text-align: center;
+      font-size: 10px;
+      line-height: 1.7;
     }
 
     @media (max-width: 700px) {
-      .sidebar {
-        width: 270px;
-
-        transform:
-          translateX(-100%);
-
-        transition:
-          transform .2s ease;
+      .app-shell {
+        display: block;
       }
 
-      body.sidebar-expanded
       .sidebar {
-        transform:
-          translateX(0);
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 250px;
+        transform: translateX(-100%);
+        transition: transform .2s ease;
+        box-shadow: 8px 0 20px rgba(0, 0, 0, .08);
+      }
+
+      body.sidebar-expanded .sidebar {
+        transform: translateX(0);
       }
 
       .main-area {
-        margin-left: 0;
+        min-height: 100vh;
+      }
+
+      .topbar {
+        padding: 0 16px;
       }
 
       .content {
-        padding: 22px 14px;
+        padding: 20px 12px 60px;
       }
 
-      .chat-messages {
-        min-height: 420px;
+      .conversation-header {
+        flex-direction: column;
+      }
 
+      .messages {
+        min-height: 300px;
         max-height: none;
       }
 
-      .chat-message {
+      .message-bubble {
         max-width: 94%;
       }
 
-      .question-actions {
-        flex-direction: column;
-
+      .composer-bottom {
         align-items: stretch;
+        flex-direction: column;
       }
 
       .send-button {
@@ -525,106 +541,134 @@
     }
 
     @media (min-width: 701px) {
-      body.sidebar-collapsed
-      .sidebar {
-        width: 72px;
+      body.sidebar-collapsed .sidebar {
+        width: 68px;
+        flex-basis: 68px;
       }
 
-      body.sidebar-collapsed
-      .main-area {
-        margin-left: 72px;
-      }
-
-      body.sidebar-collapsed
-      .sidebar-label,
-      body.sidebar-collapsed
-      .sidebar-history,
-      body.sidebar-collapsed
-      .sidebar-user,
-      body.sidebar-collapsed
-      .sidebar-brand-title {
+      body.sidebar-collapsed .sidebar-label,
+      body.sidebar-collapsed .sidebar-user,
+      body.sidebar-collapsed .sidebar-history,
+      body.sidebar-collapsed .sidebar-header strong {
         display: none;
+      }
+
+      body.sidebar-collapsed .sidebar-link {
+        justify-content: center;
       }
     }
   </style>
 </head>
 
-<body data-role="student">
+<body
+  data-role="student"
+  class="auth-pending"
+>
 
-  <div class="app-shell">
+  <div
+    id="loadingScreen"
+    class="loading-screen"
+  >
+    <div class="loading-card">
+      <p id="loadingText">
+        ログイン状態を確認しています。
+      </p>
+    </div>
+  </div>
+
+  <div
+    id="appShell"
+    class="app-shell"
+    hidden
+  >
 
     <aside
       id="appSidebar"
       class="sidebar"
-      aria-label="サイドメニュー"
     ></aside>
 
     <div class="main-area">
 
+      <header class="topbar">
+        <h1 class="topbar-title">
+          学習AIチャット
+        </h1>
+      </header>
+
       <main class="content">
 
-        <header class="page-header">
+        <div
+          id="errorBox"
+          class="error-box"
+          hidden
+        ></div>
 
-          <h1>
-            AIに質問
-          </h1>
+        <section class="conversation-header">
 
-          <p>
-            学習について質問してください。
-          </p>
+          <div>
+            <h1 id="conversationTitle">
+              AIに質問
+            </h1>
 
-        </header>
-
-        <section
-          class="chat-card"
-          aria-label="学習AIチャット"
-        >
-
-          <div
-            id="chatStatus"
-            class="chat-status"
-          >
-            会話を準備しています。
+            <div
+              id="conversationMeta"
+              class="conversation-meta"
+            >
+              新しい会話
+            </div>
           </div>
 
-          <div
-            id="chatMessages"
-            class="chat-messages"
+          <button
+            id="newConversationButton"
+            class="new-conversation"
+            type="button"
           >
-            <div class="chat-empty">
-              会話を準備しています。
+            新しい会話
+          </button>
+
+        </section>
+
+        <section class="chat-card">
+
+          <div
+            id="messages"
+            class="messages"
+          >
+
+            <div
+              id="emptyMessage"
+              class="empty-message"
+            >
+              学習について質問してください。
             </div>
+
           </div>
 
           <form
             id="questionForm"
-            class="question-form"
+            class="composer"
           >
 
             <textarea
               id="questionInput"
-              class="question-input"
               maxlength="4000"
               placeholder="学習について質問してください。"
-              aria-label="質問"
+              autocomplete="off"
             ></textarea>
 
-            <div
-              class="question-actions"
-            >
+            <div class="composer-bottom">
 
-              <p
-                class="question-help"
-              >
-                Enterで送信・Shift + Enterで改行
-              </p>
+              <div class="composer-help">
+                Enterでは送信されません。<br>
+                「質問を送信」を押してください。
+              </div>
 
               <button
                 id="sendButton"
                 class="send-button"
                 type="submit"
               >
-                質問する
+                質問を送信
               </button>
 
             </div>
@@ -635,14 +679,11 @@
 
       </main>
 
-      <footer
-        class="app-footer"
-      >
+      <footer class="app-footer">
         © 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.
       </footer>
 
     </div>
-
   </div>
 
   <script
@@ -651,17 +692,700 @@
   ></script>
 
   <script type="module">
+
     import {
-      initializeStudentPage
+      requireRole,
+      sendStudyQuestion,
+      getConversation,
+      getConversationByAnswerId
     } from "../assets/js/page.js";
 
-    initializeStudentPage()
-      .catch(error => {
+    const loadingScreen =
+      document.getElementById(
+        "loadingScreen"
+      );
+
+    const loadingText =
+      document.getElementById(
+        "loadingText"
+      );
+
+    const appShell =
+      document.getElementById(
+        "appShell"
+      );
+
+    const messagesElement =
+      document.getElementById(
+        "messages"
+      );
+
+    const emptyMessage =
+      document.getElementById(
+        "emptyMessage"
+      );
+
+    const form =
+      document.getElementById(
+        "questionForm"
+      );
+
+    const input =
+      document.getElementById(
+        "questionInput"
+      );
+
+    const sendButton =
+      document.getElementById(
+        "sendButton"
+      );
+
+    const errorBox =
+      document.getElementById(
+        "errorBox"
+      );
+
+    const titleElement =
+      document.getElementById(
+        "conversationTitle"
+      );
+
+    const metaElement =
+      document.getElementById(
+        "conversationMeta"
+      );
+
+    const newConversationButton =
+      document.getElementById(
+        "newConversationButton"
+      );
+
+    let currentConversationId =
+      null;
+
+    let currentAnswerId =
+      null;
+
+    let sending =
+      false;
+
+    function hideLoading() {
+      loadingScreen.hidden =
+        true;
+
+      appShell.hidden =
+        false;
+
+      document.documentElement
+        .classList
+        .remove(
+          "auth-pending"
+        );
+    }
+
+    function showLoading(
+      message
+    ) {
+      loadingText.textContent =
+        message;
+
+      loadingScreen.hidden =
+        false;
+    }
+
+    function showError(
+      message
+    ) {
+      errorBox.textContent =
+        message;
+
+      errorBox.hidden =
+        false;
+    }
+
+    function clearError() {
+      errorBox.textContent =
+        "";
+
+      errorBox.hidden =
+        true;
+    }
+
+    function formatDate(
+      value
+    ) {
+      if (!value) {
+        return "";
+      }
+
+      const date =
+        new Date(value);
+
+      if (
+        Number.isNaN(
+          date.getTime()
+        )
+      ) {
+        return "";
+      }
+
+      return new Intl.DateTimeFormat(
+        "ja-JP",
+        {
+          year: "numeric",
+          month: "numeric",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
+        }
+      ).format(date);
+    }
+
+    function scrollToBottom() {
+      messagesElement.scrollTop =
+        messagesElement.scrollHeight;
+    }
+
+    function clearMessages() {
+      messagesElement.replaceChildren();
+    }
+
+    function createMessageElement(
+      role,
+      content,
+      createdAt = null,
+      answerId = null
+    ) {
+      const wrapper =
+        document.createElement(
+          "article"
+        );
+
+      wrapper.className =
+        `message ${role}`;
+
+      const inner =
+        document.createElement(
+          "div"
+        );
+
+      const bubble =
+        document.createElement(
+          "div"
+        );
+
+      bubble.className =
+        "message-bubble";
+
+      bubble.textContent =
+        content;
+
+      inner.appendChild(
+        bubble
+      );
+
+      if (createdAt) {
+        const info =
+          document.createElement(
+            "div"
+          );
+
+        info.className =
+          "message-info";
+
+        info.textContent =
+          formatDate(
+            createdAt
+          );
+
+        inner.appendChild(
+          info
+        );
+      }
+
+      if (
+        role ===
+          "assistant" &&
+        answerId
+      ) {
+        const idElement =
+          document.createElement(
+            "div"
+          );
+
+        idElement.className =
+          "answer-id";
+
+        idElement.textContent =
+          `回答ID: ${answerId}`;
+
+        inner.appendChild(
+          idElement
+        );
+      }
+
+      wrapper.appendChild(
+        inner
+      );
+
+      return wrapper;
+    }
+
+    function renderMessages(
+      messages
+    ) {
+      clearMessages();
+
+      if (
+        !Array.isArray(
+          messages
+        ) ||
+        messages.length === 0
+      ) {
+        messagesElement.appendChild(
+          emptyMessage
+        );
+
+        emptyMessage.hidden =
+          false;
+
+        return;
+      }
+
+      emptyMessage.hidden =
+        true;
+
+      for (
+        const message of messages
+      ) {
+        messagesElement.appendChild(
+          createMessageElement(
+            message.role,
+            message.content,
+            message.created_at,
+            message.role ===
+              "assistant"
+              ? message.id
+              : null
+          )
+        );
+      }
+
+      scrollToBottom();
+    }
+
+    function addMessage(
+      role,
+      content,
+      createdAt = null,
+      answerId = null
+    ) {
+      if (
+        emptyMessage.parentElement ===
+        messagesElement
+      ) {
+        emptyMessage.remove();
+      }
+
+      messagesElement.appendChild(
+        createMessageElement(
+          role,
+          content,
+          createdAt,
+          answerId
+        )
+      );
+
+      scrollToBottom();
+    }
+
+    function addTyping() {
+      const wrapper =
+        document.createElement(
+          "article"
+        );
+
+      wrapper.className =
+        "typing";
+
+      wrapper.id =
+        "typingMessage";
+
+      const bubble =
+        document.createElement(
+          "div"
+        );
+
+      bubble.className =
+        "message-bubble";
+
+      bubble.textContent =
+        "回答を作成しています…";
+
+      wrapper.appendChild(
+        bubble
+      );
+
+      messagesElement.appendChild(
+        wrapper
+      );
+
+      scrollToBottom();
+    }
+
+    function removeTyping() {
+      const typing =
+        document.getElementById(
+          "typingMessage"
+        );
+
+      if (typing) {
+        typing.remove();
+      }
+    }
+
+    function updateConversationHeader(
+      conversation
+    ) {
+      if (!conversation) {
+        titleElement.textContent =
+          "AIに質問";
+
+        metaElement.textContent =
+          "新しい会話";
+
+        return;
+      }
+
+      titleElement.textContent =
+        conversation.title ||
+        "AIに質問";
+
+      const parts = [];
+
+      if (
+        conversation.updated_at
+      ) {
+        parts.push(
+          `最終更新: ${formatDate(
+            conversation.updated_at
+          )}`
+        );
+      }
+
+      parts.push(
+        `会話ID: ${conversation.id}`
+      );
+
+      metaElement.textContent =
+        parts.join(" / ");
+    }
+
+    async function loadConversation(
+      conversationId
+    ) {
+      showLoading(
+        "会話を読み込んでいます。"
+      );
+
+      const result =
+        await getConversation(
+          conversationId
+        );
+
+      currentConversationId =
+        result.conversation.id;
+
+      updateConversationHeader(
+        result.conversation
+      );
+
+      renderMessages(
+        result.messages
+      );
+
+      hideLoading();
+    }
+
+    async function loadAnswer(
+      answerId
+    ) {
+      showLoading(
+        "回答を読み込んでいます。"
+      );
+
+      const result =
+        await getConversationByAnswerId(
+          answerId
+        );
+
+      currentConversationId =
+        result.conversation.id;
+
+      currentAnswerId =
+        result.answerId;
+
+      updateConversationHeader(
+        result.conversation
+      );
+
+      renderMessages(
+        result.messages
+      );
+
+      hideLoading();
+
+      scrollToBottom();
+    }
+
+    async function initialize() {
+      try {
+        showLoading(
+          "ログイン状態を確認しています。"
+        );
+
+        const result =
+          await requireRole(
+            "student"
+          );
+
+        if (!result) {
+          return;
+        }
+
+        const params =
+          new URLSearchParams(
+            location.search
+          );
+
+        const conversationId =
+          params.get(
+            "conversationId"
+          );
+
+        const answerId =
+          params.get(
+            "answerId"
+          );
+
+        if (answerId) {
+          await loadAnswer(
+            answerId
+          );
+
+          return;
+        }
+
+        if (conversationId) {
+          await loadConversation(
+            conversationId
+          );
+
+          return;
+        }
+
+        currentConversationId =
+          null;
+
+        currentAnswerId =
+          null;
+
+        updateConversationHeader(
+          null
+        );
+
+        renderMessages([]);
+
+        hideLoading();
+
+      } catch (error) {
         console.error(
           "質問画面初期化エラー:",
           error
         );
-      });
+
+        loadingScreen.hidden =
+          true;
+
+        appShell.hidden =
+          false;
+
+        showError(
+          error?.message ||
+          "質問画面の初期化に失敗しました。"
+        );
+      }
+    }
+
+    async function submitQuestion(
+      event
+    ) {
+      event.preventDefault();
+
+      if (sending) {
+        return;
+      }
+
+      const question =
+        input.value.trim();
+
+      if (!question) {
+        showError(
+          "質問を入力してください。"
+        );
+
+        input.focus();
+
+        return;
+      }
+
+      clearError();
+
+      sending = true;
+
+      sendButton.disabled =
+        true;
+
+      sendButton.textContent =
+        "回答中...";
+
+      const questionText =
+        question;
+
+      input.value =
+        "";
+
+      addMessage(
+        "user",
+        questionText,
+        new Date().toISOString()
+      );
+
+      addTyping();
+
+      try {
+        const result =
+          await sendStudyQuestion(
+            questionText,
+            currentConversationId
+          );
+
+        removeTyping();
+
+        currentConversationId =
+          result.conversationId;
+
+        currentAnswerId =
+          result.answerId;
+
+        addMessage(
+          "assistant",
+          result.answer,
+          result.createdAt,
+          result.answerId
+        );
+
+        updateConversationHeader({
+          id:
+            result.conversationId,
+
+          title:
+            questionText.length > 50
+              ? questionText.slice(
+                  0,
+                  50
+                ) + "…"
+              : questionText,
+
+          updated_at:
+            result.createdAt
+        });
+
+        const newUrl =
+          `question.html?conversationId=${encodeURIComponent(
+            result.conversationId
+          )}`;
+
+        history.replaceState(
+          null,
+          "",
+          newUrl
+        );
+
+      } catch (error) {
+        console.error(
+          "質問送信エラー:",
+          error
+        );
+
+        removeTyping();
+
+        showError(
+          error?.message ||
+          "AIへの質問に失敗しました。"
+        );
+
+        input.value =
+          questionText;
+
+      } finally {
+        sending =
+          false;
+
+        sendButton.disabled =
+          false;
+
+        sendButton.textContent =
+          "質問を送信";
+
+        input.focus();
+      }
+    }
+
+    function startNewConversation() {
+      currentConversationId =
+        null;
+
+      currentAnswerId =
+        null;
+
+      clearError();
+
+      input.value =
+        "";
+
+      updateConversationHeader(
+        null
+      );
+
+      renderMessages([]);
+
+      history.replaceState(
+        null,
+        "",
+        "question.html"
+      );
+
+      input.focus();
+    }
+
+    form.addEventListener(
+      "submit",
+      submitQuestion
+    );
+
+    newConversationButton.addEventListener(
+      "click",
+      startNewConversation
+    );
+
+    input.addEventListener(
+      "input",
+      clearError
+    );
+
+    initialize();
+
   </script>
 
 </body>
