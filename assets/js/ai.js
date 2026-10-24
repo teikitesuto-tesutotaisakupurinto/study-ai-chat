@@ -1,4 +1,4 @@
-import { auth } from "./firebase.js";
+import { auth } from "./firebase-module.js";
 
 const SUPABASE_URL =
   "https://fjqobjcvejhkevyfsoxt.supabase.co";
