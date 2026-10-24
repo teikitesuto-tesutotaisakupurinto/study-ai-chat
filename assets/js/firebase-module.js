@@ -1,10 +1,10 @@
 // assets/js/firebase-module.js
-// Firebase compat SDK を ES module から安全に利用するための共通アダプター。
-// Firebase の設定は firebase.js と同じプロジェクトを使用します。
+// Firebase compat SDK を ES module から利用する共通アダプター。
 
 const FIREBASE_VERSION = "10.12.5";
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyByt8kGALyS8AU8SR6P8zWFEPXfgHY5iynk",
+
+const firebaseConfig = {
+  apiKey: "AIzaSyByt8kGALyS8AU8SR6PzWFEPXfgHY5iynk",
   authDomain: "studychat-1b39d.firebaseapp.com",
   projectId: "studychat-1b39d",
   storageBucket: "studychat-1b39d.firebasestorage.app",
@@ -19,9 +19,12 @@ function loadScript(src) {
     );
 
     const alreadyAvailable =
-      (src.includes("firebase-app-compat") && !!window.firebase) ||
-      (src.includes("firebase-auth-compat") && !!window.firebase?.auth) ||
-      (src.includes("firebase-firestore-compat") && !!window.firebase?.firestore);
+      (src.includes("firebase-app-compat") &&
+        !!window.firebase) ||
+      (src.includes("firebase-auth-compat") &&
+        !!window.firebase?.auth) ||
+      (src.includes("firebase-firestore-compat") &&
+        !!window.firebase?.firestore);
 
     if (existing?.dataset.loaded === "true" || alreadyAvailable) {
       resolve();
@@ -32,9 +35,12 @@ function loadScript(src) {
       existing.addEventListener("load", resolve, { once: true });
       existing.addEventListener(
         "error",
-        () => reject(new Error(`Firebase SDKを読み込めません: ${src}`)),
+        () => reject(
+          new Error(`Firebase SDKを読み込めません: ${src}`)
+        ),
         { once: true }
       );
+
       return;
     }
 
@@ -48,7 +54,9 @@ function loadScript(src) {
     };
 
     script.onerror = () => {
-      reject(new Error(`Firebase SDKを読み込めません: ${src}`));
+      reject(
+        new Error(`Firebase SDKを読み込めません: ${src}`)
+      );
     };
 
     document.head.append(script);
@@ -56,14 +64,18 @@ function loadScript(src) {
 }
 
 async function ensureCompatSDK() {
-  if (window.firebase?.auth && window.firebase?.firestore) return;
+  if (window.firebase?.auth && window.firebase?.firestore) {
+    return;
+  }
 
   await loadScript(
     `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app-compat.js`
   );
+
   await loadScript(
     `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-auth-compat.js`
   );
+
   await loadScript(
     `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-firestore-compat.js`
   );
@@ -85,17 +97,20 @@ export const app = window.firebase.app();
 export const auth = window.firebase.auth();
 export const db = window.firebase.firestore();
 
-export const persistenceReady = window.authReadyPromise || auth.setPersistence(
-  window.firebase.auth.Auth.Persistence.LOCAL
-).catch(error => {
-  console.error(
-    "Firebase Authenticationの保存設定に失敗しました:",
-    error
-  );
-  throw error;
-});
+export const persistenceReady =
+  window.authReadyPromise ||
+  auth.setPersistence(
+    window.firebase.auth.Auth.Persistence.LOCAL
+  ).catch(error => {
+    console.error(
+      "Firebase Authenticationの保存設定に失敗しました:",
+      error
+    );
 
-// 旧式ページとの互換性を保つ
+    throw error;
+  });
+
+// 旧式ページとの互換性
 window.firebaseApp = app;
 window.auth = auth;
 window.db = db;
@@ -109,7 +124,10 @@ export function onAuthStateChanged(
   callback,
   errorCallback
 ) {
-  return authInstance.onAuthStateChanged(callback, errorCallback);
+  return authInstance.onAuthStateChanged(
+    callback,
+    errorCallback
+  );
 }
 
 export function signOut(authInstance) {
@@ -121,7 +139,10 @@ export function signInWithEmailAndPassword(
   email,
   password
 ) {
-  return authInstance.signInWithEmailAndPassword(email, password);
+  return authInstance.signInWithEmailAndPassword(
+    email,
+    password
+  );
 }
 
 export function signInWithPopup(authInstance, provider) {
@@ -141,7 +162,10 @@ export function sendPasswordResetEmail(
   email,
   settings
 ) {
-  return authInstance.sendPasswordResetEmail(email, settings);
+  return authInstance.sendPasswordResetEmail(
+    email,
+    settings
+  );
 }
 
 export function createUserWithEmailAndPassword(
@@ -149,7 +173,10 @@ export function createUserWithEmailAndPassword(
   email,
   password
 ) {
-  return authInstance.createUserWithEmailAndPassword(email, password);
+  return authInstance.createUserWithEmailAndPassword(
+    email,
+    password
+  );
 }
 
 export function doc(dbOrCollection, ...segments) {
@@ -186,9 +213,8 @@ export function collection(dbInstance, ...segments) {
   return dbInstance.collection(segments.join("/"));
 }
 
-// Compat SDK の DocumentSnapshot.exists は boolean プロパティだが、
-// アプリ側は modular SDK と同じ exists() メソッドを使用している。
-// ここで統一し、全画面で同じ形式にする。
+// compat SDK の exists は boolean プロパティ。
+// アプリ内では exists() として呼び出せるように統一する。
 function normalizeDocumentSnapshot(snapshot) {
   if (!snapshot || typeof snapshot.exists !== "boolean") {
     return snapshot;
@@ -290,7 +316,9 @@ export function onSnapshot(
   errorCallback
 ) {
   return reference.onSnapshot(
-    snapshot => callback(normalizeDocumentSnapshot(snapshot)),
+    snapshot => callback(
+      normalizeDocumentSnapshot(snapshot)
+    ),
     errorCallback
   );
 }
