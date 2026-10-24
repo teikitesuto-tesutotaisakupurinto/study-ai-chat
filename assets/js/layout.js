@@ -1,17 +1,20 @@
 import {
   auth,
   db
+} from "./firebase.js";
+
+import {
+  requireRole
 } from "./auth.js";
 
 import {
-  signOut,
-  collection,
-  query,
-  where,
-  orderBy,
-  limit,
-  getDocs
-} from "./firebase.js";
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+
+import {
+  getRecentConversations
+} from "./page.js";
+
 
 const STUDENT_LINKS = [
   {
@@ -40,6 +43,7 @@ const STUDENT_LINKS = [
     href: "settings.html"
   }
 ];
+
 
 const ADMIN_LINKS = [
   {
@@ -84,86 +88,65 @@ const ADMIN_LINKS = [
   }
 ];
 
-let started = false;
 
-function makeElement(
+function element(
   tag,
   className = "",
   text = ""
 ) {
-  const element =
+
+  const node =
     document.createElement(tag);
 
   if (className) {
-    element.className =
+    node.className =
       className;
   }
 
   if (text !== "") {
-    element.textContent =
+    node.textContent =
       text;
   }
 
-  return element;
+  return node;
 }
 
-function isMobile() {
-  return window.matchMedia(
-    "(max-width: 700px)"
-  ).matches;
+
+function currentFile() {
+
+  return (
+    location.pathname
+      .split("/")
+      .pop() ||
+    "index.html"
+  );
 }
 
-function updateToggleState() {
-  const mobile =
-    isMobile();
-
-  const expanded =
-    mobile
-      ? document.body.classList.contains(
-          "sidebar-expanded"
-        )
-      : !document.body.classList.contains(
-          "sidebar-collapsed"
-        );
-
-  document.querySelectorAll(
-    ".sidebar-toggle"
-  ).forEach(button => {
-    button.setAttribute(
-      "aria-expanded",
-      String(expanded)
-    );
-  });
-}
 
 function toggleSidebar() {
-  if (isMobile()) {
-    document.body.classList.toggle(
-      "sidebar-expanded"
-    );
-  } else {
-    document.body.classList.toggle(
-      "sidebar-collapsed"
-    );
-  }
 
-  updateToggleState();
+  document.body.classList.toggle(
+    "sidebar-collapsed"
+  );
+
+  document.body.classList.toggle(
+    "sidebar-expanded"
+  );
 }
 
-function bindSidebarToggle(
-  button
-) {
+
+function setupToggle(button) {
+
   if (
-    button.dataset.sidebarBound ===
-    "true"
+    button.dataset.bound === "true"
   ) {
     return;
   }
 
-  button.dataset.sidebarBound =
-    "true";
+  button.dataset.bound = "true";
 
-  button.type = "button";
+  button.type =
+    "button";
 
   button.setAttribute(
     "aria-label",
@@ -176,85 +159,13 @@ function bindSidebarToggle(
   );
 }
 
-export function setupSidebar() {
-  document.querySelectorAll(
-    ".sidebar-toggle"
-  ).forEach(
-    bindSidebarToggle
-  );
 
-  updateToggleState();
-}
-
-export function setupLogout() {
-  document.querySelectorAll(
-    "[data-logout], .logout-button"
-  ).forEach(button => {
-
-    if (
-      button.dataset.logoutBound ===
-      "true"
-    ) {
-      return;
-    }
-
-    button.dataset.logoutBound =
-      "true";
-
-    button.type = "button";
-
-    button.addEventListener(
-      "click",
-      async () => {
-
-        button.disabled = true;
-
-        try {
-          await signOut(auth);
-
-          const nested =
-            location.pathname.includes(
-              "/student/"
-            ) ||
-            location.pathname.includes(
-              "/admin/"
-            );
-
-          location.replace(
-            nested
-              ? "../login.html"
-              : "./login.html"
-          );
-
-        } catch (error) {
-
-          console.error(
-            "ログアウトエラー:",
-            error
-          );
-
-          button.disabled =
-            false;
-        }
-      }
-    );
-  });
-}
-
-function currentFile() {
-  return (
-    location.pathname
-      .split("/")
-      .pop() ||
-    "index.html"
-  );
-}
-
-function createNavigationLink(
+function createLink(
   item
 ) {
+
   const link =
-    makeElement(
+    element(
       "a",
       "sidebar-link"
     );
@@ -262,15 +173,13 @@ function createNavigationLink(
   link.href =
     item.href;
 
-  const target =
+  const file =
     item.href
-      .split("?")[0]
-      .split("#")[0]
       .split("/")
       .pop();
 
   if (
-    target === currentFile()
+    file === currentFile()
   ) {
     link.classList.add(
       "active"
@@ -283,7 +192,7 @@ function createNavigationLink(
   }
 
   const icon =
-    makeElement(
+    element(
       "span",
       "sidebar-icon",
       item.icon
@@ -295,7 +204,7 @@ function createNavigationLink(
   );
 
   const label =
-    makeElement(
+    element(
       "span",
       "sidebar-label",
       item.label
@@ -309,72 +218,212 @@ function createNavigationLink(
   return link;
 }
 
-function formatDate(
-  value
+
+function createSidebar(
+  role,
+  user,
+  profile
 ) {
-  if (!value) {
-    return "";
+
+  let sidebar =
+    document.getElementById(
+      "appSidebar"
+    );
+
+  if (!sidebar) {
+
+    sidebar =
+      element(
+        "aside",
+        "sidebar"
+      );
+
+    sidebar.id =
+      "appSidebar";
+
+    document.body.prepend(
+      sidebar
+    );
   }
 
-  let date;
+  sidebar.replaceChildren();
 
-  try {
-    date =
-      typeof value.toDate ===
-      "function"
-        ? value.toDate()
-        : new Date(value);
-  } catch {
-    return "";
+
+  const header =
+    element(
+      "div",
+      "sidebar-header"
+    );
+
+  header.append(
+    element(
+      "strong",
+      "",
+      role === "admin"
+        ? "運営管理コンソール"
+        : "学習AIチャット"
+    )
+  );
+
+  sidebar.append(
+    header
+  );
+
+
+  const toggle =
+    element(
+      "button",
+      "sidebar-toggle",
+      "☰"
+    );
+
+  setupToggle(toggle);
+
+  sidebar.append(
+    toggle
+  );
+
+
+  const displayName =
+    profile?.displayName ||
+    user?.displayName ||
+    user?.email ||
+    "ユーザー";
+
+
+  sidebar.append(
+    element(
+      "div",
+      "sidebar-user",
+      displayName
+    )
+  );
+
+
+  const nav =
+    element(
+      "nav",
+      "sidebar-nav"
+    );
+
+  nav.setAttribute(
+    "aria-label",
+    "メインメニュー"
+  );
+
+
+  const links =
+    role === "admin"
+      ? ADMIN_LINKS
+      : STUDENT_LINKS;
+
+
+  for (
+    const item of links
+  ) {
+
+    nav.append(
+      createLink(item)
+    );
   }
+
+
+  sidebar.append(
+    nav
+  );
+
 
   if (
-    Number.isNaN(
-      date.getTime()
-    )
+    role === "student"
   ) {
-    return "";
+
+    renderRecentHistory(
+      sidebar,
+      user.uid
+    );
   }
 
-  return new Intl.DateTimeFormat(
-    "ja-JP",
-    {
-      month: "numeric",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
+
+  const logout =
+    element(
+      "button",
+      "sidebar-link logout-button",
+      "ログアウト"
+    );
+
+  logout.type =
+    "button";
+
+  logout.dataset.logout =
+    "true";
+
+
+  logout.addEventListener(
+    "click",
+    async () => {
+
+      logout.disabled =
+        true;
+
+      try {
+
+        await signOut(
+          auth
+        );
+
+        location.replace(
+          getRootFile(
+            "login.html"
+          )
+        );
+
+      } catch (error) {
+
+        console.error(
+          "ログアウトエラー:",
+          error
+        );
+
+        logout.disabled =
+          false;
+      }
     }
-  ).format(date);
+  );
+
+
+  sidebar.append(
+    logout
+  );
 }
 
-async function renderRecentConversations(
+
+async function renderRecentHistory(
   sidebar,
-  user
+  userId
 ) {
+
   const section =
-    makeElement(
+    element(
       "section",
       "sidebar-history"
     );
 
   const heading =
-    makeElement(
+    element(
       "h2",
       "sidebar-history-heading",
       "最近の会話"
     );
 
   const list =
-    makeElement(
+    element(
       "div",
       "sidebar-history-list"
     );
 
-  list.id =
-    "sidebarRecentHistory";
-
   list.textContent =
     "履歴を読み込んでいます...";
+
 
   section.append(
     heading,
@@ -385,92 +434,69 @@ async function renderRecentConversations(
     section
   );
 
+
   try {
 
-    const historyQuery =
-      query(
-        collection(
-          db,
-          "chatHistories"
-        ),
-        where(
-          "userId",
-          "==",
-          user.uid
-        ),
-        orderBy(
-          "updatedAt",
-          "desc"
-        ),
-        limit(8)
-      );
-
-    const snapshot =
-      await getDocs(
-        historyQuery
+    const conversations =
+      await getRecentConversations(
+        userId
       );
 
     list.replaceChildren();
 
+
     if (
-      snapshot.empty
+      conversations.length === 0
     ) {
+
       list.textContent =
         "まだ会話履歴はありません。";
 
       return;
     }
 
-    snapshot.docs.forEach(
-      conversationDoc => {
 
-        const data =
-          conversationDoc.data();
+    for (
+      const conversation
+      of conversations
+    ) {
 
-        const link =
-          makeElement(
-            "a",
-            "sidebar-history-link"
-          );
-
-        link.href =
-          `question.html?conversationId=${encodeURIComponent(
-            conversationDoc.id
-          )}`;
-
-        const title =
-          makeElement(
-            "span",
-            "sidebar-history-title",
-            data.title ||
-              data.lastQuestion ||
-              "会話"
-          );
-
-        const date =
-          makeElement(
-            "small",
-            "sidebar-history-date",
-            formatDate(
-              data.updatedAt
-            )
-          );
-
-        link.append(
-          title,
-          date
+      const link =
+        element(
+          "a",
+          "sidebar-history-link"
         );
 
-        list.append(
-          link
-        );
-      }
-    );
+      link.href =
+        `question.html?conversationId=${encodeURIComponent(
+          conversation.id
+        )}`;
+
+
+      const title =
+        conversation.title ||
+        conversation.lastQuestion ||
+        "会話";
+
+
+      link.append(
+        element(
+          "span",
+          "sidebar-history-title",
+          title
+        )
+      );
+
+
+      list.append(
+        link
+      );
+    }
 
   } catch (error) {
 
     console.error(
-      "会話履歴取得エラー:",
+      "履歴取得エラー:",
       error
     );
 
@@ -479,211 +505,102 @@ async function renderRecentConversations(
   }
 }
 
-export async function renderSidebar(
-  role,
-  user,
-  profile
+
+function getRootFile(
+  file
 ) {
-  const sidebar =
-    document.getElementById(
-      "appSidebar"
-    );
 
-  if (!sidebar) {
-    throw new Error(
-      "appSidebar がありません。"
-    );
-  }
-
-  sidebar.replaceChildren();
-
-  const header =
-    makeElement(
-      "div",
-      "sidebar-header"
-    );
-
-  const title =
-    makeElement(
-      "strong",
-      "sidebar-brand",
-      role === "admin"
-        ? "運営管理コンソール"
-        : "学習AIチャット"
-    );
-
-  header.append(
-    title
-  );
-
-  sidebar.append(
-    header
-  );
-
-  const toggleRow =
-    makeElement(
-      "div",
-      "sidebar-toggle-row"
-    );
-
-  const toggle =
-    makeElement(
-      "button",
-      "sidebar-toggle",
-      "☰"
-    );
-
-  bindSidebarToggle(
-    toggle
-  );
-
-  toggleRow.append(
-    toggle
-  );
-
-  sidebar.append(
-    toggleRow
-  );
-
-  const userName =
-    profile.displayName ||
-    user.displayName ||
-    user.email ||
-    "ユーザー";
-
-  const userElement =
-    makeElement(
-      "div",
-      "sidebar-user",
-      userName
-    );
-
-  sidebar.append(
-    userElement
-  );
-
-  const nav =
-    makeElement(
-      "nav",
-      "sidebar-nav"
-    );
-
-  nav.setAttribute(
-    "aria-label",
-    "メインメニュー"
-  );
-
-  const links =
-    role === "admin"
-      ? ADMIN_LINKS
-      : STUDENT_LINKS;
-
-  links.forEach(
-    item => {
-      nav.append(
-        createNavigationLink(
-          item
-        )
-      );
-    }
-  );
-
-  sidebar.append(
-    nav
-  );
+  const path =
+    location.pathname;
 
   if (
-    role === "student"
+    path.includes("/student/") ||
+    path.includes("/admin/")
   ) {
-    await renderRecentConversations(
-      sidebar,
-      user
-    );
+
+    return `../${file}`;
   }
 
-  const logout =
-    makeElement(
-      "button",
-      "sidebar-link logout-button",
-      "ログアウト"
-    );
-
-  logout.dataset.logout =
-    "";
-
-  sidebar.append(
-    logout
-  );
-
-  setupSidebar();
-  setupLogout();
+  return `./${file}`;
 }
 
-export async function startLayout(
-  roleOverride = null,
-  userOverride = null,
-  profileOverride = null
-) {
-  if (started) {
-    return;
-  }
+
+export async function startLayout() {
 
   const role =
-    roleOverride ||
     document.body.dataset.role;
 
   if (
     role !== "student" &&
     role !== "admin"
   ) {
-    throw new Error(
-      "body の data-role が student または admin ではありません。"
+    return null;
+  }
+
+
+  const result =
+    await requireRole(
+      role,
+      {
+        allowMaintenance:
+          role === "admin"
+      }
     );
+
+
+  if (!result) {
+    return null;
   }
 
-  started = true;
 
-  if (
-    !userOverride ||
-    !profileOverride
-  ) {
-    setupSidebar();
-    setupLogout();
-
-    return;
-  }
-
-  await renderSidebar(
+  createSidebar(
     role,
-    userOverride,
-    profileOverride
+    result.user,
+    result.profile
   );
 
-  const currentUserName =
-    document.getElementById(
-      "currentUserName"
+
+  document.documentElement
+    .classList
+    .remove(
+      "auth-pending"
     );
 
-  if (currentUserName) {
-    currentUserName.textContent =
-      profileOverride.displayName ||
-      userOverride.displayName ||
-      userOverride.email ||
-      "ユーザー";
-  }
 
-  const footer =
-    document.querySelector(
-      ".app-footer"
-    );
-
-  if (footer) {
-    footer.textContent =
-      "© 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.";
-  }
+  return result;
 }
 
-export {
-  toggleSidebar,
-  updateToggleState
-};
+
+if (
+  typeof document !== "undefined"
+) {
+
+  if (
+    document.readyState ===
+    "loading"
+  ) {
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      () => {
+        startLayout()
+          .catch(error => {
+            console.error(
+              "layout初期化エラー:",
+              error
+            );
+          });
+      }
+    );
+
+  } else {
+
+    startLayout()
+      .catch(error => {
+        console.error(
+          "layout初期化エラー:",
+          error
+        );
+      });
+  }
+}
