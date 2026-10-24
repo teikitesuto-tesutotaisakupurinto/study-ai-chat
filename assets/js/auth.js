@@ -10,7 +10,6 @@ import {
 
 function rootPath(file) {
   const path = location.pathname;
-
   const nested =
     path.includes("/student/") ||
     path.includes("/admin/");
@@ -22,9 +21,7 @@ function withTimeout(promise, milliseconds, message) {
   let timer;
 
   const timeout = new Promise((_, reject) => {
-    timer = setTimeout(() => {
-      reject(new Error(message));
-    }, milliseconds);
+    timer = setTimeout(() => reject(new Error(message)), milliseconds);
   });
 
   return Promise.race([promise, timeout]).finally(() => {
@@ -33,14 +30,10 @@ function withTimeout(promise, milliseconds, message) {
 }
 
 export async function getSystemSettings() {
-  const snapshot = await getDoc(
-    doc(db, "settings", "system")
-  );
+  const snapshot = await getDoc(doc(db, "settings", "system"));
 
   if (!snapshot.exists()) {
-    throw new Error(
-      "Firestore に settings/system がありません。"
-    );
+    throw new Error("Firestore に settings/system がありません。");
   }
 
   return snapshot.data();
@@ -48,14 +41,10 @@ export async function getSystemSettings() {
 
 export async function getCurrentProfile(user) {
   if (!user?.uid) {
-    throw new Error(
-      "ログイン中の利用者を確認できません。"
-    );
+    throw new Error("ログイン中の利用者を確認できません。");
   }
 
-  const snapshot = await getDoc(
-    doc(db, "users", user.uid)
-  );
+  const snapshot = await getDoc(doc(db, "users", user.uid));
 
   if (!snapshot.exists()) {
     throw new Error(
@@ -73,15 +62,12 @@ export function waitForAuth() {
 
     const timer = setTimeout(() => {
       finish(
-        new Error(
-          "ログイン状態の確認が15秒以内に完了しませんでした。"
-        )
+        new Error("ログイン状態の確認が15秒以内に完了しませんでした。")
       );
     }, 15000);
 
     function finish(error, user) {
       if (finished) return;
-
       finished = true;
       clearTimeout(timer);
 
@@ -90,11 +76,8 @@ export function waitForAuth() {
         unsubscribe = null;
       }
 
-      if (error) {
-        reject(error);
-      } else {
-        resolve(user);
-      }
+      if (error) reject(error);
+      else resolve(user);
     }
 
     try {
@@ -139,9 +122,7 @@ function showAccessError(title, message, detail = "") {
 }
 
 function errorDetails(error) {
-  return `${error?.code || "error"}: ${
-    error?.message || String(error)
-  }`;
+  return `${error?.code || "error"}: ${error?.message || String(error)}`;
 }
 
 const roleCheckPromises = new Map();
@@ -155,7 +136,6 @@ async function runRoleCheck(requiredRole, options = {}) {
       "必要な権限の設定が正しくありません。",
       `requiredRole: ${String(requiredRole)}`
     );
-
     return null;
   }
 
@@ -189,7 +169,6 @@ async function runRoleCheck(requiredRole, options = {}) {
         "ユーザープロフィールを取得できませんでした。Firestoreのユーザー情報とセキュリティルールを確認してください。",
         errorDetails(error)
       );
-
       return null;
     }
 
@@ -204,7 +183,6 @@ async function runRoleCheck(requiredRole, options = {}) {
         "アカウント利用不可",
         "このアカウントは無効化されています。管理者にお問い合わせください。"
       );
-
       return null;
     }
 
@@ -214,7 +192,6 @@ async function runRoleCheck(requiredRole, options = {}) {
         "アカウントの権限が設定されていないか、不正です。",
         `role: ${String(profile.role)}`
       );
-
       return null;
     }
 
@@ -224,7 +201,6 @@ async function runRoleCheck(requiredRole, options = {}) {
         "このページを開く権限がありません。",
         `必要な権限: ${requiredRole}\n現在の権限: ${profile.role}`
       );
-
       return null;
     }
 
@@ -242,15 +218,11 @@ async function runRoleCheck(requiredRole, options = {}) {
         "システム設定を取得できません。Firestoreの settings/system とセキュリティルールを確認してください。",
         errorDetails(error)
       );
-
       return null;
     }
 
-    const maintenanceEnabled =
-      settings?.maintenance === true;
+    const maintenanceEnabled = settings?.maintenance === true;
 
-    // メンテナンス中は生徒ページをブロックする。
-    // 管理者ページは引き続き利用できる。
     if (
       maintenanceEnabled &&
       requiredRole === "student" &&
