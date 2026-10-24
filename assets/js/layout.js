@@ -17,30 +17,30 @@ import {
   getDocs
 } from "./firebase.js";
 
+/* =========================================================
+   ナビゲーション設定
+   ※ 絵文字・記号アイコンは使用しない
+   ========================================================= */
+
 const STUDENT_LINKS = [
   {
     label: "ホーム",
-    icon: "⌂",
     href: "index.html"
   },
   {
     label: "AIに質問",
-    icon: "?",
     href: "question.html"
   },
   {
     label: "学習履歴",
-    icon: "≡",
     href: "history.html"
   },
   {
     label: "お知らせ",
-    icon: "▤",
     href: "announcements.html"
   },
   {
     label: "設定",
-    icon: "⚙",
     href: "settings.html"
   }
 ];
@@ -48,47 +48,43 @@ const STUDENT_LINKS = [
 const ADMIN_LINKS = [
   {
     label: "管理者ホーム",
-    icon: "⌂",
     href: "index.html"
   },
   {
     label: "ユーザー管理",
-    icon: "♙",
     href: "users.html"
   },
   {
     label: "お知らせ管理",
-    icon: "▤",
     href: "announcements.html"
   },
   {
     label: "メンテナンス",
-    icon: "⚙",
     href: "maintenance.html"
   },
   {
     label: "AI設定",
-    icon: "◇",
     href: "ai-settings.html"
   },
   {
     label: "操作ログ",
-    icon: "≡",
     href: "logs.html"
   },
   {
     label: "システム状態",
-    icon: "▦",
     href: "system.html"
   },
   {
     label: "管理者設定",
-    icon: "⚙",
     href: "settings.html"
   }
 ];
 
 let layoutStarted = false;
+
+/* =========================================================
+   共通DOM生成
+   ========================================================= */
 
 function makeElement(
   tag,
@@ -99,15 +95,21 @@ function makeElement(
     document.createElement(tag);
 
   if (className) {
-    element.className = className;
+    element.className =
+      className;
   }
 
   if (text !== "") {
-    element.textContent = text;
+    element.textContent =
+      text;
   }
 
   return element;
 }
+
+/* =========================================================
+   エラー表示
+   ========================================================= */
 
 function showLayoutError(
   message,
@@ -129,7 +131,9 @@ function showLayoutError(
       "layoutError";
 
     const main =
-      document.querySelector("main");
+      document.querySelector(
+        "main"
+      );
 
     (
       main ||
@@ -143,11 +147,19 @@ function showLayoutError(
       : message;
 }
 
+/* =========================================================
+   レスポンシブ判定
+   ========================================================= */
+
 function isMobile() {
   return window.matchMedia(
     "(max-width: 700px)"
   ).matches;
 }
+
+/* =========================================================
+   サイドバー開閉
+   ========================================================= */
 
 function toggleSidebar() {
   if (isMobile()) {
@@ -198,7 +210,8 @@ function bindSidebarToggle(
   button.dataset.sidebarBound =
     "true";
 
-  button.type = "button";
+  button.type =
+    "button";
 
   button.setAttribute(
     "aria-label",
@@ -210,6 +223,10 @@ function bindSidebarToggle(
     toggleSidebar
   );
 }
+
+/* =========================================================
+   現在ページのナビゲーション
+   ========================================================= */
 
 function setActiveNavigation() {
   const currentFile =
@@ -257,6 +274,10 @@ function setActiveNavigation() {
     });
 }
 
+/* =========================================================
+   サイドバーセットアップ
+   ========================================================= */
+
 export function setupSidebar() {
   document
     .querySelectorAll(
@@ -267,7 +288,13 @@ export function setupSidebar() {
     );
 
   setActiveNavigation();
+
+  updateToggleStates();
 }
+
+/* =========================================================
+   ログアウト
+   ========================================================= */
 
 export function setupLogout() {
   document
@@ -285,15 +312,25 @@ export function setupLogout() {
       button.dataset.logoutBound =
         "true";
 
-      button.type = "button";
+      button.type =
+        "button";
 
       button.addEventListener(
         "click",
         async () => {
-          button.disabled = true;
+          if (
+            button.disabled
+          ) {
+            return;
+          }
+
+          button.disabled =
+            true;
 
           try {
-            await signOut(auth);
+            await signOut(
+              auth
+            );
 
             const nested =
               location.pathname.includes(
@@ -315,7 +352,8 @@ export function setupLogout() {
               error
             );
 
-            button.disabled = false;
+            button.disabled =
+              false;
 
             showLayoutError(
               "ログアウトに失敗しました。",
@@ -326,6 +364,11 @@ export function setupLogout() {
       );
     });
 }
+
+/* =========================================================
+   ナビゲーションリンク生成
+   ※ アイコン・絵文字は使用しない
+   ========================================================= */
 
 function createNavigationLink(
   item,
@@ -342,6 +385,8 @@ function createNavigationLink(
 
   const targetFile =
     item.href
+      .split("?")[0]
+      .split("#")[0]
       .split("/")
       .pop();
 
@@ -359,18 +404,6 @@ function createNavigationLink(
     );
   }
 
-  const icon =
-    makeElement(
-      "span",
-      "sidebar-icon",
-      item.icon
-    );
-
-  icon.setAttribute(
-    "aria-hidden",
-    "true"
-  );
-
   const label =
     makeElement(
       "span",
@@ -379,12 +412,15 @@ function createNavigationLink(
     );
 
   link.append(
-    icon,
     label
   );
 
   return link;
 }
+
+/* =========================================================
+   日付フォーマット
+   ========================================================= */
 
 function formatDate(
   value
@@ -424,6 +460,10 @@ function formatDate(
   ).format(date);
 }
 
+/* =========================================================
+   最近の会話
+   ========================================================= */
+
 async function renderRecentConversations(
   sidebar,
   user
@@ -458,7 +498,9 @@ async function renderRecentConversations(
     list
   );
 
-  sidebar.append(section);
+  sidebar.append(
+    section
+  );
 
   try {
     const historyQuery =
@@ -486,7 +528,9 @@ async function renderRecentConversations(
 
     list.replaceChildren();
 
-    if (snapshot.empty) {
+    if (
+      snapshot.empty
+    ) {
       list.textContent =
         "まだ会話履歴はありません。";
 
@@ -532,7 +576,9 @@ async function renderRecentConversations(
           date
         );
 
-        list.append(link);
+        list.append(
+          link
+        );
       }
     );
 
@@ -546,6 +592,10 @@ async function renderRecentConversations(
       "履歴を読み込めませんでした。";
   }
 }
+
+/* =========================================================
+   サイドバー本体
+   ========================================================= */
 
 async function renderSidebar(
   role,
@@ -562,6 +612,10 @@ async function renderSidebar(
   }
 
   sidebar.replaceChildren();
+
+  /* -------------------------------------------------------
+     ブランド
+     ------------------------------------------------------- */
 
   const brand =
     makeElement(
@@ -586,6 +640,11 @@ async function renderSidebar(
     brand
   );
 
+  /* -------------------------------------------------------
+     メニュー開閉ボタン
+     ※ 絵文字・記号ではなく文字表示
+     ------------------------------------------------------- */
+
   const toggleRow =
     makeElement(
       "div",
@@ -596,7 +655,7 @@ async function renderSidebar(
     makeElement(
       "button",
       "sidebar-toggle",
-      "☰"
+      "メニュー"
     );
 
   bindSidebarToggle(
@@ -610,6 +669,10 @@ async function renderSidebar(
   sidebar.append(
     toggleRow
   );
+
+  /* -------------------------------------------------------
+     ユーザー名
+     ------------------------------------------------------- */
 
   const userName =
     profile.displayName ||
@@ -627,6 +690,10 @@ async function renderSidebar(
   sidebar.append(
     name
   );
+
+  /* -------------------------------------------------------
+     メインナビゲーション
+     ------------------------------------------------------- */
 
   const nav =
     makeElement(
@@ -650,25 +717,37 @@ async function renderSidebar(
       ? ADMIN_LINKS
       : STUDENT_LINKS;
 
-  links.forEach(item => {
-    nav.append(
-      createNavigationLink(
-        item,
-        currentFile
-      )
-    );
-  });
+  links.forEach(
+    item => {
+      nav.append(
+        createNavigationLink(
+          item,
+          currentFile
+        )
+      );
+    }
+  );
 
   sidebar.append(
     nav
   );
 
-  if (role === "student") {
+  /* -------------------------------------------------------
+     学生用：最近の会話
+     ------------------------------------------------------- */
+
+  if (
+    role === "student"
+  ) {
     await renderRecentConversations(
       sidebar,
       user
     );
   }
+
+  /* -------------------------------------------------------
+     ログアウト
+     ------------------------------------------------------- */
 
   const logout =
     makeElement(
@@ -691,8 +770,14 @@ async function renderSidebar(
   setupLogout();
 }
 
+/* =========================================================
+   レイアウト開始
+   ========================================================= */
+
 async function startLayout() {
-  if (layoutStarted) {
+  if (
+    layoutStarted
+  ) {
     return;
   }
 
@@ -708,7 +793,8 @@ async function startLayout() {
     return;
   }
 
-  layoutStarted = true;
+  layoutStarted =
+    true;
 
   try {
     const result =
@@ -730,12 +816,18 @@ async function startLayout() {
       result.profile
     );
 
+    /* -------------------------------------------------------
+       現在のユーザー名
+       ------------------------------------------------------- */
+
     const nameElement =
       document.getElementById(
         "currentUserName"
       );
 
-    if (nameElement) {
+    if (
+      nameElement
+    ) {
       nameElement.textContent =
         result.profile.displayName ||
         result.user.displayName ||
@@ -743,17 +835,31 @@ async function startLayout() {
         "ユーザー";
     }
 
+    /* -------------------------------------------------------
+       フッター
+       ------------------------------------------------------- */
+
     const footer =
       document.querySelector(
         ".app-footer"
       );
 
-    if (footer) {
+    if (
+      footer
+    ) {
       footer.textContent =
         "© 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.";
     }
 
+    /* -------------------------------------------------------
+       初期化完了
+       ------------------------------------------------------- */
+
     document.documentElement.classList.remove(
+      "auth-pending"
+    );
+
+    document.body.classList.remove(
       "auth-pending"
     );
 
@@ -771,8 +877,16 @@ async function startLayout() {
     document.documentElement.classList.remove(
       "auth-pending"
     );
+
+    document.body.classList.remove(
+      "auth-pending"
+    );
   }
 }
+
+/* =========================================================
+   初期実行
+   ========================================================= */
 
 if (
   typeof document !==
@@ -788,8 +902,20 @@ if (
     )
   ) {
     startLayout();
+
   } else {
     setupSidebar();
     setupLogout();
   }
 }
+
+/* =========================================================
+   画面サイズ変更時
+   ========================================================= */
+
+window.addEventListener(
+  "resize",
+  () => {
+    updateToggleStates();
+  }
+);
