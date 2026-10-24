@@ -1,428 +1,157 @@
 import {
-  auth,
-  db
-} from "./firebase.js";
-
-import {
+  db,
   collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  addDoc,
   query,
   where,
   orderBy,
-  getDocs,
-  doc,
-  getDoc,
-  addDoc,
-  setDoc,
-  updateDoc,
-  serverTimestamp,
-  onSnapshot
+  limit,
+  serverTimestamp
 } from "./firebase.js";
 
-import {
-  renderSidebar,
-  setupSidebar,
-  setupLogout
-} from "./layout.js";
 
-let questionPageStarted = false;
-
-let currentConversationId = null;
-
-let currentConversation = null;
-
-let currentUser = null;
-
-let currentProfile = null;
-
-let sending = false;
-
-function createId(prefix) {
-  const random =
-    crypto.randomUUID
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random()
-          .toString(36)
-          .slice(2)}`;
-
-  return `${prefix}_${random}`;
+function getHistoryCollection() {
+  return collection(db, "chatHistories");
 }
 
-function getConversationIdFromUrl() {
-  const params =
-    new URLSearchParams(
-      window.location.search
-    );
 
-  return (
-    params.get(
-      "conversationId"
-    ) || null
+function getMessageCollection(conversationId) {
+  return collection(
+    db,
+    "chatHistories",
+    conversationId,
+    "messages"
   );
 }
 
-function setConversationUrl(
-  conversationId
-) {
-  const url =
-    new URL(
-      window.location.href
-    );
 
-  url.searchParams.set(
-    "conversationId",
-    conversationId
-  );
-
-  window.history.replaceState(
-    {},
-    "",
-    url.toString()
-  );
-}
-
-function clearConversationUrl() {
-  const url =
-    new URL(
-      window.location.href
-    );
-
-  url.searchParams.delete(
-    "conversationId"
-  );
-
-  window.history.replaceState(
-    {},
-    "",
-    url.toString()
-  );
-}
-
-function makeTitle(
-  question
-) {
-  const cleaned =
-    String(question || "")
-      .replace(/\s+/g, " ")
-      .trim();
-
-  if (!cleaned) {
-    return "新しい会話";
-  }
+function createConversationId() {
 
   if (
-    cleaned.length <= 30
+    window.crypto &&
+    typeof window.crypto.randomUUID === "function"
   ) {
-    return cleaned;
+    return window.crypto.randomUUID();
   }
 
   return (
-    cleaned.slice(0, 30) +
-    "…"
+    "conversation_" +
+    Date.now().toString(36) +
+    "_" +
+    Math.random()
+      .toString(36)
+      .slice(2)
   );
 }
 
-function setText(
-  id,
-  value
-) {
-  const element =
-    document.getElementById(id);
 
-  if (element) {
-    element.textContent =
-      value ?? "";
+function createAnswerId() {
+
+  if (
+    window.crypto &&
+    typeof window.crypto.randomUUID === "function"
+  ) {
+    return window.crypto.randomUUID();
   }
+
+  return (
+    "answer_" +
+    Date.now().toString(36) +
+    "_" +
+    Math.random()
+      .toString(36)
+      .slice(2)
+  );
 }
 
-function showChatError(
+
+export async function initPage(options = {}) {
+
+  const role =
+    options.role ||
+    document.body.dataset.role ||
+    "";
+
+  if (
+    role !== "student" &&
+    role !== "admin"
+  ) {
+    throw new Error(
+      "ページのrole設定が正しくありません。"
+    );
+  }
+
+  document.body.dataset.initialized = "true";
+
+  return {
+    role,
+    user: options.user || null,
+    profile: options.profile || null
+  };
+}
+
+
+export async function createConversation(
+  userId,
+  title = "新しい会話"
+) {
+
+  if (!userId) {
+    throw new Error(
+      "ユーザーIDがありません。"
+    );
+  }
+
+  const conversationId =
+    createConversationId();
+
+  await setDoc(
+    doc(
+      db,
+      "chatHistories",
+      conversationId
+    ),
+    {
+      conversationId,
+      userId,
+      title,
+      lastQuestion: "",
+      lastAnswer: "",
+      messageCount: 0,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    }
+  );
+
+  return conversationId;
+}
+
+
+export async function saveConversationMessage(
+  userId,
+  conversationId,
   message
 ) {
-  const element =
-    document.getElementById(
-      "chatError"
-    );
 
-  if (!element) {
-    return;
-  }
-
-  element.hidden =
-    false;
-
-  element.textContent =
-    message;
-}
-
-function clearChatError() {
-  const element =
-    document.getElementById(
-      "chatError"
-    );
-
-  if (!element) {
-    return;
-  }
-
-  element.hidden =
-    true;
-
-  element.textContent =
-    "";
-}
-
-function setSending(
-  value
-) {
-  sending =
-    value;
-
-  const input =
-    document.getElementById(
-      "chatInput"
-    );
-
-  const button =
-    document.getElementById(
-      "sendButton"
-    );
-
-  if (input) {
-    input.disabled =
-      value;
-  }
-
-  if (button) {
-    button.disabled =
-      value;
-
-    button.textContent =
-      value
-        ? "送信中..."
-        : "送信";
-  }
-}
-
-function scrollMessages() {
-  const box =
-    document.getElementById(
-      "chatMessages"
-    );
-
-  if (!box) {
-    return;
-  }
-
-  box.scrollTop =
-    box.scrollHeight;
-}
-
-function clearEmptyState() {
-  const empty =
-    document.getElementById(
-      "emptyChat"
-    );
-
-  if (empty) {
-    empty.remove();
-  }
-}
-
-function addMessage(
-  role,
-  content,
-  responseId = null,
-  createdAt = null
-) {
-  clearEmptyState();
-
-  const messages =
-    document.getElementById(
-      "chatMessages"
-    );
-
-  if (!messages) {
-    return;
-  }
-
-  const row =
-    document.createElement(
-      "div"
-    );
-
-  row.className =
-    `message-row ${role}`;
-
-  const bubble =
-    document.createElement(
-      "div"
-    );
-
-  bubble.className =
-    "message-bubble";
-
-  bubble.textContent =
-    content || "";
-
-  const meta =
-    document.createElement(
-      "div"
-    );
-
-  meta.className =
-    "message-meta";
-
-  meta.textContent =
-    role === "user"
-      ? "あなた"
-      : "学習AI";
-
-  if (createdAt) {
-    const date =
-      createdAt.toDate
-        ? createdAt.toDate()
-        : new Date(createdAt);
-
-    if (
-      !Number.isNaN(
-        date.getTime()
-      )
-    ) {
-      meta.textContent +=
-        " ・ " +
-        new Intl.DateTimeFormat(
-          "ja-JP",
-          {
-            hour: "2-digit",
-            minute: "2-digit"
-          }
-        ).format(date);
-    }
-  }
-
-  if (
-    role === "assistant" &&
-    responseId
-  ) {
-    const id =
-      document.createElement(
-        "span"
-      );
-
-    id.className =
-      "response-id";
-
-    id.textContent =
-      `回答ID: ${responseId}`;
-
-    meta.append(
-      id
-    );
-  }
-
-  bubble.append(
-    meta
-  );
-
-  row.append(
-    bubble
-  );
-
-  messages.append(
-    row
-  );
-
-  scrollMessages();
-}
-
-function renderConversation(
-  messages
-) {
-  const container =
-    document.getElementById(
-      "chatMessages"
-    );
-
-  if (!container) {
-    return;
-  }
-
-  container.replaceChildren();
-
-  if (
-    !messages ||
-    messages.length === 0
-  ) {
-    const empty =
-      document.createElement(
-        "div"
-      );
-
-    empty.id =
-      "emptyChat";
-
-    empty.className =
-      "empty-chat";
-
-    const inner =
-      document.createElement(
-        "div"
-      );
-
-    inner.className =
-      "empty-chat-inner";
-
-    const heading =
-      document.createElement(
-        "h2"
-      );
-
-    heading.textContent =
-      "何を勉強しますか？";
-
-    const paragraph =
-      document.createElement(
-        "p"
-      );
-
-    paragraph.textContent =
-      "学習について質問してください。";
-
-    inner.append(
-      heading,
-      paragraph
-    );
-
-    empty.append(
-      inner
-    );
-
-    container.append(
-      empty
-    );
-
-    return;
-  }
-
-  messages.forEach(
-    message => {
-      addMessage(
-        message.role,
-        message.content,
-        message.responseId ||
-          null,
-        message.createdAt ||
-          null
-      );
-    }
-  );
-}
-
-async function loadConversation(
-  conversationId
-) {
-  if (!currentUser) {
+  if (!userId) {
     throw new Error(
-      "ログイン情報を確認できません。"
+      "ユーザーIDがありません。"
+    );
+  }
+
+  if (!conversationId) {
+    throw new Error(
+      "会話IDがありません。"
+    );
+  }
+
+  if (!message || !message.content) {
+    throw new Error(
+      "保存するメッセージがありません。"
     );
   }
 
@@ -438,508 +167,412 @@ async function loadConversation(
       conversationRef
     );
 
-  if (
-    !conversationSnap.exists()
-  ) {
-    throw new Error(
-      "指定された会話が見つかりません。"
+  if (!conversationSnap.exists()) {
+
+    await setDoc(
+      conversationRef,
+      {
+        conversationId,
+        userId,
+        title:
+          message.role === "user"
+            ? message.content.slice(0, 40)
+            : "新しい会話",
+        lastQuestion:
+          message.role === "user"
+            ? message.content
+            : "",
+        lastAnswer:
+          message.role === "assistant"
+            ? message.content
+            : "",
+        messageCount: 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      }
     );
+
+  } else {
+
+    const existing =
+      conversationSnap.data();
+
+    if (
+      existing.userId &&
+      existing.userId !== userId
+    ) {
+      throw new Error(
+        "この会話を保存する権限がありません。"
+      );
+    }
+  }
+
+  const answerId =
+    message.answerId ||
+    createAnswerId();
+
+  const messageRef =
+    doc(
+      getMessageCollection(conversationId),
+      answerId
+    );
+
+  await setDoc(
+    messageRef,
+    {
+      answerId,
+      conversationId,
+      userId,
+      role:
+        message.role === "assistant"
+          ? "assistant"
+          : "user",
+      content:
+        String(message.content),
+      createdAt:
+        serverTimestamp()
+    }
+  );
+
+  const conversationData = {
+    updatedAt:
+      serverTimestamp()
+  };
+
+  if (message.role === "user") {
+    conversationData.lastQuestion =
+      message.content;
+  }
+
+  if (message.role === "assistant") {
+    conversationData.lastAnswer =
+      message.content;
+  }
+
+  const currentCount =
+    conversationSnap.exists()
+      ? Number(
+          conversationSnap.data().messageCount || 0
+        )
+      : 0;
+
+  conversationData.messageCount =
+    currentCount + 1;
+
+  await setDoc(
+    conversationRef,
+    conversationData,
+    {
+      merge: true
+    }
+  );
+
+  return {
+    answerId
+  };
+}
+
+
+export async function loadConversationHistory(
+  userId,
+  conversationId
+) {
+
+  if (!userId) {
+    throw new Error(
+      "ユーザーIDがありません。"
+    );
+  }
+
+  if (!conversationId) {
+    return {
+      conversationId: null,
+      messages: []
+    };
+  }
+
+  const conversationSnap =
+    await getDoc(
+      doc(
+        db,
+        "chatHistories",
+        conversationId
+      )
+    );
+
+  if (!conversationSnap.exists()) {
+    return {
+      conversationId,
+      messages: []
+    };
   }
 
   const conversation =
     conversationSnap.data();
 
-  if (
-    conversation.userId !==
-    currentUser.uid
-  ) {
+  if (conversation.userId !== userId) {
     throw new Error(
-      "この会話を開く権限がありません。"
+      "この会話を閲覧する権限がありません。"
     );
   }
 
   const messagesQuery =
     query(
-      collection(
-        db,
-        "chatHistories",
-        conversationId,
-        "messages"
-      ),
-      orderBy(
-        "createdAt",
-        "asc"
-      )
+      getMessageCollection(conversationId),
+      orderBy("createdAt", "asc")
     );
 
-  const messageSnapshot =
+  const messagesSnap =
     await getDocs(
       messagesQuery
     );
 
   const messages =
-    messageSnapshot.docs.map(
-      item => ({
-        id: item.id,
-        ...item.data()
-      })
-    );
+    messagesSnap.docs.map(
+      item => {
 
-  currentConversationId =
-    conversationId;
+        const data =
+          item.data();
 
-  currentConversation =
-    conversation;
+        return {
+          answerId:
+            data.answerId ||
+            item.id,
 
-  setConversationUrl(
-    conversationId
-  );
+          conversationId:
+            data.conversationId ||
+            conversationId,
 
-  setText(
-    "conversationTitle",
-    conversation.title ||
-      "会話"
-  );
+          role:
+            data.role || "assistant",
 
-  setText(
-    "conversationId",
-    `会話ID: ${conversationId}`
-  );
+          content:
+            data.content || "",
 
-  renderConversation(
-    messages
-  );
-}
-
-async function createConversation(
-  firstQuestion = ""
-) {
-  if (!currentUser) {
-    throw new Error(
-      "ログイン情報がありません。"
-    );
-  }
-
-  const conversationId =
-    createId("conversation");
-
-  const title =
-    makeTitle(
-      firstQuestion
-    );
-
-  const conversationRef =
-    doc(
-      db,
-      "chatHistories",
-      conversationId
-    );
-
-  const data = {
-    conversationId,
-    userId:
-      currentUser.uid,
-    title,
-    lastQuestion:
-      firstQuestion || "",
-    messageCount: 0,
-    createdAt:
-      serverTimestamp(),
-    updatedAt:
-      serverTimestamp()
-  };
-
-  await setDoc(
-    conversationRef,
-    data
-  );
-
-  currentConversationId =
-    conversationId;
-
-  currentConversation =
-    data;
-
-  setConversationUrl(
-    conversationId
-  );
-
-  setText(
-    "conversationTitle",
-    title
-  );
-
-  setText(
-    "conversationId",
-    `会話ID: ${conversationId}`
-  );
-
-  return conversationId;
-}
-
-async function saveMessage(
-  conversationId,
-  message
-) {
-  const messageRef =
-    await addDoc(
-      collection(
-        db,
-        "chatHistories",
-        conversationId,
-        "messages"
-      ),
-      {
-        role:
-          message.role,
-        content:
-          message.content,
-        responseId:
-          message.responseId ||
-          null,
-        userId:
-          currentUser.uid,
-        createdAt:
-          serverTimestamp()
+          createdAt:
+            data.createdAt || null
+        };
       }
     );
 
-  return messageRef.id;
+  return {
+    conversationId,
+    title:
+      conversation.title ||
+      "会話",
+    messages
+  };
 }
 
-async function updateConversation(
-  conversationId,
-  question
+
+export async function getRecentConversations(
+  userId
 ) {
-  await updateDoc(
-    doc(
-      db,
-      "chatHistories",
-      conversationId
-    ),
-    {
-      lastQuestion:
-        question,
-      updatedAt:
-        serverTimestamp()
-    }
+
+  if (!userId) {
+    return [];
+  }
+
+  const q =
+    query(
+      getHistoryCollection(),
+      where(
+        "userId",
+        "==",
+        userId
+      ),
+      orderBy(
+        "updatedAt",
+        "desc"
+      ),
+      limit(20)
+    );
+
+  const snapshot =
+    await getDocs(q);
+
+  return snapshot.docs.map(
+    item => ({
+      id: item.id,
+      ...item.data()
+    })
   );
 }
 
-async function sendToAI(
-  conversationId,
-  question
+
+export async function getConversation(
+  userId,
+  conversationId
 ) {
+
+  const snapshot =
+    await getDoc(
+      doc(
+        db,
+        "chatHistories",
+        conversationId
+      )
+    );
+
+  if (!snapshot.exists()) {
+    return null;
+  }
+
+  const data =
+    snapshot.data();
+
+  if (data.userId !== userId) {
+    throw new Error(
+      "この会話を閲覧する権限がありません。"
+    );
+  }
+
+  return {
+    id: snapshot.id,
+    ...data
+  };
+}
+
+
+/*
+ * AI呼び出し
+ *
+ * GitHub Pagesから直接秘密鍵を置かない。
+ * 実際のAI処理はCloud Functions等の
+ * サーバー側エンドポイントへ送る。
+ */
+export async function askStudyAI(payload) {
+
+  if (!payload) {
+    throw new Error(
+      "AIへの送信データがありません。"
+    );
+  }
+
+  const {
+    userId,
+    conversationId,
+    answerId,
+    question,
+    messages
+  } = payload;
+
+  if (!userId) {
+    throw new Error(
+      "ユーザーIDがありません。"
+    );
+  }
+
+  if (!conversationId) {
+    throw new Error(
+      "会話IDがありません。"
+    );
+  }
+
+  if (!answerId) {
+    throw new Error(
+      "回答IDがありません。"
+    );
+  }
+
+  if (!question) {
+    throw new Error(
+      "質問内容がありません。"
+    );
+  }
+
+
+  /*
+   * Cloud Functions等の実際のAPI URLに置き換える。
+   *
+   * ここにOpenAI等の秘密APIキーを書かない。
+   */
+
   const endpoint =
-    window.AI_CHAT_ENDPOINT ||
-    "/api/chat";
+    window.STUDY_AI_ENDPOINT ||
+    "";
+
+  if (!endpoint) {
+
+    throw new Error(
+      "AIサーバーの接続先が設定されていません。"
+    );
+  }
+
 
   const response =
     await fetch(
       endpoint,
       {
         method: "POST",
+
         headers: {
           "Content-Type":
             "application/json"
         },
-        body: JSON.stringify({
-          conversationId,
-          question,
-          userId:
-            currentUser.uid
-        })
+
+        body:
+          JSON.stringify({
+            userId,
+            conversationId,
+            answerId,
+            question,
+
+            messages:
+              Array.isArray(messages)
+                ? messages.map(
+                    message => ({
+                      answerId:
+                        message.answerId || null,
+
+                      role:
+                        message.role,
+
+                      content:
+                        message.content
+                    })
+                  )
+                : []
+          })
       }
     );
+
 
   if (!response.ok) {
-    let message =
-      `AIサーバーエラー: HTTP ${response.status}`;
 
-    try {
-      const data =
-        await response.json();
-
-      if (data.message) {
-        message =
-          data.message;
-      }
-    } catch {
-      // JSONでない場合は既定メッセージ
-    }
+    const text =
+      await response.text();
 
     throw new Error(
-      message
+      `AIサーバーエラー (${response.status})\n${text}`
     );
   }
+
 
   const data =
     await response.json();
 
+
   if (
-    !data.answer
+    !data ||
+    typeof data.answer !== "string"
   ) {
     throw new Error(
-      "AIから回答を取得できませんでした。"
+      "AIサーバーから正しい回答形式が返されませんでした。"
     );
   }
+
 
   return {
     answer:
-      String(data.answer),
-    responseId:
-      data.responseId ||
-      createId("response")
+      data.answer,
+
+    answerId:
+      data.answerId ||
+      answerId,
+
+    conversationId:
+      data.conversationId ||
+      conversationId
   };
 }
-
-async function handleQuestion(
-  event
-) {
-  event.preventDefault();
-
-  if (
-    sending ||
-    !currentUser
-  ) {
-    return;
-  }
-
-  const input =
-    document.getElementById(
-      "chatInput"
-    );
-
-  const question =
-    input.value.trim();
-
-  if (!question) {
-    return;
-  }
-
-  clearChatError();
-
-  setSending(true);
-
-  try {
-
-    if (
-      !currentConversationId
-    ) {
-      await createConversation(
-        question
-      );
-    }
-
-    const conversationId =
-      currentConversationId;
-
-    const userMessage = {
-      role: "user",
-      content: question,
-      responseId: null
-    };
-
-    addMessage(
-      "user",
-      question
-    );
-
-    input.value = "";
-
-    await saveMessage(
-      conversationId,
-      userMessage
-    );
-
-    await updateConversation(
-      conversationId,
-      question
-    );
-
-    const result =
-      await sendToAI(
-        conversationId,
-        question
-      );
-
-    const assistantMessage = {
-      role: "assistant",
-      content:
-        result.answer,
-      responseId:
-        result.responseId
-    };
-
-    addMessage(
-      "assistant",
-      result.answer,
-      result.responseId
-    );
-
-    await saveMessage(
-      conversationId,
-      assistantMessage
-    );
-
-    await updateConversation(
-      conversationId,
-      question
-    );
-
-  } catch (error) {
-
-    console.error(
-      "AI質問処理エラー:",
-      error
-    );
-
-    showChatError(
-      "回答を取得できませんでした。\n" +
-      (error?.message ||
-        String(error))
-    );
-
-  } finally {
-    setSending(false);
-    input.focus();
-  }
-}
-
-async function newConversation() {
-  currentConversationId =
-    null;
-
-  currentConversation =
-    null;
-
-  clearConversationUrl();
-
-  setText(
-    "conversationTitle",
-    "新しい会話"
-  );
-
-  setText(
-    "conversationId",
-    ""
-  );
-
-  renderConversation(
-    []
-  );
-
-  const input =
-    document.getElementById(
-      "chatInput"
-    );
-
-  if (input) {
-    input.focus();
-  }
-}
-
-function bindQuestionEvents() {
-  const form =
-    document.getElementById(
-      "chatForm"
-    );
-
-  const newButton =
-    document.getElementById(
-      "newConversationButton"
-    );
-
-  if (form) {
-    form.addEventListener(
-      "submit",
-      handleQuestion
-    );
-  }
-
-  if (newButton) {
-    newButton.addEventListener(
-      "click",
-      newConversation
-    );
-  }
-}
-
-export async function initializeQuestionPage(
-  context
-) {
-  if (
-    questionPageStarted
-  ) {
-    return;
-  }
-
-  questionPageStarted =
-    true;
-
-  currentUser =
-    context.user;
-
-  currentProfile =
-    context.profile;
-
-  if (!currentUser) {
-    throw new Error(
-      "ログイン中のユーザーが確認できません。"
-    );
-  }
-
-  await renderSidebar(
-    "student",
-    currentUser,
-    currentProfile
-  );
-
-  bindQuestionEvents();
-
-  const conversationId =
-    getConversationIdFromUrl();
-
-  if (conversationId) {
-    try {
-      await loadConversation(
-        conversationId
-      );
-    } catch (error) {
-
-      console.error(
-        "会話読み込みエラー:",
-        error
-      );
-
-      clearConversationUrl();
-
-      showChatError(
-        "会話を読み込めませんでした。\n" +
-        (error?.message ||
-          String(error))
-      );
-
-      renderConversation(
-        []
-      );
-    }
-  } else {
-    renderConversation(
-      []
-    );
-  }
-}
-
-export function getCurrentConversationId() {
-  return currentConversationId;
-}
-
-export function getCurrentUser() {
-  return currentUser;
-}
-
-export {
-  createConversation,
-  saveMessage
-};
