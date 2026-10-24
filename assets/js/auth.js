@@ -10,6 +10,7 @@ import {
 
 function rootPath(file) {
   const path = location.pathname;
+
   const nested =
     path.includes("/student/") ||
     path.includes("/admin/");
@@ -143,7 +144,6 @@ function errorDetails(error) {
   }`;
 }
 
-// 同じページ内での認証確認を共有する。
 const roleCheckPromises = new Map();
 
 async function runRoleCheck(requiredRole, options = {}) {
@@ -155,6 +155,7 @@ async function runRoleCheck(requiredRole, options = {}) {
       "必要な権限の設定が正しくありません。",
       `requiredRole: ${String(requiredRole)}`
     );
+
     return null;
   }
 
@@ -188,6 +189,7 @@ async function runRoleCheck(requiredRole, options = {}) {
         "ユーザープロフィールを取得できませんでした。Firestoreのユーザー情報とセキュリティルールを確認してください。",
         errorDetails(error)
       );
+
       return null;
     }
 
@@ -202,6 +204,7 @@ async function runRoleCheck(requiredRole, options = {}) {
         "アカウント利用不可",
         "このアカウントは無効化されています。管理者にお問い合わせください。"
       );
+
       return null;
     }
 
@@ -211,6 +214,7 @@ async function runRoleCheck(requiredRole, options = {}) {
         "アカウントの権限が設定されていないか、不正です。",
         `role: ${String(profile.role)}`
       );
+
       return null;
     }
 
@@ -220,6 +224,7 @@ async function runRoleCheck(requiredRole, options = {}) {
         "このページを開く権限がありません。",
         `必要な権限: ${requiredRole}\n現在の権限: ${profile.role}`
       );
+
       return null;
     }
 
@@ -237,6 +242,7 @@ async function runRoleCheck(requiredRole, options = {}) {
         "システム設定を取得できません。Firestoreの settings/system とセキュリティルールを確認してください。",
         errorDetails(error)
       );
+
       return null;
     }
 
@@ -244,7 +250,7 @@ async function runRoleCheck(requiredRole, options = {}) {
       settings?.maintenance === true;
 
     // メンテナンス中は生徒ページをブロックする。
-    // 管理者ページは継続利用可能。
+    // 管理者ページは引き続き利用できる。
     if (
       maintenanceEnabled &&
       requiredRole === "student" &&
@@ -278,7 +284,6 @@ async function runRoleCheck(requiredRole, options = {}) {
 }
 
 export function requireRole(requiredRole, options = {}) {
-  // 管理者ページではメンテナンス設定による移動は発生しない。
   const allowMaintenance =
     requiredRole === "admin" ||
     options.allowMaintenance === true;
