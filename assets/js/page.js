@@ -1,14 +1,6 @@
-// assets/js/page.js
-
 import {
-  requireRole,
   auth,
   db
-} from "./auth.js";
-
-import {
-  signOut,
-  onAuthStateChanged
 } from "./firebase.js";
 
 import {
@@ -16,807 +8,938 @@ import {
   query,
   where,
   orderBy,
-  limit,
-  getDocs
+  getDocs,
+  doc,
+  getDoc,
+  addDoc,
+  setDoc,
+  updateDoc,
+  serverTimestamp,
+  onSnapshot
 } from "./firebase.js";
 
-const STUDENT_LINKS = [
-  {
-    label: "ホーム",
-    icon: "⌂",
-    href: "index.html"
-  },
-  {
-    label: "AIに質問",
-    icon: "?",
-    href: "question.html"
-  },
-  {
-    label: "学習履歴",
-    icon: "≡",
-    href: "history.html"
-  },
-  {
-    label: "お知らせ",
-    icon: "▤",
-    href: "announcements.html"
-  },
-  {
-    label: "設定",
-    icon: "⚙",
-    href: "settings.html"
-  }
-];
+import {
+  renderSidebar,
+  setupSidebar,
+  setupLogout
+} from "./layout.js";
 
-const ADMIN_LINKS = [
-  {
-    label: "管理者ホーム",
-    icon: "⌂",
-    href: "index.html"
-  },
-  {
-    label: "ユーザー管理",
-    icon: "♙",
-    href: "users.html"
-  },
-  {
-    label: "お知らせ管理",
-    icon: "▤",
-    href: "announcements.html"
-  },
-  {
-    label: "メンテナンス",
-    icon: "⚙",
-    href: "maintenance.html"
-  },
-  {
-    label: "AI設定",
-    icon: "◇",
-    href: "ai-settings.html"
-  },
-  {
-    label: "操作ログ",
-    icon: "≡",
-    href: "logs.html"
-  },
-  {
-    label: "システム状態",
-    icon: "▦",
-    href: "system.html"
-  },
-  {
-    label: "管理者設定",
-    icon: "⚙",
-    href: "settings.html"
-  }
-];
+let questionPageStarted = false;
 
-let layoutStarted = false;
+let currentConversationId = null;
 
-function makeElement(
-  tag,
-  className = "",
-  text = ""
-) {
-  const element =
-    document.createElement(tag);
+let currentConversation = null;
 
-  if (className) {
-    element.className =
-      className;
-  }
+let currentUser = null;
 
-  if (text !== "") {
-    element.textContent =
-      text;
-  }
+let currentProfile = null;
 
-  return element;
+let sending = false;
+
+function createId(prefix) {
+  const random =
+    crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}`;
+
+  return `${prefix}_${random}`;
 }
 
-function getCurrentFile() {
+function getConversationIdFromUrl() {
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
+
   return (
-    location.pathname
-      .split("/")
-      .pop() ||
-    "index.html"
+    params.get(
+      "conversationId"
+    ) || null
   );
 }
 
-function isMobile() {
-  return window.matchMedia(
-    "(max-width: 700px)"
-  ).matches;
+function setConversationUrl(
+  conversationId
+) {
+  const url =
+    new URL(
+      window.location.href
+    );
+
+  url.searchParams.set(
+    "conversationId",
+    conversationId
+  );
+
+  window.history.replaceState(
+    {},
+    "",
+    url.toString()
+  );
 }
 
-function updateToggleStates() {
-  const expanded =
-    isMobile()
-      ? document.body.classList.contains(
-          "sidebar-expanded"
-        )
-      : !document.body.classList.contains(
-          "sidebar-collapsed"
-        );
+function clearConversationUrl() {
+  const url =
+    new URL(
+      window.location.href
+    );
 
-  document
-    .querySelectorAll(
-      ".sidebar-toggle"
-    )
-    .forEach(button => {
-      button.setAttribute(
-        "aria-expanded",
-        String(expanded)
-      );
-    });
+  url.searchParams.delete(
+    "conversationId"
+  );
+
+  window.history.replaceState(
+    {},
+    "",
+    url.toString()
+  );
 }
 
-function toggleSidebar() {
-  if (isMobile()) {
-    document.body.classList.toggle(
-      "sidebar-expanded"
-    );
-  } else {
-    document.body.classList.toggle(
-      "sidebar-collapsed"
-    );
+function makeTitle(
+  question
+) {
+  const cleaned =
+    String(question || "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  if (!cleaned) {
+    return "新しい会話";
   }
 
-  updateToggleStates();
+  if (
+    cleaned.length <= 30
+  ) {
+    return cleaned;
+  }
+
+  return (
+    cleaned.slice(0, 30) +
+    "…"
+  );
 }
 
-function bindSidebarToggle(button) {
-  if (
-    button.dataset.sidebarBound ===
-    "true"
-  ) {
+function setText(
+  id,
+  value
+) {
+  const element =
+    document.getElementById(id);
+
+  if (element) {
+    element.textContent =
+      value ?? "";
+  }
+}
+
+function showChatError(
+  message
+) {
+  const element =
+    document.getElementById(
+      "chatError"
+    );
+
+  if (!element) {
     return;
   }
 
-  button.dataset.sidebarBound =
-    "true";
+  element.hidden =
+    false;
 
-  button.type = "button";
-
-  button.setAttribute(
-    "aria-label",
-    "サイドメニューを開閉"
-  );
-
-  button.addEventListener(
-    "click",
-    toggleSidebar
-  );
+  element.textContent =
+    message;
 }
 
-export function setupSidebar() {
-  document
-    .querySelectorAll(
-      ".sidebar-toggle"
-    )
-    .forEach(
-      bindSidebarToggle
+function clearChatError() {
+  const element =
+    document.getElementById(
+      "chatError"
     );
 
-  updateToggleStates();
-  setActiveNavigation();
+  if (!element) {
+    return;
+  }
+
+  element.hidden =
+    true;
+
+  element.textContent =
+    "";
 }
 
-function setActiveNavigation() {
-  const currentFile =
-    getCurrentFile();
-
-  document
-    .querySelectorAll(
-      ".sidebar a[href]"
-    )
-    .forEach(link => {
-      const href =
-        link.getAttribute(
-          "href"
-        ) || "";
-
-      const target =
-        href
-          .split("?")[0]
-          .split("#")[0]
-          .split("/")
-          .pop();
-
-      const active =
-        target ===
-        currentFile;
-
-      link.classList.toggle(
-        "active",
-        active
-      );
-
-      if (active) {
-        link.setAttribute(
-          "aria-current",
-          "page"
-        );
-      } else {
-        link.removeAttribute(
-          "aria-current"
-        );
-      }
-    });
-}
-
-export function setupLogout() {
-  document
-    .querySelectorAll(
-      "[data-logout], .logout-button"
-    )
-    .forEach(button => {
-      if (
-        button.dataset.logoutBound ===
-        "true"
-      ) {
-        return;
-      }
-
-      button.dataset.logoutBound =
-        "true";
-
-      button.type = "button";
-
-      button.addEventListener(
-        "click",
-        async () => {
-          button.disabled =
-            true;
-
-          try {
-            await signOut(auth);
-
-            const nested =
-              location.pathname.includes(
-                "/student/"
-              ) ||
-              location.pathname.includes(
-                "/admin/"
-              );
-
-            location.replace(
-              nested
-                ? "../login.html"
-                : "./login.html"
-            );
-
-          } catch (error) {
-            console.error(
-              "ログアウトエラー:",
-              error
-            );
-
-            button.disabled =
-              false;
-
-            showLayoutError(
-              "ログアウトに失敗しました。",
-              error
-            );
-          }
-        }
-      );
-    });
-}
-
-function showLayoutError(
-  message,
-  error = null
+function setSending(
+  value
 ) {
-  let box =
+  sending =
+    value;
+
+  const input =
     document.getElementById(
-      "layoutError"
+      "chatInput"
+    );
+
+  const button =
+    document.getElementById(
+      "sendButton"
+    );
+
+  if (input) {
+    input.disabled =
+      value;
+  }
+
+  if (button) {
+    button.disabled =
+      value;
+
+    button.textContent =
+      value
+        ? "送信中..."
+        : "送信";
+  }
+}
+
+function scrollMessages() {
+  const box =
+    document.getElementById(
+      "chatMessages"
     );
 
   if (!box) {
-    box =
-      makeElement(
-        "div",
-        "layout-error"
-      );
-
-    box.id =
-      "layoutError";
-
-    const main =
-      document.querySelector(
-        "main"
-      );
-
-    (
-      main ||
-      document.body
-    ).prepend(box);
+    return;
   }
 
-  box.textContent =
-    `${message}${
-      error?.message
-        ? ` ${error.message}`
-        : ""
-    }`;
+  box.scrollTop =
+    box.scrollHeight;
 }
 
-function createNavigationLink(
-  item,
-  currentFile
+function clearEmptyState() {
+  const empty =
+    document.getElementById(
+      "emptyChat"
+    );
+
+  if (empty) {
+    empty.remove();
+  }
+}
+
+function addMessage(
+  role,
+  content,
+  responseId = null,
+  createdAt = null
 ) {
-  const link =
-    makeElement(
-      "a",
-      "sidebar-link"
+  clearEmptyState();
+
+  const messages =
+    document.getElementById(
+      "chatMessages"
     );
 
-  link.href =
-    item.href;
-
-  const targetFile =
-    item.href
-      .split("?")[0]
-      .split("#")[0]
-      .split("/")
-      .pop();
-
-  if (
-    targetFile ===
-    currentFile
-  ) {
-    link.classList.add(
-      "active"
-    );
-
-    link.setAttribute(
-      "aria-current",
-      "page"
-    );
+  if (!messages) {
+    return;
   }
 
-  const icon =
-    makeElement(
-      "span",
-      "sidebar-icon",
-      item.icon
+  const row =
+    document.createElement(
+      "div"
     );
 
-  icon.setAttribute(
-    "aria-hidden",
-    "true"
-  );
+  row.className =
+    `message-row ${role}`;
 
-  const label =
-    makeElement(
-      "span",
-      "sidebar-label",
-      item.label
+  const bubble =
+    document.createElement(
+      "div"
     );
 
-  link.append(
-    icon,
-    label
-  );
+  bubble.className =
+    "message-bubble";
 
-  return link;
-}
+  bubble.textContent =
+    content || "";
 
-function formatDate(value) {
-  if (!value) {
-    return "";
-  }
-
-  const date =
-    typeof value.toDate ===
-    "function"
-      ? value.toDate()
-      : new Date(value);
-
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
-    return "";
-  }
-
-  return new Intl.DateTimeFormat(
-    "ja-JP",
-    {
-      month: "numeric",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    }
-  ).format(date);
-}
-
-async function renderRecentConversations(
-  sidebar,
-  user
-) {
-  const section =
-    makeElement(
-      "section",
-      "sidebar-history"
+  const meta =
+    document.createElement(
+      "div"
     );
 
-  const heading =
-    makeElement(
-      "h2",
-      "sidebar-history-heading",
-      "最近の会話"
-    );
+  meta.className =
+    "message-meta";
 
-  const list =
-    makeElement(
-      "div",
-      "sidebar-history-list"
-    );
+  meta.textContent =
+    role === "user"
+      ? "あなた"
+      : "学習AI";
 
-  list.id =
-    "sidebarRecentHistory";
-
-  list.textContent =
-    "履歴を読み込んでいます...";
-
-  section.append(
-    heading,
-    list
-  );
-
-  sidebar.append(
-    section
-  );
-
-  try {
-    const historyQuery =
-      query(
-        collection(
-          db,
-          "chatHistories"
-        ),
-        where(
-          "userId",
-          "==",
-          user.uid
-        ),
-        orderBy(
-          "updatedAt",
-          "desc"
-        ),
-        limit(8)
-      );
-
-    const snapshot =
-      await getDocs(
-        historyQuery
-      );
-
-    list.replaceChildren();
+  if (createdAt) {
+    const date =
+      createdAt.toDate
+        ? createdAt.toDate()
+        : new Date(createdAt);
 
     if (
-      snapshot.empty
+      !Number.isNaN(
+        date.getTime()
+      )
     ) {
-      list.textContent =
-        "まだ会話履歴はありません。";
-
-      return;
+      meta.textContent +=
+        " ・ " +
+        new Intl.DateTimeFormat(
+          "ja-JP",
+          {
+            hour: "2-digit",
+            minute: "2-digit"
+          }
+        ).format(date);
     }
-
-    snapshot.forEach(
-      conversationDoc => {
-        const data =
-          conversationDoc.data();
-
-        const conversationId =
-          conversationDoc.id;
-
-        const link =
-          makeElement(
-            "a",
-            "sidebar-history-link"
-          );
-
-        link.href =
-          `question.html?conversationId=${
-            encodeURIComponent(
-              conversationId
-            )
-          }`;
-
-        const title =
-          makeElement(
-            "span",
-            "sidebar-history-title",
-            data.title ||
-              data.lastQuestion ||
-              "新しい会話"
-          );
-
-        const date =
-          makeElement(
-            "small",
-            "sidebar-history-date",
-            formatDate(
-              data.updatedAt
-            )
-          );
-
-        link.append(
-          title,
-          date
-        );
-
-        list.append(
-          link
-        );
-      }
-    );
-
-  } catch (error) {
-    console.error(
-      "会話履歴取得エラー:",
-      error
-    );
-
-    list.textContent =
-      "履歴を読み込めませんでした。";
   }
+
+  if (
+    role === "assistant" &&
+    responseId
+  ) {
+    const id =
+      document.createElement(
+        "span"
+      );
+
+    id.className =
+      "response-id";
+
+    id.textContent =
+      `回答ID: ${responseId}`;
+
+    meta.append(
+      id
+    );
+  }
+
+  bubble.append(
+    meta
+  );
+
+  row.append(
+    bubble
+  );
+
+  messages.append(
+    row
+  );
+
+  scrollMessages();
 }
 
-async function renderSidebar(
-  role,
-  user,
-  profile
+function renderConversation(
+  messages
 ) {
-  const sidebar =
+  const container =
     document.getElementById(
-      "appSidebar"
+      "chatMessages"
     );
 
-  if (!sidebar) {
-    console.warn(
-      "appSidebar がHTMLにありません。"
+  if (!container) {
+    return;
+  }
+
+  container.replaceChildren();
+
+  if (
+    !messages ||
+    messages.length === 0
+  ) {
+    const empty =
+      document.createElement(
+        "div"
+      );
+
+    empty.id =
+      "emptyChat";
+
+    empty.className =
+      "empty-chat";
+
+    const inner =
+      document.createElement(
+        "div"
+      );
+
+    inner.className =
+      "empty-chat-inner";
+
+    const heading =
+      document.createElement(
+        "h2"
+      );
+
+    heading.textContent =
+      "何を勉強しますか？";
+
+    const paragraph =
+      document.createElement(
+        "p"
+      );
+
+    paragraph.textContent =
+      "学習について質問してください。";
+
+    inner.append(
+      heading,
+      paragraph
+    );
+
+    empty.append(
+      inner
+    );
+
+    container.append(
+      empty
     );
 
     return;
   }
 
-  sidebar.replaceChildren();
+  messages.forEach(
+    message => {
+      addMessage(
+        message.role,
+        message.content,
+        message.responseId ||
+          null,
+        message.createdAt ||
+          null
+      );
+    }
+  );
+}
 
-  const header =
-    makeElement(
-      "div",
-      "sidebar-header"
+async function loadConversation(
+  conversationId
+) {
+  if (!currentUser) {
+    throw new Error(
+      "ログイン情報を確認できません。"
     );
+  }
+
+  const conversationRef =
+    doc(
+      db,
+      "chatHistories",
+      conversationId
+    );
+
+  const conversationSnap =
+    await getDoc(
+      conversationRef
+    );
+
+  if (
+    !conversationSnap.exists()
+  ) {
+    throw new Error(
+      "指定された会話が見つかりません。"
+    );
+  }
+
+  const conversation =
+    conversationSnap.data();
+
+  if (
+    conversation.userId !==
+    currentUser.uid
+  ) {
+    throw new Error(
+      "この会話を開く権限がありません。"
+    );
+  }
+
+  const messagesQuery =
+    query(
+      collection(
+        db,
+        "chatHistories",
+        conversationId,
+        "messages"
+      ),
+      orderBy(
+        "createdAt",
+        "asc"
+      )
+    );
+
+  const messageSnapshot =
+    await getDocs(
+      messagesQuery
+    );
+
+  const messages =
+    messageSnapshot.docs.map(
+      item => ({
+        id: item.id,
+        ...item.data()
+      })
+    );
+
+  currentConversationId =
+    conversationId;
+
+  currentConversation =
+    conversation;
+
+  setConversationUrl(
+    conversationId
+  );
+
+  setText(
+    "conversationTitle",
+    conversation.title ||
+      "会話"
+  );
+
+  setText(
+    "conversationId",
+    `会話ID: ${conversationId}`
+  );
+
+  renderConversation(
+    messages
+  );
+}
+
+async function createConversation(
+  firstQuestion = ""
+) {
+  if (!currentUser) {
+    throw new Error(
+      "ログイン情報がありません。"
+    );
+  }
+
+  const conversationId =
+    createId("conversation");
 
   const title =
-    makeElement(
-      "strong",
-      "sidebar-brand-title",
-      role === "admin"
-        ? "運営管理コンソール"
-        : "学習AIチャット"
+    makeTitle(
+      firstQuestion
     );
 
-  header.append(
+  const conversationRef =
+    doc(
+      db,
+      "chatHistories",
+      conversationId
+    );
+
+  const data = {
+    conversationId,
+    userId:
+      currentUser.uid,
+    title,
+    lastQuestion:
+      firstQuestion || "",
+    messageCount: 0,
+    createdAt:
+      serverTimestamp(),
+    updatedAt:
+      serverTimestamp()
+  };
+
+  await setDoc(
+    conversationRef,
+    data
+  );
+
+  currentConversationId =
+    conversationId;
+
+  currentConversation =
+    data;
+
+  setConversationUrl(
+    conversationId
+  );
+
+  setText(
+    "conversationTitle",
     title
   );
 
-  sidebar.append(
-    header
+  setText(
+    "conversationId",
+    `会話ID: ${conversationId}`
   );
 
-  const toggleRow =
-    makeElement(
-      "div",
-      "sidebar-toggle-row"
-    );
-
-  const toggle =
-    makeElement(
-      "button",
-      "sidebar-toggle",
-      "☰"
-    );
-
-  bindSidebarToggle(
-    toggle
-  );
-
-  toggleRow.append(
-    toggle
-  );
-
-  sidebar.append(
-    toggleRow
-  );
-
-  const userName =
-    profile.displayName ||
-    user.displayName ||
-    user.email ||
-    "ユーザー";
-
-  const userBox =
-    makeElement(
-      "div",
-      "sidebar-user",
-      userName
-    );
-
-  sidebar.append(
-    userBox
-  );
-
-  const nav =
-    makeElement(
-      "nav",
-      "sidebar-nav"
-    );
-
-  nav.setAttribute(
-    "aria-label",
-    "メインメニュー"
-  );
-
-  const links =
-    role === "admin"
-      ? ADMIN_LINKS
-      : STUDENT_LINKS;
-
-  const currentFile =
-    getCurrentFile();
-
-  links.forEach(
-    item => {
-      nav.append(
-        createNavigationLink(
-          item,
-          currentFile
-        )
-      );
-    }
-  );
-
-  sidebar.append(
-    nav
-  );
-
-  if (
-    role === "student"
-  ) {
-    await renderRecentConversations(
-      sidebar,
-      user
-    );
-  }
-
-  const logout =
-    makeElement(
-      "button",
-      "sidebar-link logout-button",
-      "ログアウト"
-    );
-
-  logout.type =
-    "button";
-
-  logout.dataset.logout =
-    "";
-
-  sidebar.append(
-    logout
-  );
-
-  setupSidebar();
-  setupLogout();
+  return conversationId;
 }
 
-async function startLayout() {
-  if (
-    layoutStarted
-  ) {
-    return;
-  }
-
-  const role =
-    document.body.dataset.role;
-
-  if (
-    role !== "student" &&
-    role !== "admin"
-  ) {
-    return;
-  }
-
-  layoutStarted =
-    true;
-
-  try {
-    const result =
-      await requireRole(
-        role,
-        {
-          allowMaintenance:
-            role === "admin"
-        }
-      );
-
-    if (!result) {
-      return;
-    }
-
-    await renderSidebar(
-      role,
-      result.user,
-      result.profile
+async function saveMessage(
+  conversationId,
+  message
+) {
+  const messageRef =
+    await addDoc(
+      collection(
+        db,
+        "chatHistories",
+        conversationId,
+        "messages"
+      ),
+      {
+        role:
+          message.role,
+        content:
+          message.content,
+        responseId:
+          message.responseId ||
+          null,
+        userId:
+          currentUser.uid,
+        createdAt:
+          serverTimestamp()
+      }
     );
 
-    const nameElement =
-      document.getElementById(
-        "currentUserName"
-      );
+  return messageRef.id;
+}
 
-    if (nameElement) {
-      nameElement.textContent =
-        result.profile.displayName ||
-        result.user.displayName ||
-        result.user.email ||
-        "ユーザー";
+async function updateConversation(
+  conversationId,
+  question
+) {
+  await updateDoc(
+    doc(
+      db,
+      "chatHistories",
+      conversationId
+    ),
+    {
+      lastQuestion:
+        question,
+      updatedAt:
+        serverTimestamp()
+    }
+  );
+}
+
+async function sendToAI(
+  conversationId,
+  question
+) {
+  const endpoint =
+    window.AI_CHAT_ENDPOINT ||
+    "/api/chat";
+
+  const response =
+    await fetch(
+      endpoint,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
+        body: JSON.stringify({
+          conversationId,
+          question,
+          userId:
+            currentUser.uid
+        })
+      }
+    );
+
+  if (!response.ok) {
+    let message =
+      `AIサーバーエラー: HTTP ${response.status}`;
+
+    try {
+      const data =
+        await response.json();
+
+      if (data.message) {
+        message =
+          data.message;
+      }
+    } catch {
+      // JSONでない場合は既定メッセージ
     }
 
-    const footer =
-      document.querySelector(
-        ".app-footer"
-      );
+    throw new Error(
+      message
+    );
+  }
 
-    if (footer) {
-      footer.textContent =
-        "© 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.";
+  const data =
+    await response.json();
+
+  if (
+    !data.answer
+  ) {
+    throw new Error(
+      "AIから回答を取得できませんでした。"
+    );
+  }
+
+  return {
+    answer:
+      String(data.answer),
+    responseId:
+      data.responseId ||
+      createId("response")
+  };
+}
+
+async function handleQuestion(
+  event
+) {
+  event.preventDefault();
+
+  if (
+    sending ||
+    !currentUser
+  ) {
+    return;
+  }
+
+  const input =
+    document.getElementById(
+      "chatInput"
+    );
+
+  const question =
+    input.value.trim();
+
+  if (!question) {
+    return;
+  }
+
+  clearChatError();
+
+  setSending(true);
+
+  try {
+
+    if (
+      !currentConversationId
+    ) {
+      await createConversation(
+        question
+      );
     }
 
-    document.documentElement.classList.remove(
-      "auth-pending"
+    const conversationId =
+      currentConversationId;
+
+    const userMessage = {
+      role: "user",
+      content: question,
+      responseId: null
+    };
+
+    addMessage(
+      "user",
+      question
+    );
+
+    input.value = "";
+
+    await saveMessage(
+      conversationId,
+      userMessage
+    );
+
+    await updateConversation(
+      conversationId,
+      question
+    );
+
+    const result =
+      await sendToAI(
+        conversationId,
+        question
+      );
+
+    const assistantMessage = {
+      role: "assistant",
+      content:
+        result.answer,
+      responseId:
+        result.responseId
+    };
+
+    addMessage(
+      "assistant",
+      result.answer,
+      result.responseId
+    );
+
+    await saveMessage(
+      conversationId,
+      assistantMessage
+    );
+
+    await updateConversation(
+      conversationId,
+      question
     );
 
   } catch (error) {
+
     console.error(
-      "画面初期化エラー:",
+      "AI質問処理エラー:",
       error
     );
 
-    showLayoutError(
-      "画面を初期化できませんでした。",
-      error
+    showChatError(
+      "回答を取得できませんでした。\n" +
+      (error?.message ||
+        String(error))
     );
 
-    document.documentElement.classList.remove(
-      "auth-pending"
+  } finally {
+    setSending(false);
+    input.focus();
+  }
+}
+
+async function newConversation() {
+  currentConversationId =
+    null;
+
+  currentConversation =
+    null;
+
+  clearConversationUrl();
+
+  setText(
+    "conversationTitle",
+    "新しい会話"
+  );
+
+  setText(
+    "conversationId",
+    ""
+  );
+
+  renderConversation(
+    []
+  );
+
+  const input =
+    document.getElementById(
+      "chatInput"
+    );
+
+  if (input) {
+    input.focus();
+  }
+}
+
+function bindQuestionEvents() {
+  const form =
+    document.getElementById(
+      "chatForm"
+    );
+
+  const newButton =
+    document.getElementById(
+      "newConversationButton"
+    );
+
+  if (form) {
+    form.addEventListener(
+      "submit",
+      handleQuestion
+    );
+  }
+
+  if (newButton) {
+    newButton.addEventListener(
+      "click",
+      newConversation
     );
   }
 }
 
-if (
-  typeof document !==
-    "undefined"
+export async function initializeQuestionPage(
+  context
 ) {
   if (
-    document.readyState ===
-    "loading"
+    questionPageStarted
   ) {
-    document.addEventListener(
-      "DOMContentLoaded",
-      startLayout,
-      {
-        once: true
-      }
+    return;
+  }
+
+  questionPageStarted =
+    true;
+
+  currentUser =
+    context.user;
+
+  currentProfile =
+    context.profile;
+
+  if (!currentUser) {
+    throw new Error(
+      "ログイン中のユーザーが確認できません。"
     );
+  }
+
+  await renderSidebar(
+    "student",
+    currentUser,
+    currentProfile
+  );
+
+  bindQuestionEvents();
+
+  const conversationId =
+    getConversationIdFromUrl();
+
+  if (conversationId) {
+    try {
+      await loadConversation(
+        conversationId
+      );
+    } catch (error) {
+
+      console.error(
+        "会話読み込みエラー:",
+        error
+      );
+
+      clearConversationUrl();
+
+      showChatError(
+        "会話を読み込めませんでした。\n" +
+        (error?.message ||
+          String(error))
+      );
+
+      renderConversation(
+        []
+      );
+    }
   } else {
-    startLayout();
+    renderConversation(
+      []
+    );
   }
 }
+
+export function getCurrentConversationId() {
+  return currentConversationId;
+}
+
+export function getCurrentUser() {
+  return currentUser;
+}
+
+export {
+  createConversation,
+  saveMessage
+};
