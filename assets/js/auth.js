@@ -32,7 +32,9 @@ function withTimeout(promise, milliseconds, message) {
 }
 
 export async function getSystemSettings() {
-  const snapshot = await getDoc(doc(db, "settings", "system"));
+  const snapshot = await getDoc(
+    doc(db, "settings", "system")
+  );
 
   if (!snapshot.exists()) {
     throw new Error(
@@ -45,10 +47,14 @@ export async function getSystemSettings() {
 
 export async function getCurrentProfile(user) {
   if (!user?.uid) {
-    throw new Error("ログイン中の利用者を確認できません。");
+    throw new Error(
+      "ログイン中の利用者を確認できません。"
+    );
   }
 
-  const snapshot = await getDoc(doc(db, "users", user.uid));
+  const snapshot = await getDoc(
+    doc(db, "users", user.uid)
+  );
 
   if (!snapshot.exists()) {
     throw new Error(
@@ -93,8 +99,8 @@ export function waitForAuth() {
     try {
       unsubscribe = onAuthStateChanged(
         auth,
-        (user) => finish(null, user),
-        (error) => finish(error)
+        user => finish(null, user),
+        error => finish(error)
       );
     } catch (error) {
       finish(error);
@@ -234,8 +240,13 @@ async function runRoleCheck(requiredRole, options = {}) {
       return null;
     }
 
+    const maintenanceEnabled =
+      settings?.maintenance === true;
+
+    // メンテナンス中は生徒ページをブロックする。
+    // 管理者ページは継続利用可能。
     if (
-      settings.maintenance === true &&
+      maintenanceEnabled &&
       requiredRole === "student" &&
       options.allowMaintenance !== true
     ) {
@@ -267,10 +278,10 @@ async function runRoleCheck(requiredRole, options = {}) {
 }
 
 export function requireRole(requiredRole, options = {}) {
-  // 管理者ページではメンテナンス設定による移動は発生しないため、
-  // layout.js とページ側で同じ認証確認を共有できる。
+  // 管理者ページではメンテナンス設定による移動は発生しない。
   const allowMaintenance =
-    requiredRole === "admin" || options.allowMaintenance === true;
+    requiredRole === "admin" ||
+    options.allowMaintenance === true;
 
   const key = `${requiredRole}:${allowMaintenance}`;
 
