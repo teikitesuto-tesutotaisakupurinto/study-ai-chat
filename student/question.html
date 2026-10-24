@@ -8,8 +8,12 @@
 
   <script>
     document.documentElement.classList.add("auth-pending");
-    // JavaScriptモジュールの読み込み失敗時も画面が永久に非表示にならないようにする。
-    window.setTimeout(() => document.documentElement.classList.remove("auth-pending"), 15000);
+
+    // モジュールの読み込みに失敗した場合も、
+    // 画面が永久に非表示にならないようにする。
+    window.setTimeout(() => {
+      document.documentElement.classList.remove("auth-pending");
+    }, 15000);
   </script>
 
   <link rel="stylesheet" href="../assets/css/common.css">
@@ -17,7 +21,6 @@
 
   <style>
     [hidden] { display: none !important; }
-
     body { background: #f7f8fa; }
 
     .app-main {
@@ -215,7 +218,11 @@
       .chat-header { padding: 14px; }
       .chat-header h1 { font-size: 18px; }
       .chat-content { padding: 14px; }
-      .subject-panel { align-items: flex-start; flex-direction: column; gap: 8px; }
+      .subject-panel {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+      }
       .subject-panel select { width: 100%; }
       .message { max-width: 95%; }
       .composer-hint { max-width: 60%; }
@@ -265,7 +272,13 @@
           </div>
         </div>
 
-        <p id="statusMessage" class="status-message" role="status" aria-live="polite" hidden></p>
+        <p
+          id="statusMessage"
+          class="status-message"
+          role="status"
+          aria-live="polite"
+          hidden
+        ></p>
 
         <form id="questionForm" class="composer">
           <div class="composer-box">
@@ -278,8 +291,15 @@
             ></textarea>
 
             <div class="composer-bottom">
-              <span class="composer-hint">Enterで送信・Shift+Enterで改行</span>
-              <button id="sendButton" class="primary-button" type="submit">
+              <span class="composer-hint">
+                Enterで送信・Shift+Enterで改行
+              </span>
+
+              <button
+                id="sendButton"
+                class="primary-button"
+                type="submit"
+              >
                 質問する
               </button>
             </div>
@@ -297,6 +317,10 @@
     </main>
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="../assets/js/firebase.js"></script>
   <script type="module" src="../assets/js/page.js"></script>
 </body>
 </html>
