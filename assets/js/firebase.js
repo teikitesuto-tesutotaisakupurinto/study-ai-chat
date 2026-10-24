@@ -32,7 +32,9 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
-const firebaseConfig = {
+// assets/js/firebase.js
+
+window.FIREBASE_CONFIG = {
   apiKey: "AIzaSyByt8kGALyS8AU8SR6P8zWFEPXfgHY5iyn",
   authDomain: "studychat-1b39d.firebaseapp.com",
   projectId: "studychat-1b39d",
