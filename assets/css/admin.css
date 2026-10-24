@@ -1,21 +1,23 @@
-/* assets/css/admin.css */
-.admin-shell .sidebar {
-  background: #172033;
+.admin-page {
+  min-height: 100vh;
+  background: #f5f7fb;
 }
 
-.admin-shell .brand-mark {
-  background: #e0e7ff;
-  color: #3730a3;
+.admin-content {
+  width: min(1200px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 24px 0 48px;
 }
 
-.admin-shell .topbar {
-  border-bottom: 2px solid #dbe3ef;
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
 }
 
-.admin-shell .page-content > .content-card h1 {
-  letter-spacing: -.02em;
-}
-
-.admin-shell .data-table th {
-  color: #344256;
+.admin-card {
+  padding: 20px;
+  border: 1px solid #e1e6ef;
+  border-radius: 12px;
+  background: #fff;
 }
