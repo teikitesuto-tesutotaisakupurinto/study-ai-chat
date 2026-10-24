@@ -2,10 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1"
-  >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <meta
     name="theme-color"
@@ -16,97 +13,136 @@
 
   <link
     rel="stylesheet"
-    href="../assets/css/common.css"
-  >
-
-  <link
-    rel="stylesheet"
     href="../assets/css/student.css"
   >
 
   <style>
     html.auth-pending body {
-      visibility: hidden;
-    }
-
-    body {
-      margin: 0;
-      background: #f5f7fb;
-    }
-
-    .app-shell {
-      min-height: 100vh;
-      display: flex;
-    }
-
-    .sidebar {
-      width: 250px;
-      flex: 0 0 250px;
-      min-height: 100vh;
-      background: #ffffff;
-      border-right: 1px solid #e2e6ee;
-      display: flex;
-      flex-direction: column;
-      position: sticky;
-      top: 0;
-      height: 100vh;
-      overflow-y: auto;
-    }
-
-    .main-area {
-      min-width: 0;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .topbar {
-      height: 64px;
-      background: #ffffff;
-      border-bottom: 1px solid #e2e6ee;
-      display: flex;
-      align-items: center;
-      padding: 0 24px;
-    }
-
-    .topbar h1 {
-      margin: 0;
-      font-size: 20px;
-    }
-
-    .chat-wrapper {
-      width: 100%;
-      max-width: 1050px;
-      margin: 0 auto;
-      padding: 28px 24px 40px;
-      flex: 1;
-    }
-
-    .chat-card {
-      min-height: calc(100vh - 140px);
-      background: #ffffff;
-      border: 1px solid #e2e6ee;
-      border-radius: 14px;
-      display: flex;
-      flex-direction: column;
       overflow: hidden;
     }
 
-    .conversation-header {
-      padding: 18px 22px;
-      border-bottom: 1px solid #e8ebf0;
+    #pageLoading {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f7fb;
     }
 
-    .conversation-header h2 {
-      margin: 0;
+    #pageLoading[hidden] {
+      display: none;
+    }
+
+    .page-loading-box {
+      width: min(420px, calc(100vw - 32px));
+      padding: 32px;
+      background: #fff;
+      border: 1px solid #e2e6ee;
+      border-radius: 14px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, .06);
+      text-align: center;
+    }
+
+    .page-loading-title {
+      margin: 0 0 8px;
       font-size: 18px;
+      font-weight: 700;
+    }
+
+    .page-loading-message {
+      margin: 0;
+      color: #5f6368;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .question-page {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .question-main {
+      flex: 1;
+      min-width: 0;
+      padding: 32px;
+    }
+
+    .question-container {
+      width: min(100%, 900px);
+      margin: 0 auto;
+    }
+
+    .question-header {
+      margin-bottom: 20px;
+    }
+
+    .question-header h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    .question-header p {
+      margin: 0;
+      color: #5f6368;
+      line-height: 1.7;
+    }
+
+    .conversation-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      background: #fff;
+      border: 1px solid #e2e6ee;
+      border-radius: 10px;
+    }
+
+    .conversation-info {
+      min-width: 0;
+    }
+
+    .conversation-title {
+      font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .conversation-id {
-      margin-top: 5px;
+      margin-top: 3px;
       color: #777;
       font-size: 11px;
-      word-break: break-all;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .new-conversation-button {
+      flex: 0 0 auto;
+      padding: 9px 14px;
+      border: 1px solid #c8ced8;
+      border-radius: 7px;
+      background: #fff;
+      color: #202124;
+      cursor: pointer;
+    }
+
+    .new-conversation-button:hover {
+      background: #f5f7fb;
+    }
+
+    .chat-card {
+      display: flex;
+      flex-direction: column;
+      min-height: 620px;
+      background: #fff;
+      border: 1px solid #e2e6ee;
+      border-radius: 14px;
+      overflow: hidden;
     }
 
     .chat-messages {
@@ -116,67 +152,91 @@
     }
 
     .empty-chat {
-      max-width: 600px;
-      margin: 80px auto;
+      display: flex;
+      min-height: 420px;
+      align-items: center;
+      justify-content: center;
       text-align: center;
-      color: #68707c;
+      color: #5f6368;
+    }
+
+    .empty-chat-inner {
+      width: min(600px, 100%);
+    }
+
+    .empty-chat h2 {
+      margin: 0 0 12px;
+      color: #202124;
+      font-size: 22px;
+    }
+
+    .empty-chat p {
+      margin: 0;
       line-height: 1.8;
     }
 
-    .message {
-      margin-bottom: 20px;
+    .message-row {
+      display: flex;
+      margin-bottom: 22px;
     }
 
-    .message.user {
-      display: flex;
+    .message-row.user {
       justify-content: flex-end;
     }
 
-    .message.ai {
-      display: flex;
+    .message-row.assistant {
       justify-content: flex-start;
     }
 
     .message-bubble {
-      max-width: min(780px, 88%);
-      padding: 15px 17px;
+      width: min(85%, 760px);
+      padding: 14px 16px;
       border-radius: 12px;
       line-height: 1.8;
-      white-space: pre-wrap;
       overflow-wrap: anywhere;
+      white-space: pre-wrap;
     }
 
-    .message.user .message-bubble {
+    .message-row.user .message-bubble {
       background: #1a73e8;
-      color: #ffffff;
+      color: #fff;
     }
 
-    .message.ai .message-bubble {
-      background: #f1f3f6;
+    .message-row.assistant .message-bubble {
+      background: #f1f3f4;
       color: #202124;
     }
 
     .message-meta {
-      margin-top: 5px;
+      margin-top: 6px;
+      color: #777;
       font-size: 10px;
-      color: #858585;
     }
 
-    .chat-input-area {
-      border-top: 1px solid #e8ebf0;
-      padding: 16px;
-      background: #ffffff;
+    .message-row.user .message-meta {
+      text-align: right;
+    }
+
+    .response-id {
+      display: block;
+      margin-top: 3px;
+      color: #8a8a8a;
+      font-size: 9px;
+      word-break: break-all;
     }
 
     .chat-form {
       display: flex;
-      gap: 10px;
       align-items: flex-end;
+      gap: 10px;
+      padding: 16px;
+      border-top: 1px solid #e2e6ee;
+      background: #fff;
     }
 
     .chat-input {
       flex: 1;
-      min-height: 50px;
+      min-height: 52px;
       max-height: 180px;
       resize: vertical;
       padding: 13px 14px;
@@ -193,87 +253,67 @@
     }
 
     .send-button {
-      width: auto;
+      flex: 0 0 auto;
       min-width: 100px;
-      margin: 0;
+      height: 52px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 9px;
+      background: #1a73e8;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
     }
 
-    .status-message {
-      min-height: 20px;
-      margin-top: 8px;
-      color: #68707c;
-      font-size: 12px;
+    .send-button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
     }
 
-    .layout-error {
-      margin: 20px;
-      padding: 15px;
-      border: 1px solid #f0b8b8;
+    .chat-error {
+      margin: 0 16px 16px;
+      padding: 12px 14px;
       border-radius: 8px;
-      background: #fff4f4;
-      color: #a52222;
+      background: #fff2f0;
+      color: #b3261e;
+      font-size: 13px;
+      line-height: 1.7;
+      white-space: pre-wrap;
     }
 
-    .app-footer {
-      padding: 16px;
-      text-align: center;
-      color: #777;
-      font-size: 11px;
+    .chat-error[hidden] {
+      display: none;
     }
 
     @media (max-width: 700px) {
-      .app-shell {
-        display: block;
+      .question-main {
+        padding: 16px;
       }
 
-      .sidebar {
-        width: 100%;
-        height: auto;
-        min-height: 0;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        transform: translateX(-100%);
-        transition: transform .2s ease;
-      }
-
-      body.sidebar-expanded .sidebar {
-        transform: translateX(0);
-      }
-
-      .main-area {
-        width: 100%;
-      }
-
-      .chat-wrapper {
-        padding: 15px 10px 25px;
+      .question-header h1 {
+        font-size: 23px;
       }
 
       .chat-card {
-        min-height: calc(100vh - 110px);
-        border-radius: 10px;
+        min-height: calc(100vh - 170px);
       }
 
-      .topbar {
-        padding: 0 15px;
+      .message-bubble {
+        width: 92%;
       }
 
       .chat-form {
         flex-direction: column;
-      }
-
-      .chat-input {
-        width: 100%;
+        align-items: stretch;
       }
 
       .send-button {
         width: 100%;
       }
 
-      .message-bubble {
-        max-width: 94%;
+      .conversation-bar {
+        align-items: stretch;
+        flex-direction: column;
       }
     }
   </style>
@@ -284,6 +324,21 @@
   class="student-page"
 >
 
+  <div id="pageLoading">
+    <div class="page-loading-box">
+      <p class="page-loading-title">
+        学習AIチャット
+      </p>
+
+      <p
+        id="pageLoadingMessage"
+        class="page-loading-message"
+      >
+        ログイン状態を確認しています。
+      </p>
+    </div>
+  </div>
+
   <div class="app-shell">
 
     <aside
@@ -292,681 +347,183 @@
       aria-label="サイドメニュー"
     ></aside>
 
-    <div class="main-area">
+    <main class="question-main">
+      <div class="question-container">
 
-      <header class="topbar">
-        <h1>AIに質問</h1>
-      </header>
+        <header class="question-header">
+          <h1>AIに質問</h1>
+          <p>
+            学習に関する質問を入力してください。
+            この画面から会話を続けることができます。
+          </p>
+        </header>
 
-      <main class="chat-wrapper">
+        <section class="conversation-bar">
+          <div class="conversation-info">
+            <div
+              id="conversationTitle"
+              class="conversation-title"
+            >
+              新しい会話
+            </div>
+
+            <div
+              id="conversationId"
+              class="conversation-id"
+            ></div>
+          </div>
+
+          <button
+            id="newConversationButton"
+            class="new-conversation-button"
+            type="button"
+          >
+            新しい会話
+          </button>
+        </section>
 
         <section class="chat-card">
 
-          <header
-            class="conversation-header"
-          >
-            <h2 id="conversationTitle">
-              新しい会話
-            </h2>
-
-            <div
-              id="conversationIdDisplay"
-              class="conversation-id"
-            ></div>
-          </header>
-
-          <section
+          <div
             id="chatMessages"
             class="chat-messages"
-            aria-live="polite"
           >
             <div
               id="emptyChat"
               class="empty-chat"
             >
-              AIに質問してください。
-              <br>
-              学習内容について質問すると、
-              この会話に回答が保存されます。
+              <div class="empty-chat-inner">
+                <h2>何を勉強しますか？</h2>
+                <p>
+                  数学、英語、国語、理科、社会など、
+                  学習に関する質問を入力してください。
+                </p>
+              </div>
             </div>
-          </section>
+          </div>
 
-          <section
-            class="chat-input-area"
+          <div
+            id="chatError"
+            class="chat-error"
+            role="alert"
+            hidden
+          ></div>
+
+          <form
+            id="chatForm"
+            class="chat-form"
           >
+            <textarea
+              id="chatInput"
+              class="chat-input"
+              maxlength="4000"
+              placeholder="学習について質問してください"
+              aria-label="質問内容"
+              required
+            ></textarea>
 
-            <form
-              id="chatForm"
-              class="chat-form"
+            <button
+              id="sendButton"
+              class="send-button"
+              type="submit"
             >
-
-              <textarea
-                id="questionInput"
-                class="chat-input"
-                maxlength="5000"
-                placeholder="学習について質問してください"
-                required
-              ></textarea>
-
-              <button
-                id="sendButton"
-                class="send-button"
-                type="submit"
-              >
-                送信
-              </button>
-
-            </form>
-
-            <div
-              id="chatStatus"
-              class="status-message"
-              role="status"
-            ></div>
-
-          </section>
+              送信
+            </button>
+          </form>
 
         </section>
 
-      </main>
+        <footer class="app-footer">
+          © 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.
+        </footer>
 
-      <footer class="app-footer">
-        © 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.
-      </footer>
-
-    </div>
+      </div>
+    </main>
 
   </div>
 
-  <script
-    type="module"
-    src="../assets/js/page.js"
-  ></script>
-
-  <script
-    type="module"
-  >
+  <script type="module">
     import {
-      auth,
-      db,
-      doc,
-      getDoc,
-      setDoc,
-      updateDoc,
-      addDoc,
-      collection,
-      serverTimestamp
-    } from "../assets/js/firebase.js";
-
-    import {
-      requireRole
+      protectPage
     } from "../assets/js/auth.js";
 
-    let currentUser = null;
-    let currentProfile = null;
+    import {
+      startLayout
+    } from "../assets/js/layout.js";
 
-    let conversationId = null;
+    import {
+      initializeQuestionPage
+    } from "../assets/js/page.js";
 
-    const params =
-      new URLSearchParams(
-        window.location.search
-      );
+    const loading = document.getElementById("pageLoading");
+    const loadingMessage =
+      document.getElementById("pageLoadingMessage");
 
-    const requestedConversationId =
-      params.get(
-        "conversationId"
-      );
-
-    const messagesElement =
-      document.getElementById(
-        "chatMessages"
-      );
-
-    const emptyChat =
-      document.getElementById(
-        "emptyChat"
-      );
-
-    const form =
-      document.getElementById(
-        "chatForm"
-      );
-
-    const input =
-      document.getElementById(
-        "questionInput"
-      );
-
-    const sendButton =
-      document.getElementById(
-        "sendButton"
-      );
-
-    const statusElement =
-      document.getElementById(
-        "chatStatus"
-      );
-
-    const titleElement =
-      document.getElementById(
-        "conversationTitle"
-      );
-
-    const idElement =
-      document.getElementById(
-        "conversationIdDisplay"
-      );
-
-    function createId(prefix) {
-      if (
-        typeof crypto !==
-          "undefined" &&
-        crypto.randomUUID
-      ) {
-        return `${prefix}_${crypto.randomUUID()}`;
-      }
-
-      return (
-        `${prefix}_` +
-        Date.now() +
-        "_" +
-        Math.random()
-          .toString(36)
-          .slice(2, 12)
-      );
+    function hideLoading() {
+      loading.hidden = true;
+      document.documentElement.classList.remove("auth-pending");
     }
 
-    function setStatus(
-      message
-    ) {
-      statusElement.textContent =
-        message || "";
+    function showLoadingMessage(message) {
+      loading.hidden = false;
+      loadingMessage.textContent = message;
     }
 
-    function clearEmptyState() {
-      if (emptyChat) {
-        emptyChat.remove();
-      }
-    }
-
-    function addMessageToScreen(
-      type,
-      text,
-      answerId = ""
-    ) {
-      clearEmptyState();
-
-      const wrapper =
-        document.createElement(
-          "article"
-        );
-
-      wrapper.className =
-        `message ${type}`;
-
-      if (answerId) {
-        wrapper.dataset.answerId =
-          answerId;
-      }
-
-      const bubble =
-        document.createElement(
-          "div"
-        );
-
-      bubble.className =
-        "message-bubble";
-
-      bubble.textContent =
-        text;
-
-      wrapper.append(
-        bubble
-      );
-
-      if (answerId) {
-        const meta =
-          document.createElement(
-            "div"
-          );
-
-        meta.className =
-          "message-meta";
-
-        meta.textContent =
-          `回答ID: ${answerId}`;
-
-        wrapper.append(
-          meta
-        );
-      }
-
-      messagesElement.append(
-        wrapper
-      );
-
-      messagesElement.scrollTop =
-        messagesElement.scrollHeight;
-    }
-
-    async function createConversation(
-      firstQuestion
-    ) {
-      const newConversationId =
-        createId(
-          "conversation"
-        );
-
-      const conversationRef =
-        doc(
-          db,
-          "chatHistories",
-          newConversationId
-        );
-
-      await setDoc(
-        conversationRef,
-        {
-          conversationId:
-            newConversationId,
-
-          userId:
-            currentUser.uid,
-
-          title:
-            firstQuestion
-              .trim()
-              .slice(0, 50),
-
-          lastQuestion:
-            firstQuestion
-              .trim()
-              .slice(0, 200),
-
-          messageCount: 0,
-
-          createdAt:
-            serverTimestamp(),
-
-          updatedAt:
-            serverTimestamp()
-        }
-      );
-
-      return newConversationId;
-    }
-
-    async function loadConversation(
-      id
-    ) {
-      const conversationRef =
-        doc(
-          db,
-          "chatHistories",
-          id
-        );
-
-      const snapshot =
-        await getDoc(
-          conversationRef
-        );
-
-      if (
-        !snapshot.exists()
-      ) {
-        throw new Error(
-          "指定された会話が見つかりません。"
-        );
-      }
-
-      const data =
-        snapshot.data();
-
-      if (
-        data.userId !==
-        currentUser.uid
-      ) {
-        throw new Error(
-          "この会話を開く権限がありません。"
-        );
-      }
-
-      conversationId =
-        id;
-
-      titleElement.textContent =
-        data.title ||
-        "会話";
-
-      idElement.textContent =
-        `会話ID: ${id}`;
-
-      /*
-       * 会話の回答データは
-       * chatHistories/{conversationId}/messages
-       * に保存する。
-       */
-      const messagesRef =
-        collection(
-          db,
-          "chatHistories",
-          id,
-          "messages"
-        );
-
-      const snapshot =
-        await getDocs(
-          query(
-            messagesRef,
-            orderBy(
-              "createdAt",
-              "asc"
-            )
-          )
-        );
-
-      snapshot.forEach(
-        messageDoc => {
-          const message =
-            messageDoc.data();
-
-          addMessageToScreen(
-            message.role === "user"
-              ? "user"
-              : "ai",
-            message.text ||
-              "",
-            message.answerId ||
-              messageDoc.id
-          );
-        }
-      );
-    }
-
-    async function saveMessage(
-      role,
-      text,
-      answerId
-    ) {
-      if (
-        !conversationId
-      ) {
-        throw new Error(
-          "会話IDがありません。"
-        );
-      }
-
-      const messagesRef =
-        collection(
-          db,
-          "chatHistories",
-          conversationId,
-          "messages"
-        );
-
-      const messageRef =
-        await addDoc(
-          messagesRef,
-          {
-            answerId:
-              answerId,
-
-            conversationId:
-              conversationId,
-
-            userId:
-              currentUser.uid,
-
-            role:
-              role,
-
-            text:
-              text,
-
-            createdAt:
-              serverTimestamp()
-          }
-        );
-
-      return messageRef.id;
-    }
-
-    async function updateConversation(
-      question
-    ) {
-      if (
-        !conversationId
-      ) {
-        return;
-      }
-
-      const ref =
-        doc(
-          db,
-          "chatHistories",
-          conversationId
-        );
-
-      await updateDoc(
-        ref,
-        {
-          lastQuestion:
-            question
-              .trim()
-              .slice(0, 200),
-
-          updatedAt:
-            serverTimestamp()
-        }
-      );
-    }
-
-    async function getAIAnswer(
-      question
-    ) {
-      /*
-       * ここは後から index.ts / API側と
-       * 接続するための境界。
-       *
-       * 現段階では学習AI側から
-       * 実際のAI APIを直接呼ばず、
-       * 明確なエラーとして扱う。
-       */
-      throw new Error(
-        "AI回答APIがまだ接続されていません。"
-      );
-    }
-
-    async function sendQuestion(
-      question
-    ) {
-      if (
-        !question.trim()
-      ) {
-        return;
-      }
-
-      if (
-        !currentUser
-      ) {
-        throw new Error(
-          "ログイン状態を確認できません。"
-        );
-      }
-
-      sendButton.disabled =
-        true;
-
-      input.disabled =
-        true;
-
-      setStatus(
-        "回答を生成しています..."
-      );
-
+    async function start() {
       try {
-        if (
-          !conversationId
-        ) {
-          conversationId =
-            await createConversation(
-              question
-            );
-
-          const newUrl =
-            `question.html?conversationId=${
-              encodeURIComponent(
-                conversationId
-              )
-            }`;
-
-          window.history.replaceState(
-            {},
-            "",
-            newUrl
-          );
-
-          idElement.textContent =
-            `会話ID: ${conversationId}`;
-
-          titleElement.textContent =
-            question
-              .trim()
-              .slice(0, 50);
-        }
-
-        const answerId =
-          createId(
-            "answer"
-          );
-
-        await saveMessage(
-          "user",
-          question,
-          answerId
+        showLoadingMessage(
+          "ログイン状態を確認しています。"
         );
 
-        addMessageToScreen(
-          "user",
-          question,
-          answerId
-        );
-
-        await updateConversation(
-          question
-        );
-
-        const answer =
-          await getAIAnswer(
-            question
-          );
-
-        await saveMessage(
-          "assistant",
-          answer,
-          answerId
-        );
-
-        addMessageToScreen(
-          "ai",
-          answer,
-          answerId
-        );
-
-        setStatus(
-          "回答を保存しました。"
-        );
-
-      } catch (error) {
-        console.error(
-          "質問処理エラー:",
-          error
-        );
-
-        setStatus(
-          `回答を保存できませんでした。${
-            error?.message
-              ? ` ${error.message}`
-              : ""
-          }`
-        );
-
-      } finally {
-        sendButton.disabled =
-          false;
-
-        input.disabled =
-          false;
-
-        input.focus();
-      }
-    }
-
-    form.addEventListener(
-      "submit",
-      async event => {
-        event.preventDefault();
-
-        const question =
-          input.value.trim();
-
-        if (
-          !question
-        ) {
-          return;
-        }
-
-        input.value =
-          "";
-
-        await sendQuestion(
-          question
-        );
-      }
-    );
-
-    async function initialize() {
-      try {
-        const result =
-          await requireRole(
-            "student"
-          );
+        const result = await protectPage("student");
 
         if (!result) {
           return;
         }
 
-        currentUser =
-          result.user;
+        showLoadingMessage(
+          "画面を準備しています。"
+        );
 
-        currentProfile =
-          result.profile;
+        await startLayout();
 
-        if (
-          requestedConversationId
-        ) {
-          await loadConversation(
-            requestedConversationId
-          );
-        } else {
-          setStatus(
-            "新しい会話を開始できます。"
-          );
-        }
+        await initializeQuestionPage({
+          user: result.user,
+          profile: result.profile,
+          settings: result.settings
+        });
+
+        hideLoading();
 
       } catch (error) {
         console.error(
-          "質問画面初期化エラー:",
+          "質問ページ初期化エラー:",
           error
         );
 
-        setStatus(
-          "質問画面を初期化できませんでした。"
+        showLoadingMessage(
+          "画面の初期化に失敗しました。"
         );
+
+        const message =
+          error?.message ||
+          String(error);
+
+        const errorBox =
+          document.getElementById("chatError");
+
+        if (errorBox) {
+          errorBox.hidden = false;
+          errorBox.textContent =
+            "質問画面を初期化できませんでした。\n" +
+            message;
+        }
+
+        hideLoading();
       }
     }
 
-    initialize();
+    start();
   </script>
 
 </body>
