@@ -358,6 +358,7 @@ async function loadConversation(id) {
     showStatus("");
   }
 }
+
 async function callAI(question, subject) {
   if (!currentUser) {
     throw new Error("ログイン状態を確認できません。再読み込みしてください。");
@@ -384,7 +385,6 @@ async function callAI(question, subject) {
         "Authorization": `Bearer ${idToken}`
       },
       body: JSON.stringify({
-        // 既存のEdge Functionが question / message のどちらを使っていても受け取れるよう両方送る。
         question,
         message: question,
         grade: currentProfile?.grade || "中学生",
@@ -429,8 +429,6 @@ async function callAI(question, subject) {
 }
 
 function looksLikeNonStudyRequest(question) {
-  // 学習専用という注意書きは表示するが、
-  // 単語検索だけで学習質問を誤判定しない。
   const patterns = [
     /^今日の天気/,
     /^明日の天気/,
@@ -573,7 +571,6 @@ async function startNewConversation() {
   questionInput.focus();
 }
 
-
 function legacyElement(tag, text = "", className = "") {
   const node = document.createElement(tag);
   if (text !== "") node.textContent = text;
@@ -595,7 +592,11 @@ function legacyLink(text, href, className = "secondary-button") {
 }
 
 function legacyMessage(container, text, isError = false) {
-  const message = legacyElement("p", text, isError ? "layout-error" : "status-message");
+  const message = legacyElement(
+    "p",
+    text,
+    isError ? "layout-error" : "status-message"
+  );
   message.setAttribute("role", isError ? "alert" : "status");
   container.append(message);
   return message;
@@ -603,65 +604,113 @@ function legacyMessage(container, text, isError = false) {
 
 function formatLegacyDate(value) {
   if (!value) return "日時未設定";
-  const date = typeof value.toDate === "function" ? value.toDate() : new Date(value);
+
+  const date = typeof value.toDate === "function"
+    ? value.toDate()
+    : new Date(value);
+
   if (Number.isNaN(date.getTime())) return "日時未設定";
+
   return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit"
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
   }).format(date);
 }
 
 function renderLegacyShell(appRoot, role, profile, user, pageName) {
   appRoot.replaceChildren();
+
   const shell = legacyElement("div", "", "legacy-shell");
   const header = legacyElement("header", "", "page-header");
+
   header.append(
-    legacyElement("h1", role === "admin" ? "運営管理コンソール" : "学習AIチャット", "page-title"),
-    legacyElement("p", `${profile.displayName || profile.name || user.displayName || user.email || "利用者"} さん`)
+    legacyElement(
+      "h1",
+      role === "admin" ? "運営管理コンソール" : "学習AIチャット",
+      "page-title"
+    ),
+    legacyElement(
+      "p",
+      `${profile.displayName || profile.name || user.displayName || user.email || "利用者"} さん`
+    )
   );
+
   const nav = legacyElement("nav", "", "legacy-nav");
+
   const items = role === "admin"
     ? [
-        ["管理者ホーム", "index.html"], ["ユーザー管理", "users.html"],
-        ["お知らせ管理", "announcements.html"], ["メンテナンス", "maintenance.html"],
-        ["AI設定", "ai-settings.html"], ["操作ログ", "logs.html"],
-        ["システム状態", "system.html"], ["管理者設定", "settings.html"]
+        ["管理者ホーム", "index.html"],
+        ["ユーザー管理", "users.html"],
+        ["お知らせ管理", "announcements.html"],
+        ["メンテナンス", "maintenance.html"],
+        ["AI設定", "ai-settings.html"],
+        ["操作ログ", "logs.html"],
+        ["システム状態", "system.html"],
+        ["管理者設定", "settings.html"]
       ]
     : [
-        ["学習ホーム", "index.html"], ["AIに質問", "question.html"],
-        ["学習履歴", "history.html"], ["お知らせ", "announcements.html"],
+        ["学習ホーム", "index.html"],
+        ["AIに質問", "question.html"],
+        ["学習履歴", "history.html"],
+        ["お知らせ", "announcements.html"],
         ["設定", "settings.html"]
       ];
 
   for (const [label, href] of items) {
     const link = legacyLink(label, href);
-    if (href === (pageName === "home" ? "index.html" : `${pageName}.html`)) {
+
+    if (
+      href === (
+        pageName === "home"
+          ? "index.html"
+          : `${pageName}.html`
+      )
+    ) {
       link.classList.add("active");
     }
+
     nav.append(link);
   }
 
   const logout = legacyButton("ログアウト", async () => {
     logout.disabled = true;
+
     try {
       await auth.signOut();
-      location.replace(role === "admin" ? "../login.html" : "../login.html");
+      location.replace("../login.html");
     } catch (error) {
       logout.disabled = false;
-      legacyMessage(appRoot, `ログアウトに失敗しました: ${error.message || error}`, true);
+      legacyMessage(
+        appRoot,
+        `ログアウトに失敗しました: ${error.message || error}`,
+        true
+      );
     }
   }, "secondary-button");
+
   nav.append(logout);
 
   const main = legacyElement("main", "", "page-content");
-  const footer = legacyElement("footer", "© 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.", "page-footer");
+
+  const footer = legacyElement(
+    "footer",
+    "© 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.",
+    "page-footer"
+  );
+
   shell.append(header, nav, main, footer);
   appRoot.append(shell);
+
   return main;
 }
 
 async function legacyQueryCollection(collectionName, constraints = []) {
-  return getDocs(query(collection(db, collectionName), ...constraints));
+  return getDocs(
+    query(collection(db, collectionName), ...constraints)
+  );
 }
 
 async function initializeLegacyPage() {
@@ -670,28 +719,51 @@ async function initializeLegacyPage() {
   const pageName = document.body.dataset.page || "home";
 
   try {
-    const result = await protectPage(role, { allowMaintenance: role === "admin" });
+    const result = await protectPage(role, {
+      allowMaintenance: role === "admin"
+    });
+
     const user = result.user;
     const profile = result.profile;
-    const main = renderLegacyShell(appRoot, role, profile, user, pageName);
+
+    const main = renderLegacyShell(
+      appRoot,
+      role,
+      profile,
+      user,
+      pageName
+    );
 
     if (role === "student") {
       await renderStudentLegacyPage(main, pageName, user, profile);
     } else {
       await renderAdminLegacyPage(main, pageName, user, profile);
     }
+
     document.documentElement.classList.remove("auth-pending");
   } catch (error) {
     console.error("ページ初期化エラー:", error);
+
     document.documentElement.classList.remove("auth-pending");
+
     if (!document.querySelector(".auth-error")) {
       appRoot.replaceChildren();
+
       const panel = legacyElement("main", "", "auth-error");
+
       panel.append(
         legacyElement("h1", "ページを開けませんでした"),
         legacyElement("p", error?.message || String(error))
       );
-      panel.append(legacyButton("再読み込み", () => location.reload(), "secondary-button"));
+
+      panel.append(
+        legacyButton(
+          "再読み込み",
+          () => location.reload(),
+          "secondary-button"
+        )
+      );
+
       appRoot.append(panel);
     }
   }
@@ -701,165 +773,303 @@ async function renderStudentLegacyPage(main, pageName, user, profile) {
   if (pageName === "home" || pageName === "dashboard") {
     main.append(
       legacyElement("h2", "学習ホーム"),
-      legacyElement("p", "学習内容について、AIに質問したり、過去の会話を続けたりできます。"),
+      legacyElement(
+        "p",
+        "学習内容について、AIに質問したり、過去の会話を続けたりできます。"
+      ),
       legacyLink("AIに質問する", "question.html", "primary-button")
     );
+
     const section = legacyElement("section", "", "page-card");
     section.append(legacyElement("h2", "最近の学習履歴"));
     main.append(section);
+
     try {
       const snapshot = await legacyQueryCollection("chatHistories", [
         where("userId", "==", user.uid),
         limit(50)
       ]);
-      const recentDocs = snapshot.docs.sort((a, b) =>
-        (b.data().updatedAt?.toMillis?.() || 0) - (a.data().updatedAt?.toMillis?.() || 0)
-      ).slice(0, 10);
-      if (!recentDocs.length) section.append(legacyElement("p", "まだ会話履歴はありません。"));
+
+      const recentDocs = snapshot.docs
+        .sort((a, b) =>
+          (b.data().updatedAt?.toMillis?.() || 0) -
+          (a.data().updatedAt?.toMillis?.() || 0)
+        )
+        .slice(0, 10);
+
+      if (!recentDocs.length) {
+        section.append(
+          legacyElement("p", "まだ会話履歴はありません。")
+        );
+      }
+
       for (const item of recentDocs) {
-        section.append(legacyLink(
-          `${item.data().title || item.data().lastQuestion || "会話"} — ${formatLegacyDate(item.data().updatedAt)}`,
-          `question.html?conversationId=${encodeURIComponent(item.id)}`
-        ));
+        section.append(
+          legacyLink(
+            `${item.data().title || item.data().lastQuestion || "会話"} — ${formatLegacyDate(item.data().updatedAt)}`,
+            `question.html?conversationId=${encodeURIComponent(item.id)}`
+          )
+        );
       }
     } catch (error) {
-      legacyMessage(section, `履歴を読み込めませんでした。\n${error.message || error}`, true);
+      legacyMessage(
+        section,
+        `履歴を読み込めませんでした。\n${error.message || error}`,
+        true
+      );
     }
+
     return;
   }
-    if (pageName === "history") {
+
+  if (pageName === "history") {
     main.append(legacyElement("h2", "学習履歴"));
+
     try {
       const snapshot = await legacyQueryCollection("chatHistories", [
         where("userId", "==", user.uid),
         limit(100)
       ]);
-      const historyDocs = snapshot.docs.sort((a, b) =>
-        (b.data().updatedAt?.toMillis?.() || 0) - (a.data().updatedAt?.toMillis?.() || 0)
-      ).slice(0, 50);
-      if (!historyDocs.length) main.append(legacyElement("p", "まだ学習履歴はありません。"));
+
+      const historyDocs = snapshot.docs
+        .sort((a, b) =>
+          (b.data().updatedAt?.toMillis?.() || 0) -
+          (a.data().updatedAt?.toMillis?.() || 0)
+        )
+        .slice(0, 50);
+
+      if (!historyDocs.length) {
+        main.append(
+          legacyElement("p", "まだ学習履歴はありません。")
+        );
+      }
+
       for (const item of historyDocs) {
         const data = item.data();
-        main.append(legacyLink(
-          `${data.title || data.lastQuestion || "会話"} — ${formatLegacyDate(data.updatedAt)}`,
-          `question.html?conversationId=${encodeURIComponent(item.id)}`
-        ));
+
+        main.append(
+          legacyLink(
+            `${data.title || data.lastQuestion || "会話"} — ${formatLegacyDate(data.updatedAt)}`,
+            `question.html?conversationId=${encodeURIComponent(item.id)}`
+          )
+        );
       }
     } catch (error) {
-      legacyMessage(main, `履歴を読み込めませんでした。\n${error.message || error}`, true);
+      legacyMessage(
+        main,
+        `履歴を読み込めませんでした。\n${error.message || error}`,
+        true
+      );
     }
+
     return;
   }
 
   if (pageName === "announcements") {
     main.append(legacyElement("h2", "お知らせ"));
+
     try {
-      const snapshot = await legacyQueryCollection("announcements", [limit(50)]);
-      const docs = snapshot.docs
-        .filter(item => item.data().visible === true)
-        .sort((a, b) => {
-          const av = a.data().publishedAt?.toMillis?.() || 0;
-          const bv = b.data().publishedAt?.toMillis?.() || 0;
-          return bv - av;
-        });
-      if (!docs.length) main.append(legacyElement("p", "現在、お知らせはありません。"));
+      // Firestoreルールに合わせ、公開済みのお知らせだけを取得する。
+      const snapshot = await legacyQueryCollection("announcements", [
+        where("visible", "==", true),
+        limit(50)
+      ]);
+
+      const docs = snapshot.docs.sort((a, b) => {
+        const av = a.data().publishedAt?.toMillis?.() || 0;
+        const bv = b.data().publishedAt?.toMillis?.() || 0;
+        return bv - av;
+      });
+
+      if (!docs.length) {
+        main.append(
+          legacyElement("p", "現在、お知らせはありません。")
+        );
+      }
+
       for (const item of docs) {
         const data = item.data();
         const card = legacyElement("article", "", "page-card");
+
         card.append(
           legacyElement("h3", data.title || "お知らせ"),
           legacyElement("p", data.body || ""),
           legacyElement("small", formatLegacyDate(data.publishedAt))
         );
+
         main.append(card);
       }
     } catch (error) {
-      legacyMessage(main, `お知らせを読み込めませんでした。\n${error.message || error}`, true);
+      legacyMessage(
+        main,
+        `お知らせを読み込めませんでした。\n${error.message || error}`,
+        true
+      );
     }
+
     return;
   }
 
   if (pageName === "settings") {
     main.append(
       legacyElement("h2", "アカウント設定"),
-      legacyElement("p", `表示名：${profile.displayName || profile.name || user.displayName || "未設定"}`),
-      legacyElement("p", `メールアドレス：${user.email || "未登録"}`),
-      legacyElement("p", `学年：${profile.grade || "未設定"}`),
-      legacyElement("p", "アカウント情報の変更が必要な場合は、運営管理者にお問い合わせください。")
+      legacyElement(
+        "p",
+        `表示名：${profile.displayName || profile.name || user.displayName || "未設定"}`
+      ),
+      legacyElement(
+        "p",
+        `メールアドレス：${user.email || "未登録"}`
+      ),
+      legacyElement(
+        "p",
+        `学年：${profile.grade || "未設定"}`
+      ),
+      legacyElement(
+        "p",
+        "アカウント情報の変更が必要な場合は、運営管理者にお問い合わせください。"
+      )
     );
+
     return;
   }
 
-  main.append(legacyElement("h2", "ページが見つかりません"), legacyLink("学習ホームへ", "index.html"));
+  main.append(
+    legacyElement("h2", "ページが見つかりません"),
+    legacyLink("学習ホームへ", "index.html")
+  );
 }
 
 async function renderAdminLegacyPage(main, pageName, user, profile) {
   if (pageName === "dashboard" || pageName === "home") {
     main.append(
       legacyElement("h2", "運営管理コンソール"),
-      legacyElement("p", "学習AIチャットの運用状況を確認できます。")
+      legacyElement(
+        "p",
+        "学習AIチャットの運用状況を確認できます。"
+      )
     );
+
     const links = [
-      ["ユーザー管理", "users.html"], ["お知らせ管理", "announcements.html"],
-      ["メンテナンス", "maintenance.html"], ["AI設定", "ai-settings.html"],
-      ["操作ログ", "logs.html"], ["システム状態", "system.html"]
+      ["ユーザー管理", "users.html"],
+      ["お知らせ管理", "announcements.html"],
+      ["メンテナンス", "maintenance.html"],
+      ["AI設定", "ai-settings.html"],
+      ["操作ログ", "logs.html"],
+      ["システム状態", "system.html"]
     ];
-    for (const [label, href] of links) main.append(legacyLink(label, href));
+
+    for (const [label, href] of links) {
+      main.append(legacyLink(label, href));
+    }
+
     return;
   }
 
   if (pageName === "users") {
     main.append(legacyElement("h2", "ユーザー管理"));
+
     try {
-      const snapshot = await legacyQueryCollection("users", [limit(200)]);
-      if (snapshot.empty) main.append(legacyElement("p", "ユーザーが登録されていません。"));
+      const snapshot = await legacyQueryCollection("users", [
+        limit(200)
+      ]);
+
+      if (snapshot.empty) {
+        main.append(
+          legacyElement("p", "ユーザーが登録されていません。")
+        );
+      }
+
       const table = legacyElement("table");
       const head = legacyElement("tr");
-      for (const label of ["メールアドレス", "表示名", "権限", "状態"]) head.append(legacyElement("th", label));
+
+      for (const label of [
+        "メールアドレス",
+        "表示名",
+        "権限",
+        "状態"
+      ]) {
+        head.append(legacyElement("th", label));
+      }
+
       table.append(head);
+
       for (const item of snapshot.docs) {
         const data = item.data();
         const row = legacyElement("tr");
-        for (const value of [data.email || "—", data.displayName || data.name || "—", data.role || "未設定", data.status || "未設定"]) {
+
+        for (const value of [
+          data.email || "—",
+          data.displayName || data.name || "—",
+          data.role || "未設定",
+          data.status || "未設定"
+        ]) {
           row.append(legacyElement("td", value));
         }
+
         table.append(row);
       }
+
       const wrapper = legacyElement("div", "", "table-wrapper");
       wrapper.append(table);
       main.append(wrapper);
     } catch (error) {
-      legacyMessage(main, `ユーザー一覧を取得できませんでした。\n${error.message || error}`, true);
+      legacyMessage(
+        main,
+        `ユーザー一覧を取得できませんでした。\n${error.message || error}`,
+        true
+      );
     }
+
     return;
   }
 
   if (pageName === "announcements") {
     main.append(legacyElement("h2", "お知らせ管理"));
+
     const form = legacyElement("form", "", "page-card");
+
     const titleLabel = legacyElement("label", "タイトル");
     const titleInput = legacyElement("input");
     titleInput.required = true;
     titleInput.maxLength = 150;
     titleLabel.append(titleInput);
+
     const bodyLabel = legacyElement("label", "本文");
     const bodyInput = legacyElement("textarea");
     bodyInput.required = true;
     bodyInput.maxLength = 10000;
     bodyLabel.append(bodyInput);
+
     const visibleLabel = legacyElement("label", "公開する");
     const visibleInput = legacyElement("input");
     visibleInput.type = "checkbox";
     visibleInput.checked = true;
     visibleLabel.append(visibleInput);
-    const submit = legacyElement("button", "お知らせを保存", "primary-button");
+
+    const submit = legacyElement(
+      "button",
+      "お知らせを保存",
+      "primary-button"
+    );
     submit.type = "submit";
+
     const status = legacyElement("p");
-    form.append(titleLabel, bodyLabel, visibleLabel, submit, status);
+
+    form.append(
+      titleLabel,
+      bodyLabel,
+      visibleLabel,
+      submit,
+      status
+    );
+
     form.addEventListener("submit", async event => {
       event.preventDefault();
+
       submit.disabled = true;
       status.textContent = "保存しています。";
+
       try {
         await addDoc(collection(db, "announcements"), {
           title: titleInput.value.trim(),
@@ -868,54 +1078,95 @@ async function renderAdminLegacyPage(main, pageName, user, profile) {
           createdBy: user.uid,
           publishedAt: serverTimestamp()
         });
+
         status.textContent = "お知らせを保存しました。";
         form.reset();
         visibleInput.checked = true;
       } catch (error) {
-        status.textContent = `保存に失敗しました: ${error.message || error}`;
+        status.textContent =
+          `保存に失敗しました: ${error.message || error}`;
       } finally {
         submit.disabled = false;
       }
     });
+
     main.append(form);
     return;
   }
 
   if (pageName === "maintenance") {
     main.append(legacyElement("h2", "メンテナンス設定"));
+
     const form = legacyElement("form", "", "page-card");
-    const enabledLabel = legacyElement("label", "メンテナンスを有効にする");
+
+    const enabledLabel = legacyElement(
+      "label",
+      "メンテナンスを有効にする"
+    );
+
     const enabled = legacyElement("input");
     enabled.type = "checkbox";
     enabledLabel.append(enabled);
+
     const titleLabel = legacyElement("label", "表示タイトル");
     const titleInput = legacyElement("input");
     titleInput.required = true;
+    titleInput.maxLength = 200;
     titleLabel.append(titleInput);
+
     const messageLabel = legacyElement("label", "表示メッセージ");
     const messageInput = legacyElement("textarea");
     messageInput.required = true;
+    messageInput.maxLength = 5000;
     messageLabel.append(messageInput);
-    const save = legacyElement("button", "設定を保存", "primary-button");
+
+    const save = legacyElement(
+      "button",
+      "設定を保存",
+      "primary-button"
+    );
     save.type = "submit";
+
     const status = legacyElement("p", "設定を読み込んでいます。");
-    form.append(enabledLabel, titleLabel, messageLabel, save, status);
+
+    form.append(
+      enabledLabel,
+      titleLabel,
+      messageLabel,
+      save,
+      status
+    );
+
     main.append(form);
+
     const ref = doc(db, "settings", "system");
+
     try {
       const snap = await getDoc(ref);
-      if (!snap.exists()) throw new Error("settings/system がありません。");
+
+      if (!snap.exists()) {
+        throw new Error("settings/system がありません。");
+      }
+
       const data = snap.data();
+
       enabled.checked = data.maintenance === true;
-      titleInput.value = data.maintenanceTitle || "システムメンテナンス中";
-      messageInput.value = data.maintenanceMessage || "現在、メンテナンスを実施しています。";
+      titleInput.value =
+        data.maintenanceTitle || "システムメンテナンス中";
+      messageInput.value =
+        data.maintenanceMessage || "現在、メンテナンスを実施しています。";
+
       status.textContent = "設定を読み込みました。";
     } catch (error) {
-      status.textContent = `設定を読み込めませんでした: ${error.message || error}`;
+      status.textContent =
+        `設定を読み込めませんでした: ${error.message || error}`;
     }
+
     form.addEventListener("submit", async event => {
       event.preventDefault();
+
       save.disabled = true;
+
       try {
         await setDoc(ref, {
           maintenance: enabled.checked,
@@ -923,81 +1174,140 @@ async function renderAdminLegacyPage(main, pageName, user, profile) {
           maintenanceMessage: messageInput.value.trim(),
           updatedAt: serverTimestamp()
         }, { merge: true });
+
         status.textContent = "設定を保存しました。";
       } catch (error) {
-        status.textContent = `保存に失敗しました: ${error.message || error}`;
+        status.textContent =
+          `保存に失敗しました: ${error.message || error}`;
       } finally {
         save.disabled = false;
       }
     });
+
     return;
   }
 
   if (pageName === "logs") {
     main.append(legacyElement("h2", "操作ログ"));
+
     try {
-      const snapshot = await legacyQueryCollection("auditLogs", [limit(100)]);
-      if (snapshot.empty) main.append(legacyElement("p", "操作ログはありません。"));
+      const snapshot = await legacyQueryCollection("auditLogs", [
+        limit(100)
+      ]);
+
+      if (snapshot.empty) {
+        main.append(
+          legacyElement("p", "操作ログはありません。")
+        );
+      }
+
       for (const item of snapshot.docs) {
         const data = item.data();
         const card = legacyElement("article", "", "page-card");
+
         card.append(
-          legacyElement("strong", data.action || data.type || "操作"),
-          legacyElement("p", data.message || data.description || JSON.stringify(data)),
-          legacyElement("small", formatLegacyDate(data.createdAt || data.timestamp))
+          legacyElement(
+            "strong",
+            data.action || data.type || "操作"
+          ),
+          legacyElement(
+            "p",
+            data.message || data.description || JSON.stringify(data)
+          ),
+          legacyElement(
+            "small",
+            formatLegacyDate(data.createdAt || data.timestamp)
+          )
         );
+
         main.append(card);
       }
     } catch (error) {
-      legacyMessage(main, `操作ログを取得できませんでした。\n${error.message || error}`, true);
+      legacyMessage(
+        main,
+        `操作ログを取得できませんでした。\n${error.message || error}`,
+        true
+      );
     }
+
     return;
   }
 
   if (pageName === "system") {
     main.append(legacyElement("h2", "システム状態"));
+
     try {
       const snapshot = await getDoc(doc(db, "settings", "system"));
-      if (!snapshot.exists()) throw new Error("settings/system がありません。");
+
+      if (!snapshot.exists()) {
+        throw new Error("settings/system がありません。");
+      }
+
       const data = snapshot.data();
-      main.append(legacyElement("p", `メンテナンス：${data.maintenance === true ? "有効" : "無効"}`));
+
+      main.append(
+        legacyElement(
+          "p",
+          `メンテナンス：${data.maintenance === true ? "有効" : "無効"}`
+        )
+      );
+
       const pre = legacyElement("pre", JSON.stringify(data, null, 2));
       main.append(pre);
     } catch (error) {
-      legacyMessage(main, `システム設定を取得できませんでした。\n${error.message || error}`, true);
+      legacyMessage(
+        main,
+        `システム設定を取得できませんでした。\n${error.message || error}`,
+        true
+      );
     }
+
     return;
   }
 
   if (pageName === "ai-settings") {
     main.append(
       legacyElement("h2", "AI設定"),
-      legacyElement("p", "AIの接続先はSupabase Edge Functionです。APIキーはブラウザー側に保存しないでください。"),
-      legacyElement("p", "Edge FunctionのURL：https://fjqobjcvejhkevyfsoxt.supabase.co/functions/v1/study-chat")
+      legacyElement(
+        "p",
+        "AIの接続先はSupabase Edge Functionです。APIキーはブラウザー側に保存しないでください。"
+      ),
+      legacyElement(
+        "p",
+        `Edge FunctionのURL：${AI_ENDPOINT}`
+      )
     );
+
     return;
   }
 
   if (pageName === "settings") {
     main.append(
       legacyElement("h2", "管理者設定"),
-      legacyElement("p", `ログイン中：${user.email || profile.displayName || user.uid}`),
-      legacyElement("p", "権限やアカウントの変更は、Firebase AuthenticationとFirestoreの管理設定で行います。")
+      legacyElement(
+        "p",
+        `ログイン中：${user.email || profile.displayName || user.uid}`
+      ),
+      legacyElement(
+        "p",
+        "権限やアカウントの変更は、Firebase AuthenticationとFirestoreの管理設定で行います。"
+      )
     );
+
     return;
   }
 
-  main.append(legacyElement("h2", "ページが見つかりません"), legacyLink("管理者ホームへ", "index.html"));
+  main.append(
+    legacyElement("h2", "ページが見つかりません"),
+    legacyLink("管理者ホームへ", "index.html")
+  );
 }
-
 
 async function initializeQuestionPage() {
   if (initializationStarted) return;
   initializationStarted = true;
 
   try {
-    // layout.js 側も requireRole() を呼び出すが、
-    // auth.js が同じ権限確認の Promise を共有する。
     const result = await protectPage("student");
 
     currentUser = result.user;
@@ -1015,7 +1325,7 @@ async function initializeQuestionPage() {
     }
 
     if (questionInput) {
-      questionInput.addEventListener("keydown", (event) => {
+      questionInput.addEventListener("keydown", event => {
         if (
           event.key === "Enter" &&
           !event.shiftKey &&
@@ -1043,8 +1353,6 @@ async function initializeQuestionPage() {
 
     document.documentElement.classList.remove("auth-pending");
 
-    // auth.js が権限エラー画面を表示している場合は、
-    // 元の画面を上書きしない。
     if (!document.querySelector(".auth-error")) {
       showStatus(
         `質問画面を初期化できませんでした。\n${error?.message || String(error)}`,
