@@ -1,7 +1,4 @@
-// assets/js/layout.js
-
 import {
-  requireRole,
   auth,
   db
 } from "./auth.js";
@@ -19,102 +16,95 @@ import {
 const STUDENT_LINKS = [
   {
     label: "ホーム",
-    href: "index.html",
-    icon: "⌂"
+    icon: "⌂",
+    href: "index.html"
   },
   {
     label: "AIに質問",
-    href: "question.html",
-    icon: "?"
+    icon: "?",
+    href: "question.html"
   },
   {
     label: "学習履歴",
-    href: "history.html",
-    icon: "≡"
+    icon: "≡",
+    href: "history.html"
   },
   {
     label: "お知らせ",
-    href: "announcements.html",
-    icon: "▤"
+    icon: "▤",
+    href: "announcements.html"
   },
   {
     label: "設定",
-    href: "settings.html",
-    icon: "⚙"
+    icon: "⚙",
+    href: "settings.html"
   }
 ];
 
 const ADMIN_LINKS = [
   {
     label: "管理者ホーム",
-    href: "index.html",
-    icon: "⌂"
+    icon: "⌂",
+    href: "index.html"
   },
   {
     label: "ユーザー管理",
-    href: "users.html",
-    icon: "♙"
+    icon: "♙",
+    href: "users.html"
   },
   {
     label: "お知らせ管理",
-    href: "announcements.html",
-    icon: "▤"
+    icon: "▤",
+    href: "announcements.html"
   },
   {
     label: "メンテナンス",
-    href: "maintenance.html",
-    icon: "⚙"
+    icon: "⚙",
+    href: "maintenance.html"
   },
   {
     label: "AI設定",
-    href: "ai-settings.html",
-    icon: "◇"
+    icon: "◇",
+    href: "ai-settings.html"
   },
   {
     label: "操作ログ",
-    href: "logs.html",
-    icon: "≡"
+    icon: "≡",
+    href: "logs.html"
   },
   {
     label: "システム状態",
-    href: "system.html",
-    icon: "▦"
+    icon: "▦",
+    href: "system.html"
   },
   {
     label: "管理者設定",
-    href: "settings.html",
-    icon: "⚙"
+    icon: "⚙",
+    href: "settings.html"
   }
 ];
 
 let started = false;
 
-function el(
+function makeElement(
   tag,
   className = "",
   text = ""
 ) {
-  const node =
+  const element =
     document.createElement(tag);
 
   if (className) {
-    node.className = className;
+    element.className =
+      className;
   }
 
   if (text !== "") {
-    node.textContent = text;
+    element.textContent =
+      text;
   }
 
-  return node;
-}
-
-function currentFile() {
-  return (
-    window.location.pathname
-      .split("/")
-      .pop() ||
-    "index.html"
-  );
+  return element;
 }
 
 function isMobile() {
@@ -124,24 +114,26 @@ function isMobile() {
 }
 
 function updateToggleState() {
-  const expanded = isMobile()
-    ? document.body.classList.contains(
-        "sidebar-expanded"
-      )
-    : !document.body.classList.contains(
-        "sidebar-collapsed"
-      );
+  const mobile =
+    isMobile();
 
-  document
-    .querySelectorAll(
-      ".sidebar-toggle"
-    )
-    .forEach(button => {
-      button.setAttribute(
-        "aria-expanded",
-        String(expanded)
-      );
-    });
+  const expanded =
+    mobile
+      ? document.body.classList.contains(
+          "sidebar-expanded"
+        )
+      : !document.body.classList.contains(
+          "sidebar-collapsed"
+        );
+
+  document.querySelectorAll(
+    ".sidebar-toggle"
+  ).forEach(button => {
+    button.setAttribute(
+      "aria-expanded",
+      String(expanded)
+    );
+  });
 }
 
 function toggleSidebar() {
@@ -158,37 +150,117 @@ function toggleSidebar() {
   updateToggleState();
 }
 
-function bindToggle(button) {
+function bindSidebarToggle(
+  button
+) {
   if (
-    button.dataset.bound === "true"
+    button.dataset.sidebarBound ===
+    "true"
   ) {
     return;
   }
 
-  button.dataset.bound = "true";
+  button.dataset.sidebarBound =
+    "true";
+
   button.type = "button";
+
+  button.setAttribute(
+    "aria-label",
+    "サイドメニューを開閉"
+  );
 
   button.addEventListener(
     "click",
     toggleSidebar
   );
+}
+
+export function setupSidebar() {
+  document.querySelectorAll(
+    ".sidebar-toggle"
+  ).forEach(
+    bindSidebarToggle
+  );
 
   updateToggleState();
 }
 
-function setupExistingSidebar() {
-  document
-    .querySelectorAll(
-      ".sidebar-toggle"
-    )
-    .forEach(bindToggle);
+export function setupLogout() {
+  document.querySelectorAll(
+    "[data-logout], .logout-button"
+  ).forEach(button => {
+
+    if (
+      button.dataset.logoutBound ===
+      "true"
+    ) {
+      return;
+    }
+
+    button.dataset.logoutBound =
+      "true";
+
+    button.type = "button";
+
+    button.addEventListener(
+      "click",
+      async () => {
+
+        button.disabled = true;
+
+        try {
+          await signOut(auth);
+
+          const nested =
+            location.pathname.includes(
+              "/student/"
+            ) ||
+            location.pathname.includes(
+              "/admin/"
+            );
+
+          location.replace(
+            nested
+              ? "../login.html"
+              : "./login.html"
+          );
+
+        } catch (error) {
+
+          console.error(
+            "ログアウトエラー:",
+            error
+          );
+
+          button.disabled =
+            false;
+        }
+      }
+    );
+  });
 }
 
-function createLink(item) {
-  const link =
-    el("a", "sidebar-link");
+function currentFile() {
+  return (
+    location.pathname
+      .split("/")
+      .pop() ||
+    "index.html"
+  );
+}
 
-  link.href = item.href;
+function createNavigationLink(
+  item
+) {
+  const link =
+    makeElement(
+      "a",
+      "sidebar-link"
+    );
+
+  link.href =
+    item.href;
 
   const target =
     item.href
@@ -200,7 +272,9 @@ function createLink(item) {
   if (
     target === currentFile()
   ) {
-    link.classList.add("active");
+    link.classList.add(
+      "active"
+    );
 
     link.setAttribute(
       "aria-current",
@@ -209,7 +283,7 @@ function createLink(item) {
   }
 
   const icon =
-    el(
+    makeElement(
       "span",
       "sidebar-icon",
       item.icon
@@ -221,7 +295,7 @@ function createLink(item) {
   );
 
   const label =
-    el(
+    makeElement(
       "span",
       "sidebar-label",
       item.label
@@ -235,8 +309,12 @@ function createLink(item) {
   return link;
 }
 
-function formatDate(value) {
-  if (!value) return "";
+function formatDate(
+  value
+) {
+  if (!value) {
+    return "";
+  }
 
   let date;
 
@@ -262,7 +340,9 @@ function formatDate(value) {
     "ja-JP",
     {
       month: "numeric",
-      day: "numeric"
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
     }
   ).format(date);
 }
@@ -272,23 +352,26 @@ async function renderRecentConversations(
   user
 ) {
   const section =
-    el(
+    makeElement(
       "section",
       "sidebar-history"
     );
 
   const heading =
-    el(
+    makeElement(
       "h2",
       "sidebar-history-heading",
       "最近の会話"
     );
 
   const list =
-    el(
+    makeElement(
       "div",
       "sidebar-history-list"
     );
+
+  list.id =
+    "sidebarRecentHistory";
 
   list.textContent =
     "履歴を読み込んでいます...";
@@ -298,64 +381,74 @@ async function renderRecentConversations(
     list
   );
 
-  sidebar.append(section);
+  sidebar.append(
+    section
+  );
 
   try {
-    const q = query(
-      collection(
-        db,
-        "chatConversations"
-      ),
-      where(
-        "userId",
-        "==",
-        user.uid
-      ),
-      orderBy(
-        "updatedAt",
-        "desc"
-      ),
-      limit(8)
-    );
+
+    const historyQuery =
+      query(
+        collection(
+          db,
+          "chatHistories"
+        ),
+        where(
+          "userId",
+          "==",
+          user.uid
+        ),
+        orderBy(
+          "updatedAt",
+          "desc"
+        ),
+        limit(8)
+      );
 
     const snapshot =
-      await getDocs(q);
+      await getDocs(
+        historyQuery
+      );
 
     list.replaceChildren();
 
-    if (snapshot.empty) {
+    if (
+      snapshot.empty
+    ) {
       list.textContent =
         "まだ会話履歴はありません。";
 
       return;
     }
 
-    snapshot.forEach(
-      conversation => {
+    snapshot.docs.forEach(
+      conversationDoc => {
+
         const data =
-          conversation.data();
+          conversationDoc.data();
 
         const link =
-          el(
+          makeElement(
             "a",
             "sidebar-history-link"
           );
 
         link.href =
           `question.html?conversationId=${encodeURIComponent(
-            conversation.id
+            conversationDoc.id
           )}`;
 
         const title =
-          el(
+          makeElement(
             "span",
             "sidebar-history-title",
             data.title ||
-              "学習AIとの会話"
+              data.lastQuestion ||
+              "会話"
           );
 
         const date =
-          el(
+          makeElement(
             "small",
             "sidebar-history-date",
             formatDate(
@@ -368,11 +461,14 @@ async function renderRecentConversations(
           date
         );
 
-        list.append(link);
+        list.append(
+          link
+        );
       }
     );
 
   } catch (error) {
+
     console.error(
       "会話履歴取得エラー:",
       error
@@ -383,7 +479,7 @@ async function renderRecentConversations(
   }
 }
 
-async function renderSidebar(
+export async function renderSidebar(
   role,
   user,
   profile
@@ -394,19 +490,21 @@ async function renderSidebar(
     );
 
   if (!sidebar) {
-    return;
+    throw new Error(
+      "appSidebar がありません。"
+    );
   }
 
   sidebar.replaceChildren();
 
   const header =
-    el(
+    makeElement(
       "div",
       "sidebar-header"
     );
 
   const title =
-    el(
+    makeElement(
       "strong",
       "sidebar-brand",
       role === "admin"
@@ -414,35 +512,38 @@ async function renderSidebar(
         : "学習AIチャット"
     );
 
-  header.append(title);
+  header.append(
+    title
+  );
 
-  sidebar.append(header);
+  sidebar.append(
+    header
+  );
 
   const toggleRow =
-    el(
+    makeElement(
       "div",
       "sidebar-toggle-row"
     );
 
   const toggle =
-    el(
+    makeElement(
       "button",
       "sidebar-toggle",
       "☰"
     );
 
-  toggle.setAttribute(
-    "aria-label",
-    "サイドメニューを開閉"
+  bindSidebarToggle(
+    toggle
   );
 
-  toggleRow.append(toggle);
+  toggleRow.append(
+    toggle
+  );
 
   sidebar.append(
     toggleRow
   );
-
-  bindToggle(toggle);
 
   const userName =
     profile.displayName ||
@@ -450,19 +551,19 @@ async function renderSidebar(
     user.email ||
     "ユーザー";
 
-  const userBox =
-    el(
+  const userElement =
+    makeElement(
       "div",
       "sidebar-user",
       userName
     );
 
   sidebar.append(
-    userBox
+    userElement
   );
 
   const nav =
-    el(
+    makeElement(
       "nav",
       "sidebar-nav"
     );
@@ -477,13 +578,19 @@ async function renderSidebar(
       ? ADMIN_LINKS
       : STUDENT_LINKS;
 
-  links.forEach(item => {
-    nav.append(
-      createLink(item)
-    );
-  });
+  links.forEach(
+    item => {
+      nav.append(
+        createNavigationLink(
+          item
+        )
+      );
+    }
+  );
 
-  sidebar.append(nav);
+  sidebar.append(
+    nav
+  );
 
   if (
     role === "student"
@@ -495,121 +602,88 @@ async function renderSidebar(
   }
 
   const logout =
-    el(
+    makeElement(
       "button",
       "sidebar-link logout-button",
       "ログアウト"
     );
 
-  logout.type = "button";
+  logout.dataset.logout =
+    "";
 
-  logout.addEventListener(
-    "click",
-    async () => {
-      logout.disabled = true;
-
-      try {
-        await signOut(auth);
-
-        window.location.replace(
-          role === "student" ||
-          role === "admin"
-            ? "../login.html"
-            : "./login.html"
-        );
-
-      } catch (error) {
-        console.error(
-          "ログアウトエラー:",
-          error
-        );
-
-        logout.disabled = false;
-      }
-    }
+  sidebar.append(
+    logout
   );
 
-  sidebar.append(logout);
+  setupSidebar();
+  setupLogout();
 }
 
-async function startLayout() {
+export async function startLayout(
+  roleOverride = null,
+  userOverride = null,
+  profileOverride = null
+) {
   if (started) {
     return;
   }
 
   const role =
+    roleOverride ||
     document.body.dataset.role;
 
   if (
     role !== "student" &&
     role !== "admin"
   ) {
-    setupExistingSidebar();
-    return;
+    throw new Error(
+      "body の data-role が student または admin ではありません。"
+    );
   }
 
   started = true;
 
-  try {
-    const result =
-      await requireRole(
-        role,
-        {
-          allowMaintenance:
-            role === "admin"
-        }
-      );
-
-    if (!result) {
-      return;
-    }
-
-    await renderSidebar(
-      role,
-      result.user,
-      result.profile
-    );
-
-    const name =
-      document.getElementById(
-        "currentUserName"
-      );
-
-    if (name) {
-      name.textContent =
-        result.profile.displayName ||
-        result.user.displayName ||
-        result.user.email ||
-        "ユーザー";
-    }
-
-    const footer =
-      document.querySelector(
-        ".app-footer"
-      );
-
-    if (footer) {
-      footer.textContent =
-        "© 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.";
-    }
-
-  } catch (error) {
-    console.error(
-      "レイアウト初期化エラー:",
-      error
-    );
-  }
-}
-
-if (
-  typeof document !==
-  "undefined"
-) {
   if (
-    document.body?.dataset?.role
+    !userOverride ||
+    !profileOverride
   ) {
-    startLayout();
-  } else {
-    setupExistingSidebar();
+    setupSidebar();
+    setupLogout();
+
+    return;
+  }
+
+  await renderSidebar(
+    role,
+    userOverride,
+    profileOverride
+  );
+
+  const currentUserName =
+    document.getElementById(
+      "currentUserName"
+    );
+
+  if (currentUserName) {
+    currentUserName.textContent =
+      profileOverride.displayName ||
+      userOverride.displayName ||
+      userOverride.email ||
+      "ユーザー";
+  }
+
+  const footer =
+    document.querySelector(
+      ".app-footer"
+    );
+
+  if (footer) {
+    footer.textContent =
+      "© 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.";
   }
 }
+
+export {
+  toggleSidebar,
+  updateToggleState
+};
