@@ -1,578 +1,1170 @@
+// assets/js/page.js
+"use strict";
+
+/*
+ * 学習AIチャット 共通ページ処理
+ *
+ * AI処理:
+ *   Supabase Edge Function
+ *   /functions/v1/study-chat
+ *
+ * Supabase Project:
+ *   https://fjqobjcvejhkevyfsoxt.supabase.co
+ *
+ * 重要:
+ *   GROQ_API_KEY は絶対にこのファイルへ書かない。
+ *   Groq API は Supabase Edge Function からのみ呼び出す。
+ */
+
 import {
-  db,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  setDoc,
-  addDoc,
-  query,
-  where,
-  orderBy,
-  limit,
-  serverTimestamp
-} from "./firebase.js";
+  requireRole,
+  auth
+} from "./auth.js";
+
+import {
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+
+const SUPABASE_URL =
+  "https://fjqobjcvejhkevyfsoxt.supabase.co";
+
+const STUDY_CHAT_FUNCTION_URL =
+  `${SUPABASE_URL}/functions/v1/study-chat`;
 
 
-function getHistoryCollection() {
-  return collection(db, "chatHistories");
+/* =========================================================
+   基本ユーティリティ
+========================================================= */
+
+function $(selector, root = document) {
+  return root.querySelector(selector);
 }
 
+function $all(selector, root = document) {
+  return Array.from(root.querySelectorAll(selector));
+}
 
-function getMessageCollection(conversationId) {
-  return collection(
-    db,
-    "chatHistories",
-    conversationId,
-    "messages"
+function createElement(
+  tag,
+  className = "",
+  text = ""
+) {
+  const element = document.createElement(tag);
+
+  if (className) {
+    element.className = className;
+  }
+
+  if (text !== "") {
+    element.textContent = text;
+  }
+
+  return element;
+}
+
+function escapeText(value) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  return String(value);
+}
+
+function getQueryParam(name) {
+  const params = new URLSearchParams(
+    window.location.search
   );
+
+  return params.get(name);
 }
 
-
-function createConversationId() {
-
+function createId(prefix = "id") {
   if (
-    window.crypto &&
-    typeof window.crypto.randomUUID === "function"
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
   ) {
-    return window.crypto.randomUUID();
+    return `${prefix}_${crypto.randomUUID()}`;
   }
 
   return (
-    "conversation_" +
+    `${prefix}_` +
     Date.now().toString(36) +
     "_" +
-    Math.random()
-      .toString(36)
-      .slice(2)
+    Math.random().toString(36).slice(2)
   );
 }
 
-
-function createAnswerId() {
-
-  if (
-    window.crypto &&
-    typeof window.crypto.randomUUID === "function"
-  ) {
-    return window.crypto.randomUUID();
-  }
-
-  return (
-    "answer_" +
-    Date.now().toString(36) +
-    "_" +
-    Math.random()
-      .toString(36)
-      .slice(2)
-  );
+function getConversationId() {
+  return getQueryParam("conversationId");
 }
 
-
-export async function initPage(options = {}) {
-
-  const role =
-    options.role ||
-    document.body.dataset.role ||
-    "";
-
-  if (
-    role !== "student" &&
-    role !== "admin"
-  ) {
-    throw new Error(
-      "ページのrole設定が正しくありません。"
-    );
-  }
-
-  document.body.dataset.initialized = "true";
-
-  return {
-    role,
-    user: options.user || null,
-    profile: options.profile || null
-  };
-}
-
-
-export async function createConversation(
-  userId,
-  title = "新しい会話"
-) {
-
-  if (!userId) {
-    throw new Error(
-      "ユーザーIDがありません。"
-    );
-  }
-
-  const conversationId =
-    createConversationId();
-
-  await setDoc(
-    doc(
-      db,
-      "chatHistories",
-      conversationId
-    ),
-    {
-      conversationId,
-      userId,
-      title,
-      lastQuestion: "",
-      lastAnswer: "",
-      messageCount: 0,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    }
-  );
-
-  return conversationId;
-}
-
-
-export async function saveConversationMessage(
-  userId,
-  conversationId,
-  message
-) {
-
-  if (!userId) {
-    throw new Error(
-      "ユーザーIDがありません。"
-    );
-  }
-
+function goToConversation(conversationId) {
   if (!conversationId) {
-    throw new Error(
-      "会話IDがありません。"
-    );
+    return;
   }
 
-  if (!message || !message.content) {
-    throw new Error(
-      "保存するメッセージがありません。"
-    );
-  }
-
-  const conversationRef =
-    doc(
-      db,
-      "chatHistories",
-      conversationId
-    );
-
-  const conversationSnap =
-    await getDoc(
-      conversationRef
-    );
-
-  if (!conversationSnap.exists()) {
-
-    await setDoc(
-      conversationRef,
-      {
-        conversationId,
-        userId,
-        title:
-          message.role === "user"
-            ? message.content.slice(0, 40)
-            : "新しい会話",
-        lastQuestion:
-          message.role === "user"
-            ? message.content
-            : "",
-        lastAnswer:
-          message.role === "assistant"
-            ? message.content
-            : "",
-        messageCount: 0,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      }
-    );
-
-  } else {
-
-    const existing =
-      conversationSnap.data();
-
-    if (
-      existing.userId &&
-      existing.userId !== userId
-    ) {
-      throw new Error(
-        "この会話を保存する権限がありません。"
-      );
-    }
-  }
-
-  const answerId =
-    message.answerId ||
-    createAnswerId();
-
-  const messageRef =
-    doc(
-      getMessageCollection(conversationId),
-      answerId
-    );
-
-  await setDoc(
-    messageRef,
-    {
-      answerId,
-      conversationId,
-      userId,
-      role:
-        message.role === "assistant"
-          ? "assistant"
-          : "user",
-      content:
-        String(message.content),
-      createdAt:
-        serverTimestamp()
-    }
+  const url = new URL(
+    "question.html",
+    window.location.href
   );
 
-  const conversationData = {
-    updatedAt:
-      serverTimestamp()
-  };
-
-  if (message.role === "user") {
-    conversationData.lastQuestion =
-      message.content;
-  }
-
-  if (message.role === "assistant") {
-    conversationData.lastAnswer =
-      message.content;
-  }
-
-  const currentCount =
-    conversationSnap.exists()
-      ? Number(
-          conversationSnap.data().messageCount || 0
-        )
-      : 0;
-
-  conversationData.messageCount =
-    currentCount + 1;
-
-  await setDoc(
-    conversationRef,
-    conversationData,
-    {
-      merge: true
-    }
+  url.searchParams.set(
+    "conversationId",
+    conversationId
   );
 
-  return {
-    answerId
-  };
+  window.location.href = url.href;
 }
 
 
-export async function loadConversationHistory(
-  userId,
-  conversationId
-) {
+/* =========================================================
+   Supabase通信
+========================================================= */
 
-  if (!userId) {
-    throw new Error(
-      "ユーザーIDがありません。"
-    );
-  }
-
-  if (!conversationId) {
-    return {
-      conversationId: null,
-      messages: []
-    };
-  }
-
-  const conversationSnap =
-    await getDoc(
-      doc(
-        db,
-        "chatHistories",
-        conversationId
-      )
-    );
-
-  if (!conversationSnap.exists()) {
-    return {
-      conversationId,
-      messages: []
-    };
-  }
-
-  const conversation =
-    conversationSnap.data();
-
-  if (conversation.userId !== userId) {
-    throw new Error(
-      "この会話を閲覧する権限がありません。"
-    );
-  }
-
-  const messagesQuery =
-    query(
-      getMessageCollection(conversationId),
-      orderBy("createdAt", "asc")
-    );
-
-  const messagesSnap =
-    await getDocs(
-      messagesQuery
-    );
-
-  const messages =
-    messagesSnap.docs.map(
-      item => {
-
-        const data =
-          item.data();
-
-        return {
-          answerId:
-            data.answerId ||
-            item.id,
-
-          conversationId:
-            data.conversationId ||
-            conversationId,
-
-          role:
-            data.role || "assistant",
-
-          content:
-            data.content || "",
-
-          createdAt:
-            data.createdAt || null
-        };
-      }
-    );
-
-  return {
-    conversationId,
-    title:
-      conversation.title ||
-      "会話",
-    messages
-  };
-}
-
-
-export async function getRecentConversations(
-  userId
-) {
-
-  if (!userId) {
-    return [];
-  }
-
-  const q =
-    query(
-      getHistoryCollection(),
-      where(
-        "userId",
-        "==",
-        userId
-      ),
-      orderBy(
-        "updatedAt",
-        "desc"
-      ),
-      limit(20)
-    );
-
-  const snapshot =
-    await getDocs(q);
-
-  return snapshot.docs.map(
-    item => ({
-      id: item.id,
-      ...item.data()
-    })
-  );
-}
-
-
-export async function getConversation(
-  userId,
-  conversationId
-) {
-
-  const snapshot =
-    await getDoc(
-      doc(
-        db,
-        "chatHistories",
-        conversationId
-      )
-    );
-
-  if (!snapshot.exists()) {
+async function getFirebaseIdToken() {
+  if (!auth?.currentUser) {
     return null;
   }
 
-  const data =
-    snapshot.data();
-
-  if (data.userId !== userId) {
-    throw new Error(
-      "この会話を閲覧する権限がありません。"
+  try {
+    return await auth.currentUser.getIdToken();
+  } catch (error) {
+    console.error(
+      "Firebase ID token取得エラー:",
+      error
     );
-  }
 
-  return {
-    id: snapshot.id,
-    ...data
-  };
+    return null;
+  }
 }
 
 
 /*
- * AI呼び出し
+ * Edge FunctionへPOST
  *
- * GitHub Pagesから直接秘密鍵を置かない。
- * 実際のAI処理はCloud Functions等の
- * サーバー側エンドポイントへ送る。
+ * Firebaseログイン状態をAuthorizationに載せる。
+ *
+ * Edge Function側では必要に応じてこのJWTを検証する。
  */
-export async function askStudyAI(payload) {
+async function callStudyChat(payload) {
+  const firebaseToken =
+    await getFirebaseIdToken();
 
-  if (!payload) {
-    throw new Error(
-      "AIへの送信データがありません。"
-    );
-  }
-
-  const {
-    userId,
-    conversationId,
-    answerId,
-    question,
-    messages
-  } = payload;
-
-  if (!userId) {
-    throw new Error(
-      "ユーザーIDがありません。"
-    );
-  }
-
-  if (!conversationId) {
-    throw new Error(
-      "会話IDがありません。"
-    );
-  }
-
-  if (!answerId) {
-    throw new Error(
-      "回答IDがありません。"
-    );
-  }
-
-  if (!question) {
-    throw new Error(
-      "質問内容がありません。"
-    );
-  }
-
+  const headers = {
+    "Content-Type": "application/json"
+  };
 
   /*
-   * Cloud Functions等の実際のAPI URLに置き換える。
+   * Firebaseトークンが取得できた場合のみ送る。
    *
-   * ここにOpenAI等の秘密APIキーを書かない。
+   * Supabase側を公開Endpointとして構成する場合は
+   * tokenがなくてもFunction側で処理できる。
    */
+  if (firebaseToken) {
+    headers.Authorization =
+      `Bearer ${firebaseToken}`;
+  }
 
-  const endpoint =
-    window.STUDY_AI_ENDPOINT ||
+  const response = await fetch(
+    STUDY_CHAT_FUNCTION_URL,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload)
+    }
+  );
+
+  let data = null;
+
+  try {
+    data = await response.json();
+  } catch {
+    data = null;
+  }
+
+  if (!response.ok) {
+    const message =
+      data?.error ||
+      data?.message ||
+      `HTTP ${response.status}`;
+
+    const error = new Error(message);
+
+    error.code =
+      data?.code ||
+      `http-${response.status}`;
+
+    error.status =
+      response.status;
+
+    throw error;
+  }
+
+  return data || {};
+}
+
+
+/* =========================================================
+   DOM取得
+========================================================= */
+
+const questionForm =
+  document.getElementById("questionForm");
+
+const questionInput =
+  document.getElementById("question");
+
+const sendButton =
+  document.getElementById("sendButton");
+
+const chatMessages =
+  document.getElementById("chatMessages");
+
+const errorBox =
+  document.getElementById("errorBox");
+
+const conversationTitle =
+  document.getElementById("conversationTitle");
+
+const newConversationButton =
+  document.getElementById("newConversationButton");
+
+const answerIdElement =
+  document.getElementById("answerId");
+
+
+/* =========================================================
+   状態
+========================================================= */
+
+let currentConversationId =
+  getConversationId();
+
+let currentAnswerId = null;
+
+let sending = false;
+
+
+/* =========================================================
+   エラー表示
+========================================================= */
+
+function showError(message) {
+  if (!errorBox) {
+    console.error(message);
+    return;
+  }
+
+  errorBox.hidden = false;
+  errorBox.textContent =
+    escapeText(message);
+}
+
+function clearError() {
+  if (!errorBox) {
+    return;
+  }
+
+  errorBox.hidden = true;
+  errorBox.textContent = "";
+}
+
+
+/* =========================================================
+   送信ボタン状態
+========================================================= */
+
+function setSending(value) {
+  sending = value;
+
+  if (sendButton) {
+    sendButton.disabled = value;
+
+    sendButton.textContent =
+      value
+        ? "回答を生成しています..."
+        : "質問する";
+  }
+
+  if (questionInput) {
+    questionInput.disabled = value;
+  }
+}
+
+
+/* =========================================================
+   回答ID
+========================================================= */
+
+function setAnswerId(answerId) {
+  currentAnswerId =
+    answerId || null;
+
+  if (answerIdElement) {
+    answerIdElement.textContent =
+      currentAnswerId
+        ? `回答ID: ${currentAnswerId}`
+        : "";
+  }
+}
+
+
+/* =========================================================
+   会話ID
+========================================================= */
+
+function ensureConversationId() {
+  if (currentConversationId) {
+    return currentConversationId;
+  }
+
+  currentConversationId =
+    createId("conversation");
+
+  return currentConversationId;
+}
+
+
+/* =========================================================
+   チャット表示
+========================================================= */
+
+function clearMessages() {
+  if (!chatMessages) {
+    return;
+  }
+
+  chatMessages.replaceChildren();
+}
+
+
+function appendMessage(
+  role,
+  text,
+  options = {}
+) {
+  if (!chatMessages) {
+    return null;
+  }
+
+  const wrapper =
+    createElement(
+      "article",
+      `chat-message ${role}`
+    );
+
+  if (options.answerId) {
+    wrapper.dataset.answerId =
+      options.answerId;
+  }
+
+  if (options.questionId) {
+    wrapper.dataset.questionId =
+      options.questionId;
+  }
+
+  const header =
+    createElement(
+      "div",
+      "chat-message-role"
+    );
+
+  if (role === "user") {
+    header.textContent =
+      "あなた";
+  } else {
+    header.textContent =
+      "学習AI";
+  }
+
+  const body =
+    createElement(
+      "div",
+      "chat-message-content"
+    );
+
+  body.textContent =
+    escapeText(text);
+
+  wrapper.append(
+    header,
+    body
+  );
+
+  chatMessages.append(wrapper);
+
+  chatMessages.scrollTop =
+    chatMessages.scrollHeight;
+
+  return wrapper;
+}
+
+
+/* =========================================================
+   回答表示
+========================================================= */
+
+function appendAnswer(data) {
+  const answer =
+    data.answer ||
+    data.content ||
+    data.message ||
     "";
 
-  if (!endpoint) {
+  const answerId =
+    data.answerId ||
+    data.id ||
+    createId("answer");
 
-    throw new Error(
-      "AIサーバーの接続先が設定されていません。"
+  setAnswerId(answerId);
+
+  appendMessage(
+    "assistant",
+    answer,
+    {
+      answerId
+    }
+  );
+
+  return answerId;
+}
+
+
+/* =========================================================
+   会話タイトル
+========================================================= */
+
+function setConversationTitle(title) {
+  if (!conversationTitle) {
+    return;
+  }
+
+  conversationTitle.textContent =
+    title ||
+    "新しい会話";
+}
+
+
+/* =========================================================
+   初期表示
+========================================================= */
+
+function showInitialState() {
+  if (!chatMessages) {
+    return;
+  }
+
+  if (
+    chatMessages.children.length === 0
+  ) {
+    appendMessage(
+      "assistant",
+      "学習AIチャットへようこそ。質問を入力してください。"
+    );
+  }
+}
+
+
+/* =========================================================
+   会話読み込み
+========================================================= */
+
+async function loadConversation() {
+  /*
+   * conversationId がない場合は
+   * 新規会話として開始する。
+   */
+  if (!currentConversationId) {
+    setConversationTitle(
+      "新しい会話"
+    );
+
+    showInitialState();
+
+    return;
+  }
+
+  /*
+   * Edge Functionに会話取得を依頼する。
+   *
+   * page.jsからFirestoreやSupabase RESTへ
+   * 直接会話データを書き込まない。
+   */
+  try {
+    const result =
+      await callStudyChat({
+        action: "getConversation",
+        conversationId:
+          currentConversationId
+      });
+
+    clearMessages();
+
+    const conversation =
+      result.conversation ||
+      result.data ||
+      null;
+
+    if (!conversation) {
+      setConversationTitle(
+        "新しい会話"
+      );
+
+      showInitialState();
+
+      return;
+    }
+
+    setConversationTitle(
+      conversation.title ||
+      "会話"
+    );
+
+    const messages =
+      Array.isArray(
+        conversation.messages
+      )
+        ? conversation.messages
+        : [];
+
+    if (messages.length === 0) {
+      showInitialState();
+      return;
+    }
+
+    for (const message of messages) {
+      if (!message) {
+        continue;
+      }
+
+      const role =
+        message.role === "user"
+          ? "user"
+          : "assistant";
+
+      appendMessage(
+        role,
+        message.content ||
+          message.text ||
+          "",
+        {
+          answerId:
+            message.answerId ||
+            null,
+          questionId:
+            message.questionId ||
+            null
+        }
+      );
+
+      if (
+        message.answerId
+      ) {
+        setAnswerId(
+          message.answerId
+        );
+      }
+    }
+
+  } catch (error) {
+    console.error(
+      "会話読み込みエラー:",
+      error
+    );
+
+    clearMessages();
+
+    appendMessage(
+      "assistant",
+      "会話履歴を読み込めませんでした。新しい質問はできます。"
+    );
+
+    showError(
+      `会話履歴の読み込みに失敗しました。\n${error.message || error}`
+    );
+  }
+}
+
+
+/* =========================================================
+   質問送信
+========================================================= */
+
+async function submitQuestion(
+  question
+) {
+  const text =
+    String(question || "").trim();
+
+  if (!text) {
+    showError(
+      "質問を入力してください。"
+    );
+
+    return;
+  }
+
+  if (sending) {
+    return;
+  }
+
+  clearError();
+
+  const conversationId =
+    ensureConversationId();
+
+  /*
+   * URLも会話IDに合わせる。
+   */
+  if (
+    getConversationId() !==
+    conversationId
+  ) {
+    const url =
+      new URL(
+        window.location.href
+      );
+
+    url.searchParams.set(
+      "conversationId",
+      conversationId
+    );
+
+    window.history.replaceState(
+      {},
+      "",
+      url
     );
   }
 
+  const questionId =
+    createId("question");
 
-  const response =
-    await fetch(
-      endpoint,
+  setSending(true);
+
+  appendMessage(
+    "user",
+    text,
+    {
+      questionId
+    }
+  );
+
+  if (questionInput) {
+    questionInput.value = "";
+  }
+
+  try {
+    const result =
+      await callStudyChat({
+        action: "chat",
+
+        conversationId,
+
+        questionId,
+
+        previousAnswerId:
+          currentAnswerId,
+
+        question: text
+      });
+
+    /*
+     * Edge Functionから返された
+     * 回答IDを保存。
+     *
+     * 次の質問ではこのIDを
+     * previousAnswerIdとして送る。
+     */
+    const answerId =
+      result.answerId ||
+      result.id ||
+      createId("answer");
+
+    const answer =
+      result.answer ||
+      result.content ||
+      result.message;
+
+    if (!answer) {
+      throw new Error(
+        "AIから回答が返されませんでした。"
+      );
+    }
+
+    appendMessage(
+      "assistant",
+      answer,
       {
-        method: "POST",
-
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
-
-        body:
-          JSON.stringify({
-            userId,
-            conversationId,
-            answerId,
-            question,
-
-            messages:
-              Array.isArray(messages)
-                ? messages.map(
-                    message => ({
-                      answerId:
-                        message.answerId || null,
-
-                      role:
-                        message.role,
-
-                      content:
-                        message.content
-                    })
-                  )
-                : []
-          })
+        answerId,
+        questionId
       }
     );
 
-
-  if (!response.ok) {
-
-    const text =
-      await response.text();
-
-    throw new Error(
-      `AIサーバーエラー (${response.status})\n${text}`
+    setAnswerId(
+      answerId
     );
+
+    if (
+      result.title
+    ) {
+      setConversationTitle(
+        result.title
+      );
+    }
+
+    /*
+     * 回答を受信した時点で
+     * conversationIdをURLに固定。
+     */
+    const url =
+      new URL(
+        window.location.href
+      );
+
+    url.searchParams.set(
+      "conversationId",
+      conversationId
+    );
+
+    window.history.replaceState(
+      {},
+      "",
+      url
+    );
+
+  } catch (error) {
+    console.error(
+      "AIチャットエラー:",
+      error
+    );
+
+    appendMessage(
+      "assistant",
+      "回答の取得に失敗しました。時間をおいてもう一度お試しください。"
+    );
+
+    showError(
+      `AIへの質問に失敗しました。\n${error.message || error}`
+    );
+
+  } finally {
+    setSending(false);
+
+    if (
+      questionInput &&
+      !questionInput.disabled
+    ) {
+      questionInput.focus();
+    }
   }
+}
 
 
-  const data =
-    await response.json();
+/* =========================================================
+   フォーム
+========================================================= */
 
+function setupQuestionForm() {
+  if (!questionForm) {
+    return;
+  }
 
   if (
-    !data ||
-    typeof data.answer !== "string"
+    questionForm.dataset.pageBound ===
+    "true"
   ) {
-    throw new Error(
-      "AIサーバーから正しい回答形式が返されませんでした。"
-    );
+    return;
   }
 
+  questionForm.dataset.pageBound =
+    "true";
 
-  return {
-    answer:
-      data.answer,
+  questionForm.addEventListener(
+    "submit",
+    async event => {
+      event.preventDefault();
 
-    answerId:
-      data.answerId ||
-      answerId,
+      if (!questionInput) {
+        return;
+      }
 
-    conversationId:
-      data.conversationId ||
-      conversationId
-  };
+      await submitQuestion(
+        questionInput.value
+      );
+    }
+  );
 }
+
+
+/* =========================================================
+   Ctrl + Enter / Enter
+========================================================= */
+
+function setupQuestionInput() {
+  if (!questionInput) {
+    return;
+  }
+
+  questionInput.addEventListener(
+    "keydown",
+    event => {
+      /*
+       * Ctrl + Enter
+       */
+      if (
+        event.key === "Enter" &&
+        event.ctrlKey
+      ) {
+        event.preventDefault();
+
+        if (
+          questionForm?.requestSubmit
+        ) {
+          questionForm.requestSubmit();
+        }
+
+        return;
+      }
+
+      /*
+       * textareaの場合、
+       * Enter単体では改行。
+       */
+    }
+  );
+}
+
+
+/* =========================================================
+   新規会話
+========================================================= */
+
+function startNewConversation() {
+  currentConversationId =
+    createId("conversation");
+
+  currentAnswerId = null;
+
+  const url =
+    new URL(
+      window.location.href
+    );
+
+  url.searchParams.set(
+    "conversationId",
+    currentConversationId
+  );
+
+  window.location.href =
+    url.href;
+}
+
+
+function setupNewConversationButton() {
+  if (!newConversationButton) {
+    return;
+  }
+
+  if (
+    newConversationButton.dataset.bound ===
+    "true"
+  ) {
+    return;
+  }
+
+  newConversationButton.dataset.bound =
+    "true";
+
+  newConversationButton.addEventListener(
+    "click",
+    () => {
+      startNewConversation();
+    }
+  );
+}
+
+
+/* =========================================================
+   サイドバー
+========================================================= */
+
+function setupSidebarToggle() {
+  const toggles =
+    $all(
+      ".sidebar-toggle, [data-sidebar-toggle]"
+    );
+
+  for (const button of toggles) {
+    if (
+      button.dataset.pageSidebarBound ===
+      "true"
+    ) {
+      continue;
+    }
+
+    button.dataset.pageSidebarBound =
+      "true";
+
+    button.addEventListener(
+      "click",
+      () => {
+        const mobile =
+          window.matchMedia(
+            "(max-width: 700px)"
+          ).matches;
+
+        if (mobile) {
+          document.body.classList.toggle(
+            "sidebar-expanded"
+          );
+        } else {
+          document.body.classList.toggle(
+            "sidebar-collapsed"
+          );
+        }
+      }
+    );
+  }
+}
+
+
+/* =========================================================
+   サイドバーの現在位置
+========================================================= */
+
+function setupActiveSidebar() {
+  const current =
+    location.pathname
+      .split("/")
+      .pop() ||
+    "index.html";
+
+  const links =
+    $all(
+      ".sidebar a, .sidebar-link"
+    );
+
+  for (const link of links) {
+    const href =
+      link.getAttribute("href") ||
+      "";
+
+    const file =
+      href
+        .split("?")[0]
+        .split("#")[0]
+        .split("/")
+        .pop();
+
+    if (
+      file &&
+      file === current
+    ) {
+      link.classList.add(
+        "active"
+      );
+
+      link.setAttribute(
+        "aria-current",
+        "page"
+      );
+    }
+  }
+}
+
+
+/* =========================================================
+   ログアウト
+========================================================= */
+
+async function logout() {
+  try {
+    await signOut(auth);
+
+    const nested =
+      location.pathname.includes(
+        "/student/"
+      ) ||
+      location.pathname.includes(
+        "/admin/"
+      );
+
+    location.replace(
+      nested
+        ? "../login.html"
+        : "./login.html"
+    );
+
+  } catch (error) {
+    console.error(
+      "ログアウトエラー:",
+      error
+    );
+
+    showError(
+      `ログアウトに失敗しました。\n${error.message || error}`
+    );
+  }
+}
+
+
+function setupLogout() {
+  const buttons =
+    $all(
+      "[data-logout], .logout-button"
+    );
+
+  for (const button of buttons) {
+    if (
+      button.dataset.pageLogoutBound ===
+      "true"
+    ) {
+      continue;
+    }
+
+    button.dataset.pageLogoutBound =
+      "true";
+
+    button.addEventListener(
+      "click",
+      async () => {
+        button.disabled = true;
+
+        try {
+          await logout();
+        } finally {
+          button.disabled = false;
+        }
+      }
+    );
+  }
+}
+
+
+/* =========================================================
+   認証
+========================================================= */
+
+async function initializeAuth() {
+  /*
+   * question.htmlは学生ページなので、
+   * ここでFirebase認証を確認する。
+   *
+   * auth.js側のrequireRoleに統一。
+   */
+  const result =
+    await requireRole(
+      "student",
+      {
+        allowMaintenance: false
+      }
+    );
+
+  if (!result) {
+    return null;
+  }
+
+  return result;
+}
+
+
+/* =========================================================
+   初期化
+========================================================= */
+
+async function initializePage() {
+  try {
+    /*
+     * まず認証。
+     */
+    const authResult =
+      await initializeAuth();
+
+    if (!authResult) {
+      return;
+    }
+
+    /*
+     * サイドバー。
+     */
+    setupSidebarToggle();
+
+    setupActiveSidebar();
+
+    setupLogout();
+
+    /*
+     * 質問フォーム。
+     */
+    setupQuestionForm();
+
+    setupQuestionInput();
+
+    setupNewConversationButton();
+
+    /*
+     * 会話IDが存在する場合、
+     * その会話を読み込む。
+     *
+     * 存在しない場合は新規会話。
+     */
+    await loadConversation();
+
+    /*
+     * 入力欄へフォーカス。
+     */
+    if (
+      questionInput &&
+      !questionInput.disabled
+    ) {
+      questionInput.focus();
+    }
+
+  } catch (error) {
+    console.error(
+      "question.html 初期化エラー:",
+      error
+    );
+
+    showError(
+      `画面の初期化に失敗しました。\n${error.message || error}`
+    );
+  }
+}
+
+
+/* =========================================================
+   DOM ready
+========================================================= */
+
+if (
+  document.readyState ===
+  "loading"
+) {
+  document.addEventListener(
+    "DOMContentLoaded",
+    initializePage,
+    {
+      once: true
+    }
+  );
+} else {
+  initializePage();
+}
+
+
+/* =========================================================
+   外部から利用可能にする
+========================================================= */
+
+window.StudyAIChat = {
+  submitQuestion,
+  startNewConversation,
+  getConversationId() {
+    return currentConversationId;
+  },
+  getAnswerId() {
+    return currentAnswerId;
+  }
+};
