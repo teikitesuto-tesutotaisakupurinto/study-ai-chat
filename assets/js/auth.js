@@ -11,17 +11,34 @@ import {
 } from "./firebase.js";
 
 function rootPath(file) {
-  const path = location.pathname;
+  const path = window.location.pathname;
 
-  const nested =
+  if (
     path.includes("/student/") ||
-    path.includes("/admin/");
+    path.includes("/admin/")
+  ) {
+    return `../${file}`;
+  }
 
-  return nested ? `../${file}` : `./${file}`;
+  return `./${file}`;
 }
 
-export function getRootPath(file) {
-  return rootPath(file);
+export async function getCurrentProfile(user) {
+  if (!user || !user.uid) {
+    throw new Error("ログイン中のユーザーを確認できません。");
+  }
+
+  const snapshot = await getDoc(
+    doc(db, "users", user.uid)
+  );
+
+  if (!snapshot.exists()) {
+    throw new Error(
+      `ユーザープロフィールがありません。\nusers/${user.uid}`
+    );
+  }
+
+  return snapshot.data();
 }
 
 export async function getSystemSettings() {
@@ -29,32 +46,9 @@ export async function getSystemSettings() {
     doc(db, "settings", "system")
   );
 
-  if (!snapshot || !snapshot.exists()) {
-    return {
-      maintenance: false,
-      maintenanceTitle: "システムメンテナンス中",
-      maintenanceMessage:
-        "現在、メンテナンスを実施しています。しばらくお待ちください。"
-    };
-  }
-
-  return snapshot.data() || {};
-}
-
-export async function getCurrentProfile(user) {
-  if (!user || !user.uid) {
+  if (!snapshot.exists()) {
     throw new Error(
-      "ログイン中の利用者を確認できません。"
-    );
-  }
-
-  const snapshot = await getDoc(
-    doc(db, "users", user.uid)
-  );
-
-  if (!snapshot || !snapshot.exists()) {
-    throw new Error(
-      `ユーザープロフィールがありません。users/${user.uid} を確認してください。`
+      "Firestoreの settings/system がありません。"
     );
   }
 
@@ -66,40 +60,39 @@ export function waitForAuth() {
     let unsubscribe = null;
     let finished = false;
 
-    function cleanup() {
+    function finish(callback, value) {
+      if (finished) return;
+
+      finished = true;
+
       if (unsubscribe) {
         unsubscribe();
         unsubscribe = null;
       }
+
+      callback(value);
     }
 
     unsubscribe = onAuthStateChanged(
       auth,
       user => {
-        if (finished) return;
-
-        finished = true;
-        cleanup();
-
-        resolve(user);
+        finish(resolve, user);
       },
       error => {
-        if (finished) return;
-
-        finished = true;
-        cleanup();
-
-        reject(error);
+        finish(reject, error);
       }
     );
   });
 }
 
-function showAccessError(
-  title,
-  message,
-  detail = ""
-) {
+function errorText(error) {
+  return [
+    error?.code || "unknown",
+    error?.message || String(error)
+  ].join(": ");
+}
+
+function showAuthError(title, message, detail = "") {
   document.documentElement.classList.remove(
     "auth-pending"
   );
@@ -109,55 +102,45 @@ function showAccessError(
   const main = document.createElement("main");
   main.className = "auth-error";
 
+  const card = document.createElement("section");
+  card.className = "auth-error-card";
+
   const heading = document.createElement("h1");
   heading.textContent = title;
 
-  const description = document.createElement("p");
-  description.textContent = message;
+  const paragraph = document.createElement("p");
+  paragraph.textContent = message;
 
-  main.append(
+  card.append(
     heading,
-    description
+    paragraph
   );
 
   if (detail) {
     const pre = document.createElement("pre");
     pre.textContent = detail;
-    main.append(pre);
+    card.append(pre);
   }
 
-  const retry = document.createElement("button");
+  const reload = document.createElement("button");
+  reload.type = "button";
+  reload.textContent = "再読み込み";
 
-  retry.type = "button";
-  retry.textContent = "再読み込み";
+  reload.addEventListener("click", () => {
+    window.location.reload();
+  });
 
-  retry.addEventListener(
-    "click",
-    () => location.reload()
-  );
+  card.append(reload);
 
-  main.append(retry);
+  const login = document.createElement("a");
+  login.href = rootPath("login.html");
+  login.textContent = "ログイン画面へ";
+  login.className = "auth-login-link";
 
-  const loginLink =
-    document.createElement("a");
+  card.append(login);
 
-  loginLink.href =
-    rootPath("login.html");
-
-  loginLink.className = "button";
-
-  loginLink.textContent =
-    "ログイン画面へ";
-
-  main.append(loginLink);
-
+  main.append(card);
   document.body.append(main);
-}
-
-function errorDetails(error) {
-  return `${error?.code || "error"}: ${
-    error?.message || String(error)
-  }`;
 }
 
 export async function requireRole(
@@ -169,13 +152,12 @@ export async function requireRole(
   );
 
   if (
-    !["student", "admin"].includes(
-      requiredRole
-    )
+    requiredRole !== "student" &&
+    requiredRole !== "admin"
   ) {
-    showAccessError(
+    showAuthError(
       "ページ設定エラー",
-      "必要な権限の設定が正しくありません。",
+      "必要な権限が正しく設定されていません。",
       `requiredRole: ${String(requiredRole)}`
     );
 
@@ -185,11 +167,10 @@ export async function requireRole(
   try {
     await persistenceReady;
 
-    const user =
-      await waitForAuth();
+    const user = await waitForAuth();
 
     if (!user) {
-      location.replace(
+      window.location.replace(
         rootPath("login.html")
       );
 
@@ -199,62 +180,50 @@ export async function requireRole(
     let profile;
 
     try {
-      profile =
-        await getCurrentProfile(user);
+      profile = await getCurrentProfile(user);
     } catch (error) {
-      showAccessError(
-        error?.code ===
-          "permission-denied"
-          ? "403 Forbidden"
-          : "ユーザー情報エラー",
-
-        "ユーザープロフィールを確認できませんでした。",
-
-        errorDetails(error)
+      showAuthError(
+        "ユーザー情報を取得できません",
+        "ログイン情報を確認できませんでした。",
+        errorText(error)
       );
 
       return null;
     }
 
-    if (
-      !profile ||
-      profile.status !== "active"
-    ) {
+    if (profile.status !== "active") {
       try {
         await signOut(auth);
-      } catch (signOutError) {
+      } catch (error) {
         console.error(
           "サインアウトエラー:",
-          signOutError
+          error
         );
       }
 
-      showAccessError(
+      showAuthError(
         "アカウント利用不可",
-        "このアカウントは現在利用できません。管理者にお問い合わせください。"
+        "このアカウントは現在利用できません。"
       );
 
       return null;
     }
 
     if (
-      !["student", "admin"].includes(
-        profile.role
-      )
+      profile.role !== "student" &&
+      profile.role !== "admin"
     ) {
-      showAccessError(
+      showAuthError(
         "403 Forbidden",
-        "アカウントの権限が設定されていないか、不正です。",
+        "アカウントの権限が設定されていません。",
         `role: ${String(profile.role)}`
       );
 
       return null;
     }
 
-    if (
-      profile.role !== requiredRole
-    ) {
-      showAccessError(
+    if (profile.role !== requiredRole) {
+      showAuthError(
         "403 Forbidden",
         "このページを開く権限がありません。",
         `必要な権限: ${requiredRole}\n現在の権限: ${profile.role}`
@@ -266,25 +235,23 @@ export async function requireRole(
     let settings;
 
     try {
-      settings =
-        await getSystemSettings();
+      settings = await getSystemSettings();
     } catch (error) {
-      showAccessError(
+      showAuthError(
         "システム設定エラー",
         "システム設定を取得できませんでした。",
-        errorDetails(error)
+        errorText(error)
       );
 
       return null;
     }
 
     if (
-      settings &&
       settings.maintenance === true &&
       requiredRole === "student" &&
       options.allowMaintenance !== true
     ) {
-      location.replace(
+      window.location.replace(
         rootPath("maintenance.html")
       );
 
@@ -304,19 +271,14 @@ export async function requireRole(
 
   } catch (error) {
     console.error(
-      "認証・権限チェックエラー:",
+      "認証・権限確認エラー:",
       error
     );
 
-    showAccessError(
-      error?.code ===
-        "permission-denied"
-        ? "403 Forbidden"
-        : "認証・権限の確認に失敗しました",
-
-      "安全にページを開けませんでした。",
-
-      errorDetails(error)
+    showAuthError(
+      "認証・権限の確認に失敗しました",
+      "ページを安全に開けませんでした。",
+      errorText(error)
     );
 
     return null;
@@ -327,15 +289,14 @@ export async function protectPage(
   requiredRole,
   options = {}
 ) {
-  const result =
-    await requireRole(
-      requiredRole,
-      options
-    );
+  const result = await requireRole(
+    requiredRole,
+    options
+  );
 
   if (!result) {
     throw new Error(
-      "権限確認に失敗したため、ページの初期化を中止しました。"
+      "権限確認に失敗しました。"
     );
   }
 
