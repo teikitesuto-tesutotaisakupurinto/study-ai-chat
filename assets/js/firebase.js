@@ -1,9 +1,43 @@
-/* assets/js/firebase.js */
-(function () {
-  "use strict";
+// assets/js/firebase.js
+import {
+  initializeApp,
+  getApps,
+  getApp
+} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
 
-  const firebaseConfig = {
-  apiKey: "AIzaSyByt8kGALyS8AU8SR6PzWFEPXfgHY5iynk",
+import {
+  getAuth,
+  setPersistence,
+  browserLocalPersistence,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs,
+  addDoc,
+  serverTimestamp,
+  onSnapshot,
+  deleteDoc
+} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyByt8kGALyS8AU8SR6P8zWFEPXfgHY5iyn",
   authDomain: "studychat-1b39d.firebaseapp.com",
   projectId: "studychat-1b39d",
   storageBucket: "studychat-1b39d.firebasestorage.app",
@@ -11,35 +45,51 @@
   appId: "1:982302014286:web:abf319aadb1ed919727c1f"
 };
 
-  try {
-    if (!window.firebase) {
-      throw new Error("Firebase SDKが読み込まれていません。");
-    }
+let app;
 
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
+try {
+  app = getApps().length
+    ? getApp()
+    : initializeApp(firebaseConfig);
+} catch (error) {
+  console.error("Firebase初期化エラー:", error);
+  throw error;
+}
 
-    window.firebaseApp = firebase.app();
-    window.auth = firebase.auth();
-    window.db = firebase.firestore();
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-    /*
-     * 他の画面から await window.authReadyPromise で
-     * 認証設定の完了を待てるようにする。
-     */
-    window.authReadyPromise = window.auth
-      .setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-      .catch(function (error) {
-        console.error("認証の保存設定に失敗しました:", error);
-        throw error;
-      });
+const persistenceReady = setPersistence(
+  auth,
+  browserLocalPersistence
+);
 
-    window.authReadyPromise.catch(function () {
-      /* 個別画面でもエラーを表示できるよう、ここでは再throwしない */
-    });
-  } catch (error) {
-    console.error("Firebase初期化エラー:", error);
-    window.firebaseInitError = error;
-  }
-})();
+export {
+  app,
+  auth,
+  db,
+  persistenceReady,
+
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  signOut,
+
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs,
+  addDoc,
+  serverTimestamp,
+  onSnapshot,
+  deleteDoc
+};
