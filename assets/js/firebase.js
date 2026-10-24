@@ -1,4 +1,3 @@
-
 import {
   initializeApp,
   getApps,
@@ -32,12 +31,9 @@ import {
   where,
   orderBy,
   limit,
+  onSnapshot,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
-
-/* =========================================================
-   Firebase設定
-   ========================================================= */
 
 const firebaseConfig = {
   apiKey: "AIzaSyByt8kGALyS8AU8SR6P8zWFEPXfgHY5iyn",
@@ -48,27 +44,24 @@ const firebaseConfig = {
   appId: "1:982302014286:web:abf319aadb1ed919727c1f"
 };
 
-// 従来のグローバル設定参照にも対応
-window.FIREBASE_CONFIG = firebaseConfig;
+// 旧コードとの互換性を維持
+if (typeof window !== "undefined") {
+  window.FIREBASE_CONFIG = firebaseConfig;
+}
 
 // Firebaseアプリを初期化
-const app = getApps().length > 0
+const app = getApps().length
   ? getApp()
   : initializeApp(firebaseConfig);
 
-// AuthenticationとFirestore
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ログイン状態の永続化
+// ログイン状態をブラウザに保存
 const persistenceReady = setPersistence(
   auth,
   browserLocalPersistence
 );
-
-/* =========================================================
-   エクスポート
-   ========================================================= */
 
 export {
   app,
@@ -76,31 +69,25 @@ export {
   db,
   firebaseConfig,
   persistenceReady,
-
   onAuthStateChanged,
   signOut,
   signInWithEmailAndPassword,
-
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
-
   sendPasswordResetEmail,
-
   doc,
   getDoc,
   setDoc,
   updateDoc,
-
   collection,
   addDoc,
   getDocs,
-
   query,
   where,
   orderBy,
   limit,
-
+  onSnapshot,
   serverTimestamp
 };
