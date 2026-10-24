@@ -1,7 +1,4 @@
-/* assets/js/firebase.js
- * Firebase compat SDK の初期化
- * 他の画面からは window.auth / window.db を利用する
- */
+/* assets/js/firebase.js */
 (function () {
   "use strict";
 
@@ -16,9 +13,7 @@
 
   try {
     if (!window.firebase) {
-      throw new Error(
-        "Firebase SDK が読み込まれていません。"
-      );
+      throw new Error("Firebase SDKが読み込まれていません。");
     }
 
     if (!firebase.apps.length) {
@@ -29,25 +24,22 @@
     window.auth = firebase.auth();
     window.db = firebase.firestore();
 
+    /*
+     * 他の画面から await window.authReadyPromise で
+     * 認証設定の完了を待てるようにする。
+     */
     window.authReadyPromise = window.auth
       .setPersistence(firebase.auth.Auth.Persistence.LOCAL)
       .catch(function (error) {
-        console.error(
-          "Firebase 認証の保存設定に失敗しました:",
-          error
-        );
-
+        console.error("認証の保存設定に失敗しました:", error);
         throw error;
       });
 
-    // 未処理の Promise rejection を防ぐ。
-    // authReadyPromise 自体は保持するため、
-    // 利用側でもエラーを取得できる。
-    window.authReadyPromise.catch(function () {});
-
-    window.firebaseInitError = null;
+    window.authReadyPromise.catch(function () {
+      /* 個別画面でもエラーを表示できるよう、ここでは再throwしない */
+    });
   } catch (error) {
-    console.error("Firebase 初期化エラー:", error);
+    console.error("Firebase初期化エラー:", error);
     window.firebaseInitError = error;
   }
 })();
