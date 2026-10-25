@@ -1,3 +1,7 @@
+/* =========================================================
+   学習AIチャット 認証・権限管理
+   ========================================================= */
+
 import {
   auth,
   db,
@@ -9,7 +13,7 @@ import {
 } from "./firebase.js";
 
 /* =========================================================
-   Supabase Edge Function
+   Supabase AI
    ========================================================= */
 
 const SUPABASE_FUNCTION_URL =
@@ -20,7 +24,8 @@ const SUPABASE_FUNCTION_URL =
    ========================================================= */
 
 function rootPath(file) {
-  const path = location.pathname;
+  const path =
+    location.pathname;
 
   const nested =
     path.includes("/student/") ||
@@ -44,43 +49,189 @@ function showAccessError(
     "auth-pending"
   );
 
+  /*
+    既存ページを完全に破壊しない。
+    特にサイドバーが既に存在する場合は残す。
+  */
+
+  const existingMain =
+    document.getElementById(
+      "appMain"
+    );
+
+  if (existingMain) {
+    let box =
+      document.getElementById(
+        "authAccessError"
+      );
+
+    if (!box) {
+      box =
+        document.createElement(
+          "section"
+        );
+
+      box.id =
+        "authAccessError";
+
+      box.style.cssText = `
+        margin: 24px;
+        padding: 24px;
+        background: #fff;
+        border: 1px solid #fecaca;
+        border-radius: 14px;
+        color: #172033;
+      `;
+
+      existingMain.prepend(
+        box
+      );
+    }
+
+    box.innerHTML = "";
+
+    const heading =
+      document.createElement(
+        "h1"
+      );
+
+    heading.textContent =
+      title;
+
+    heading.style.cssText = `
+      margin: 0 0 10px;
+      font-size: 22px;
+      color: #991b1b;
+    `;
+
+    const description =
+      document.createElement(
+        "p"
+      );
+
+    description.textContent =
+      message;
+
+    description.style.lineHeight =
+      "1.8";
+
+    box.append(
+      heading,
+      description
+    );
+
+    if (detail) {
+      const pre =
+        document.createElement(
+          "pre"
+        );
+
+      pre.textContent =
+        detail;
+
+      pre.style.cssText = `
+        margin-top: 14px;
+        padding: 12px;
+        overflow: auto;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        background: #f8fafc;
+        border-radius: 8px;
+        font-size: 12px;
+      `;
+
+      box.append(pre);
+    }
+
+    return;
+  }
+
+  /*
+    ログイン画面など appMain がない場合のみ
+    専用エラー表示を作る。
+  */
+
   document.body.replaceChildren();
 
   const main =
-    document.createElement("main");
+    document.createElement(
+      "main"
+    );
 
   main.className =
     "auth-error";
 
+  main.style.cssText = `
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: #f4f7fb;
+  `;
+
+  const card =
+    document.createElement(
+      "section"
+    );
+
+  card.style.cssText = `
+    width: min(100%, 520px);
+    padding: 28px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 12px 30px rgb(15 23 42 / 8%);
+  `;
+
   const heading =
-    document.createElement("h1");
+    document.createElement(
+      "h1"
+    );
 
   heading.textContent =
     title;
 
   const description =
-    document.createElement("p");
+    document.createElement(
+      "p"
+    );
 
   description.textContent =
     message;
 
-  main.append(
+  description.style.lineHeight =
+    "1.8";
+
+  card.append(
     heading,
     description
   );
 
   if (detail) {
     const pre =
-      document.createElement("pre");
+      document.createElement(
+        "pre"
+      );
 
     pre.textContent =
       detail;
 
-    main.append(pre);
+    pre.style.cssText = `
+      padding: 12px;
+      background: #f8fafc;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-size: 12px;
+    `;
+
+    card.append(pre);
   }
 
   const retry =
-    document.createElement("button");
+    document.createElement(
+      "button"
+    );
 
   retry.type =
     "button";
@@ -88,28 +239,50 @@ function showAccessError(
   retry.textContent =
     "再読み込み";
 
+  retry.style.cssText = `
+    width: 100%;
+    min-height: 46px;
+    margin-top: 18px;
+    border: 0;
+    border-radius: 9px;
+    background: #2563eb;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+  `;
+
   retry.addEventListener(
     "click",
-    () => {
-      location.reload();
-    }
+    () => location.reload()
   );
 
-  main.append(retry);
+  card.append(retry);
 
   const loginLink =
-    document.createElement("a");
+    document.createElement(
+      "a"
+    );
 
   loginLink.href =
-    rootPath("login.html");
-
-  loginLink.className =
-    "button";
+    rootPath(
+      "login.html"
+    );
 
   loginLink.textContent =
     "ログイン画面へ";
 
-  main.append(loginLink);
+  loginLink.style.cssText = `
+    display: block;
+    margin-top: 14px;
+    text-align: center;
+    color: #2563eb;
+  `;
+
+  card.append(
+    loginLink
+  );
+
+  main.append(card);
 
   document.body.append(main);
 }
@@ -118,9 +291,12 @@ function showAccessError(
    エラー詳細
    ========================================================= */
 
-function errorDetails(error) {
+function errorDetails(
+  error
+) {
   return `${
-    error?.code || "error"
+    error?.code ||
+    "error"
   }: ${
     error?.message ||
     String(error)
@@ -129,7 +305,6 @@ function errorDetails(error) {
 
 /* =========================================================
    システム設定
-   ※ ログイン後のみ呼び出す
    ========================================================= */
 
 export async function getSystemSettings() {
@@ -144,7 +319,7 @@ export async function getSystemSettings() {
 
   if (!snapshot.exists()) {
     throw new Error(
-      "Firestoreに settings/system がありません。"
+      "Firestore に settings/system がありません。"
     );
   }
 
@@ -152,7 +327,7 @@ export async function getSystemSettings() {
 }
 
 /* =========================================================
-   現在のユーザープロフィール
+   現在ユーザー
    ========================================================= */
 
 export async function getCurrentProfile(
@@ -175,7 +350,7 @@ export async function getCurrentProfile(
 
   if (!snapshot.exists()) {
     throw new Error(
-      `ユーザープロフィールがありません。\nusers/${user.uid}`
+      `ユーザープロフィールがありません。users/${user.uid} を確認してください。`
     );
   }
 
@@ -188,39 +363,53 @@ export async function getCurrentProfile(
 
 export function waitForAuth() {
   return new Promise(
-    (resolve, reject) => {
-      let unsubscribe = null;
-      let finished = false;
+    (
+      resolve,
+      reject
+    ) => {
+      let unsubscribe =
+        null;
+
+      let finished =
+        false;
 
       function cleanup() {
-        if (unsubscribe) {
+        if (
+          unsubscribe
+        ) {
           unsubscribe();
-          unsubscribe = null;
+
+          unsubscribe =
+            null;
         }
       }
 
       unsubscribe =
         onAuthStateChanged(
           auth,
-
           user => {
-            if (finished) {
+            if (
+              finished
+            ) {
               return;
             }
 
-            finished = true;
+            finished =
+              true;
 
             cleanup();
 
             resolve(user);
           },
-
           error => {
-            if (finished) {
+            if (
+              finished
+            ) {
               return;
             }
 
-            finished = true;
+            finished =
+              true;
 
             cleanup();
 
@@ -232,7 +421,7 @@ export function waitForAuth() {
 }
 
 /* =========================================================
-   権限チェック
+   権限確認
    ========================================================= */
 
 export async function requireRole(
@@ -247,7 +436,9 @@ export async function requireRole(
     ![
       "student",
       "admin"
-    ].includes(requiredRole)
+    ].includes(
+      requiredRole
+    )
   ) {
     showAccessError(
       "ページ設定エラー",
@@ -261,35 +452,32 @@ export async function requireRole(
   }
 
   try {
-    /* -----------------------------------------
-       Firebase Persistence
-       ----------------------------------------- */
+    /*
+      Firebase Authの初期化を待つ。
+    */
 
     await persistenceReady;
-
-    /* -----------------------------------------
-       ① まずログイン状態だけ確認
-       ----------------------------------------- */
 
     const user =
       await waitForAuth();
 
     /*
-      未ログインなら、
-      settings/systemを読む前にログインへ戻す。
+      未ログインならログイン画面へ。
     */
 
     if (!user) {
       location.replace(
-        rootPath("login.html")
+        rootPath(
+          "login.html"
+        )
       );
 
       return null;
     }
 
-    /* -----------------------------------------
-       ② ログイン後にユーザー情報取得
-       ----------------------------------------- */
+    /*
+      プロフィール取得。
+    */
 
     let profile;
 
@@ -302,37 +490,39 @@ export async function requireRole(
       showAccessError(
         error?.code ===
           "permission-denied"
-          ? "403 Forbidden"
+          ? "アクセス権限エラー"
           : "ユーザー情報エラー",
-
         "ユーザープロフィールを確認できませんでした。",
-
         errorDetails(error)
       );
 
       return null;
     }
 
-    /* -----------------------------------------
-       ③ アカウント状態
-       ----------------------------------------- */
+    /*
+      アカウント状態。
+    */
 
     if (
       profile.status !==
       "active"
     ) {
-      await signOut(auth);
+      await signOut(
+        auth
+      );
 
       location.replace(
-        rootPath("login.html")
+        rootPath(
+          "login.html"
+        )
       );
 
       return null;
     }
 
-    /* -----------------------------------------
-       ④ role
-       ----------------------------------------- */
+    /*
+      role確認。
+    */
 
     if (
       ![
@@ -344,9 +534,7 @@ export async function requireRole(
     ) {
       showAccessError(
         "403 Forbidden",
-
         "アカウントの権限が設定されていないか、不正です。",
-
         `role: ${String(
           profile.role
         )}`
@@ -355,51 +543,52 @@ export async function requireRole(
       return null;
     }
 
+    /*
+      必要role確認。
+    */
+
     if (
       profile.role !==
       requiredRole
     ) {
       showAccessError(
         "403 Forbidden",
-
         "このページを開く権限がありません。",
-
         `必要な権限: ${requiredRole}\n現在の権限: ${profile.role}`
       );
 
       return null;
     }
 
-    /* -----------------------------------------
-       ⑤ ここで初めてシステム設定を取得
-       ----------------------------------------- */
+    /*
+      メンテナンス設定。
+      
+      allowMaintenance=trueなら
+      学生でも通過できる。
+    */
 
     let settings;
 
     try {
       settings =
         await getSystemSettings();
-
     } catch (error) {
       showAccessError(
         "システム設定エラー",
-
-        "Firebaseからシステム設定を取得できませんでした。",
-
+        "システム設定を取得できません。",
         errorDetails(error)
       );
 
       return null;
     }
 
-    /* -----------------------------------------
-       ⑥ メンテナンス判定
-       ----------------------------------------- */
-
     if (
-      settings.maintenance === true &&
-      requiredRole === "student" &&
-      options.allowMaintenance !== true
+      settings.maintenance ===
+        true &&
+      requiredRole ===
+        "student" &&
+      options.allowMaintenance !==
+        true
     ) {
       location.replace(
         rootPath(
@@ -410,21 +599,15 @@ export async function requireRole(
       return null;
     }
 
-    /* -----------------------------------------
-       認証処理完了
-       ----------------------------------------- */
-
     document.documentElement.classList.remove(
       "auth-pending"
     );
 
     return {
       user,
-
       profile,
-
-      data: profile,
-
+      data:
+        profile,
       settings
     };
 
@@ -437,11 +620,9 @@ export async function requireRole(
     showAccessError(
       error?.code ===
         "permission-denied"
-        ? "403 Forbidden"
+        ? "アクセス権限エラー"
         : "認証・権限の確認に失敗しました",
-
       "安全にページを開けませんでした。",
-
       errorDetails(error)
     );
 
@@ -500,6 +681,15 @@ export async function sendStudyQuestion(
     );
   }
 
+  if (
+    cleanQuestion.length >
+    4000
+  ) {
+    throw new Error(
+      "質問が長すぎます。"
+    );
+  }
+
   const token =
     await user.getIdToken(
       true
@@ -509,26 +699,26 @@ export async function sendStudyQuestion(
     await fetch(
       SUPABASE_FUNCTION_URL,
       {
-        method: "POST",
+        method:
+          "POST",
 
         headers: {
-          "Authorization":
+          Authorization:
             `Bearer ${token}`,
 
           "Content-Type":
             "application/json"
         },
 
-        body: JSON.stringify({
-          action:
-            "sendStudyQuestion",
+        body:
+          JSON.stringify({
+            question:
+              cleanQuestion,
 
-          question:
-            cleanQuestion,
-
-          conversationId:
-            conversationId || null
-        })
+            conversationId:
+              conversationId ||
+              null
+          })
       }
     );
 
@@ -537,7 +727,6 @@ export async function sendStudyQuestion(
   try {
     result =
       await response.json();
-
   } catch {
     throw new Error(
       "AIサーバーから正しい応答を受信できませんでした。"
@@ -546,7 +735,8 @@ export async function sendStudyQuestion(
 
   if (
     !response.ok ||
-    result?.success !== true
+    result?.success !==
+      true
   ) {
     throw new Error(
       result?.error ||
@@ -590,7 +780,8 @@ export async function getConversation(
 
   const cleanId =
     String(
-      conversationId || ""
+      conversationId ||
+        ""
     ).trim();
 
   if (!cleanId) {
@@ -608,23 +799,25 @@ export async function getConversation(
     await fetch(
       SUPABASE_FUNCTION_URL,
       {
-        method: "POST",
+        method:
+          "POST",
 
         headers: {
-          "Authorization":
+          Authorization:
             `Bearer ${token}`,
 
           "Content-Type":
             "application/json"
         },
 
-        body: JSON.stringify({
-          action:
-            "getConversation",
+        body:
+          JSON.stringify({
+            action:
+              "getConversation",
 
-          conversationId:
-            cleanId
-        })
+            conversationId:
+              cleanId
+          })
       }
     );
 
@@ -635,17 +828,18 @@ export async function getConversation(
       await response.json();
   } catch {
     throw new Error(
-      "会話取得サーバーから正しい応答を受信できませんでした。"
+      "会話サーバーから正しい応答を受信できませんでした。"
     );
   }
 
   if (
     !response.ok ||
-    result?.success !== true
+    result?.success !==
+      true
   ) {
     throw new Error(
       result?.error ||
-      "会話を取得できませんでした。"
+      `会話取得エラー (${response.status})`
     );
   }
 
@@ -670,7 +864,8 @@ export async function getConversationByAnswerId(
 
   const cleanId =
     String(
-      answerId || ""
+      answerId ||
+        ""
     ).trim();
 
   if (!cleanId) {
@@ -688,23 +883,25 @@ export async function getConversationByAnswerId(
     await fetch(
       SUPABASE_FUNCTION_URL,
       {
-        method: "POST",
+        method:
+          "POST",
 
         headers: {
-          "Authorization":
+          Authorization:
             `Bearer ${token}`,
 
           "Content-Type":
             "application/json"
         },
 
-        body: JSON.stringify({
-          action:
-            "getConversationByAnswerId",
+        body:
+          JSON.stringify({
+            action:
+              "getConversationByAnswerId",
 
-          answerId:
-            cleanId
-        })
+            answerId:
+              cleanId
+          })
       }
     );
 
@@ -715,17 +912,18 @@ export async function getConversationByAnswerId(
       await response.json();
   } catch {
     throw new Error(
-      "会話取得サーバーから正しい応答を受信できませんでした。"
+      "会話サーバーから正しい応答を受信できませんでした。"
     );
   }
 
   if (
     !response.ok ||
-    result?.success !== true
+    result?.success !==
+      true
   ) {
     throw new Error(
       result?.error ||
-      "回答IDから会話を取得できませんでした。"
+      `回答取得エラー (${response.status})`
     );
   }
 
@@ -733,7 +931,7 @@ export async function getConversationByAnswerId(
 }
 
 /* =========================================================
-   Firebase
+   Export
    ========================================================= */
 
 export {
