@@ -1,10 +1,17 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f5f7fb">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
+  <meta
+    name="theme-color"
+    content="#f5f7fb"
+  >
+
   <title>ログイン | 学習AIチャット</title>
 
   <style>
@@ -16,12 +23,25 @@
       display: none !important;
     }
 
+    html,
     body {
       margin: 0;
+      min-height: 100%;
+    }
+
+    body {
       min-height: 100vh;
-      font-family: Arial, "Noto Sans JP", sans-serif;
-      color: #202124;
-      background: #f5f7fb;
+      font-family:
+        Arial,
+        "Noto Sans JP",
+        sans-serif;
+      color: #172033;
+      background:
+        linear-gradient(
+          135deg,
+          #f4f7fb,
+          #eef3fb
+        );
     }
 
     .screen {
@@ -34,23 +54,27 @@
 
     .card {
       width: 100%;
-      max-width: 420px;
-      padding: 32px;
-      background: #fff;
-      border: 1px solid #e2e6ee;
-      border-radius: 14px;
-      box-shadow: 0 8px 28px rgba(0, 0, 0, .06);
+      max-width: 430px;
+      padding: 34px;
+      background: #ffffff;
+      border: 1px solid #e1e7f0;
+      border-radius: 18px;
+      box-shadow:
+        0 12px 35px
+        rgba(15, 23, 42, .08);
     }
 
     h1 {
       margin: 0 0 8px;
-      font-size: 25px;
       text-align: center;
+      font-size: 26px;
+      font-weight: 700;
     }
 
     .subtitle {
-      margin: 0 0 28px;
-      color: #5f6368;
+      margin:
+        0 0 28px;
+      color: #64748b;
       text-align: center;
       font-size: 14px;
       line-height: 1.7;
@@ -58,36 +82,46 @@
 
     label {
       display: block;
-      margin: 16px 0 7px;
+      margin:
+        17px 0 7px;
       font-size: 14px;
       font-weight: 600;
     }
 
     input {
       width: 100%;
-      padding: 12px;
-      border: 1px solid #c8ced8;
-      border-radius: 7px;
+      padding: 13px 14px;
+      border:
+        1px solid #cbd5e1;
+      border-radius: 9px;
+      background: #ffffff;
+      color: #172033;
       font-size: 16px;
-      background: #fff;
     }
 
     input:focus {
-      outline: 2px solid #1a73e8;
-      outline-offset: 1px;
-      border-color: #1a73e8;
+      outline: none;
+      border-color: #2563eb;
+      box-shadow:
+        0 0 0 3px
+        rgba(37, 99, 235, .12);
     }
 
     button {
       width: 100%;
-      padding: 12px;
-      margin-top: 16px;
+      padding: 13px 16px;
+      margin-top: 18px;
       border: 0;
-      border-radius: 7px;
-      background: #1a73e8;
-      color: #fff;
+      border-radius: 9px;
+      background: #2563eb;
+      color: #ffffff;
       font-size: 15px;
+      font-weight: 600;
       cursor: pointer;
+    }
+
+    button:hover:not(:disabled) {
+      background: #1d4ed8;
     }
 
     button:disabled {
@@ -96,16 +130,23 @@
     }
 
     .google {
-      background: #fff;
-      color: #202124;
-      border: 1px solid #c8ced8;
+      background: #ffffff;
+      color: #172033;
+      border:
+        1px solid #cbd5e1;
+    }
+
+    .google:hover:not(:disabled) {
+      background: #f8fafc;
     }
 
     .google-mark {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       margin-right: 8px;
       font-size: 18px;
-      font-weight: bold;
+      font-weight: 700;
       color: #4285f4;
     }
 
@@ -113,8 +154,8 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      margin: 20px 0 4px;
-      color: #777;
+      margin: 22px 0 4px;
+      color: #94a3b8;
       font-size: 13px;
     }
 
@@ -123,14 +164,14 @@
       content: "";
       flex: 1;
       height: 1px;
-      background: #e0e0e0;
+      background: #e2e8f0;
     }
 
     .link {
       display: block;
       margin-top: 18px;
+      color: #2563eb;
       text-align: center;
-      color: #1a73e8;
       text-decoration: none;
       font-size: 14px;
     }
@@ -140,37 +181,48 @@
     }
 
     .message {
-      margin-top: 16px;
-      padding: 12px;
-      border-radius: 7px;
-      background: #fff2f0;
-      color: #b3261e;
+      margin-top: 17px;
+      padding: 12px 14px;
+      border-radius: 9px;
+      background: #fff1f2;
+      color: #b91c1c;
       font-size: 13px;
       line-height: 1.7;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
     }
 
+    .loading-message {
+      margin: 0;
+      color: #64748b;
+      text-align: center;
+      line-height: 1.8;
+    }
+
     .maintenance {
       text-align: center;
-      max-width: 620px;
     }
 
     .maintenance p {
       line-height: 1.9;
       white-space: pre-wrap;
+    }
+
+    .fatal-detail {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      background: #f8fafc;
+      color: #475569;
+      font-size: 12px;
+      line-height: 1.6;
+      white-space: pre-wrap;
       overflow-wrap: anywhere;
     }
 
-    .loading-message {
-      color: #5f6368;
-      text-align: center;
-      line-height: 1.8;
-    }
-
     footer {
-      padding: 18px 0 0;
-      color: #777;
+      margin-top: 26px;
+      color: #94a3b8;
       text-align: center;
       font-size: 11px;
       line-height: 1.7;
@@ -182,7 +234,8 @@
       }
 
       .card {
-        padding: 25px 20px;
+        padding: 26px 20px;
+        border-radius: 14px;
       }
 
       h1 {
@@ -193,42 +246,72 @@
 </head>
 
 <body>
-  <main id="gate" class="screen">
+
+  <!-- 初期確認 -->
+  <main
+    id="gate"
+    class="screen"
+  >
     <section class="card">
       <p class="loading-message">
-        システムを確認しています。
+        ログイン状態を確認しています。
       </p>
     </section>
   </main>
 
-  <main id="maintenanceScreen" class="screen" hidden>
+  <!-- メンテナンス -->
+  <main
+    id="maintenanceScreen"
+    class="screen"
+    hidden
+  >
     <section class="card maintenance">
-      <h1 id="maintenanceTitle">システムメンテナンス中</h1>
+
+      <h1>
+        システムメンテナンス中
+      </h1>
 
       <p id="maintenanceMessage">
-        現在、メンテナンスを実施しています。しばらくお待ちください。
+        現在、メンテナンスを実施しています。
+        しばらくお待ちください。
       </p>
 
-      <button id="maintenanceAdminLogin" type="button">
+      <button
+        id="maintenanceAdminLogin"
+        type="button"
+      >
         管理者ログイン
       </button>
 
       <footer>
-        © 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.
+        © 2026 定期テスト対策プリント運営事務局.
+        All Rights Reserved.
       </footer>
+
     </section>
   </main>
 
-  <main id="loginScreen" class="screen" hidden>
+  <!-- ログイン -->
+  <main
+    id="loginScreen"
+    class="screen"
+    hidden
+  >
     <section class="card">
-      <h1>学習AIチャット</h1>
+
+      <h1>
+        学習AIチャット
+      </h1>
 
       <p class="subtitle">
         アカウントにログインしてください
       </p>
 
       <form id="loginForm">
-        <label for="email">メールアドレス</label>
+
+        <label for="email">
+          メールアドレス
+        </label>
 
         <input
           id="email"
@@ -238,7 +321,9 @@
           placeholder="メールアドレス"
         >
 
-        <label for="password">パスワード</label>
+        <label for="password">
+          パスワード
+        </label>
 
         <input
           id="password"
@@ -248,19 +333,34 @@
           placeholder="パスワード"
         >
 
-        <button id="loginButton" type="submit">
+        <button
+          id="loginButton"
+          type="submit"
+        >
           ログイン
         </button>
+
       </form>
 
-      <div class="separator">または</div>
+      <div class="separator">
+        または
+      </div>
 
-      <button id="googleButton" class="google" type="button">
-        <span class="google-mark" aria-hidden="true">G</span>
+      <button
+        id="googleButton"
+        class="google"
+        type="button"
+      >
+        <span class="google-mark">
+          G
+        </span>
         Google でログイン
       </button>
 
-      <a class="link" href="./reset.html">
+      <a
+        class="link"
+        href="./reset.html"
+      >
         パスワードを忘れた場合
       </a>
 
@@ -268,36 +368,55 @@
         id="errorBox"
         class="message"
         role="alert"
-        aria-live="polite"
         hidden
       ></div>
 
       <footer>
-        © 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.
+        © 2026 定期テスト対策プリント運営事務局.
+        All Rights Reserved.
       </footer>
+
     </section>
   </main>
 
-  <main id="errorScreen" class="screen" hidden>
+  <!-- 致命的エラー -->
+  <main
+    id="errorScreen"
+    class="screen"
+    hidden
+  >
     <section class="card">
-      <h1>設定を確認できません</h1>
 
-      <p id="fatalMessage" class="message"></p>
+      <h1>
+        ログイン処理を続行できません
+      </h1>
 
-      <button id="reloadButton" type="button">
+      <p
+        id="fatalMessage"
+        class="message"
+      ></p>
+
+      <button
+        id="reloadButton"
+        type="button"
+      >
         再読み込み
       </button>
 
-      <a class="link" href="./login.html">
+      <a
+        class="link"
+        href="./login.html"
+      >
         ログイン画面を再表示
       </a>
+
     </section>
   </main>
 
   <script type="module">
+
     import {
       auth,
-      db,
       persistenceReady,
       onAuthStateChanged,
       signInWithEmailAndPassword,
@@ -305,85 +424,82 @@
       signInWithPopup,
       signInWithRedirect,
       getRedirectResult,
-      signOut,
-      doc,
-      getDoc,
-      onSnapshot
-    } from "./assets/js/firebase.js";
+      signOut
+    } from "./assets/js/firebase-module.js";
 
-    const $ = id => document.getElementById(id);
+    import {
+      getCurrentProfile,
+      getSystemSettings
+    } from "./assets/js/auth.js";
 
-    const gate = $("gate");
-    const loginScreen = $("loginScreen");
-    const maintenanceScreen = $("maintenanceScreen");
-    const errorScreen = $("errorScreen");
-    const errorBox = $("errorBox");
+    const $ = id =>
+      document.getElementById(id);
 
-    let initialized = false;
-    let maintenanceActive = false;
-    let settingsReady = false;
-    let isBusy = false;
+    const gate =
+      $("gate");
+
+    const loginScreen =
+      $("loginScreen");
+
+    const maintenanceScreen =
+      $("maintenanceScreen");
+
+    const errorScreen =
+      $("errorScreen");
+
+    const errorBox =
+      $("errorBox");
+
+    const loginButton =
+      $("loginButton");
+
+    const googleButton =
+      $("googleButton");
+
+    let busy = false;
     let redirecting = false;
-    let unsubscribeSettings = null;
-    let unsubscribeAuth = null;
-    let initializationStarted = false;
+    let initialized = false;
 
-    const settingsRef = doc(db, "settings", "system");
+    /* =====================================================
+       画面
+       ===================================================== */
 
     function showScreen(screen) {
+
       gate.hidden = true;
+
       loginScreen.hidden = true;
+
       maintenanceScreen.hidden = true;
+
       errorScreen.hidden = true;
 
       screen.hidden = false;
     }
 
+    /* =====================================================
+       エラー
+       ===================================================== */
+
     function showError(message) {
-      errorBox.textContent = message;
+
+      errorBox.textContent =
+        message;
+
       errorBox.hidden = false;
     }
 
     function clearError() {
+
       errorBox.textContent = "";
+
       errorBox.hidden = true;
     }
 
-    function showFatal(error) {
-      console.error("ログイン画面初期化エラー:", error);
+    function errorMessage(error) {
 
-      const message = error?.message || String(error);
-
-      $("fatalMessage").textContent =
-        "システムを初期化できませんでした。\n" +
-        (error?.code ? error.code + "\n" : "") +
-        message;
-
-      showScreen(errorScreen);
-    }
-
-    function withTimeout(promise, ms, description) {
-      let timer;
-
-      return Promise.race([
-        promise,
-        new Promise((_, reject) => {
-          timer = setTimeout(() => {
-            reject(
-              new Error(
-                description +
-                "がタイムアウトしました。通信とFirebase設定を確認してください。"
-              )
-            );
-          }, ms);
-        })
-      ]).finally(() => {
-        clearTimeout(timer);
-      });
-    }
-
-    function getErrorMessage(error) {
       const messages = {
+
         "auth/invalid-credential":
           "メールアドレスまたはパスワードが正しくありません。",
 
@@ -397,7 +513,7 @@
           "このドメインがFirebase Authenticationの承認済みドメインに登録されていません。",
 
         "auth/network-request-failed":
-          "通信に失敗しました。インターネット接続を確認してください。",
+          "通信に失敗しました。",
 
         "auth/popup-blocked":
           "Googleログインのポップアップがブロックされました。",
@@ -405,277 +521,479 @@
         "auth/popup-closed-by-user":
           "Googleログインがキャンセルされました。",
 
-        "auth/account-exists-with-different-credential":
-          "このメールアドレスは別のログイン方法で登録されています。",
-
         "permission-denied":
-          "Firestoreのアクセスが拒否されました。セキュリティルールを確認してください。"
+          "Firestoreのアクセスが拒否されました。"
       };
 
-      return messages[error?.code] ||
+      return (
+        messages[error?.code] ||
         `${error?.message || String(error)}${
-          error?.code ? "\nエラーコード: " + error.code : ""
-        }`;
+          error?.code
+            ? "\nエラーコード: " +
+              error.code
+            : ""
+        }`
+      );
     }
 
-    function setBusy(value) {
-      isBusy = value;
+    function showFatal(error) {
 
-      $("loginButton").disabled = value;
-      $("googleButton").disabled = value;
-
-      $("loginButton").textContent =
-        value ? "処理中..." : "ログイン";
-    }
-
-    async function getUserProfile(user) {
-      const snapshot = await withTimeout(
-        getDoc(doc(db, "users", user.uid)),
-        15000,
-        "ユーザー情報取得"
+      console.error(
+        "ログイン画面エラー:",
+        error
       );
 
-      if (!snapshot.exists()) {
-        throw new Error(
-          "users/" + user.uid +
-          " のプロフィールがありません。管理者にアカウント登録を依頼してください。"
-        );
-      }
+      $("fatalMessage").textContent =
+        errorMessage(error);
 
-      return snapshot.data();
+      showScreen(errorScreen);
     }
 
+    /* =====================================================
+       Busy
+       ===================================================== */
+
+    function setBusy(value) {
+
+      busy = value;
+
+      loginButton.disabled =
+        value;
+
+      googleButton.disabled =
+        value;
+
+      loginButton.textContent =
+        value
+          ? "ログイン中..."
+          : "ログイン";
+    }
+
+    /* =====================================================
+       ログイン後の遷移
+       ===================================================== */
+
     async function routeUser(user) {
-      if (!user || !settingsReady || redirecting) {
+
+      if (
+        !user ||
+        redirecting
+      ) {
         return;
       }
 
-      const profile = await getUserProfile(user);
+      /*
+        Firebaseログイン成功後、
+        Firestoreプロフィールを確認。
+      */
 
-      if (profile.status !== "active") {
+      const profile =
+        await getCurrentProfile(
+          user
+        );
+
+      if (
+        profile.status !==
+        "active"
+      ) {
+
         await signOut(auth);
 
-        showScreen(loginScreen);
+        showScreen(
+          loginScreen
+        );
 
         showError(
-          "このアカウントは現在利用できません。管理者にお問い合わせください。"
+          "このアカウントは現在利用できません。"
         );
 
         return;
       }
 
-      if (profile.role === "admin") {
-        redirecting = true;
-        location.replace("./admin/index.html");
-        return;
-      }
+      /*
+        管理者
+      */
 
-      if (profile.role === "student") {
+      if (
+        profile.role ===
+        "admin"
+      ) {
+
         redirecting = true;
 
         location.replace(
-          maintenanceActive
-            ? "./maintenance.html"
-            : "./student/index.html"
+          "./admin/index.html"
         );
 
         return;
       }
 
-      showScreen(loginScreen);
+      /*
+        生徒
+      */
+
+      if (
+        profile.role ===
+        "student"
+      ) {
+
+        redirecting = true;
+
+        /*
+          メンテナンスはログイン後に
+          判定する。
+        */
+
+        let settings;
+
+        try {
+
+          settings =
+            await getSystemSettings();
+
+        } catch (error) {
+
+          console.error(
+            "設定取得エラー:",
+            error
+          );
+
+          showFatal(error);
+
+          return;
+        }
+
+        if (
+          settings.maintenance ===
+          true
+        ) {
+
+          location.replace(
+            "./maintenance.html"
+          );
+
+          return;
+        }
+
+        location.replace(
+          "./student/index.html"
+        );
+
+        return;
+      }
+
+      /*
+        role不正
+      */
+
+      await signOut(auth);
+
+      showScreen(
+        loginScreen
+      );
 
       showError(
-        "アカウントの権限が正しく設定されていません。管理者にお問い合わせください。"
+        "アカウントの権限が正しく設定されていません。"
       );
     }
 
-    $("loginForm").addEventListener("submit", async event => {
-      event.preventDefault();
+    /* =====================================================
+       メールログイン
+       ===================================================== */
 
-      if (isBusy || !initialized) {
-        return;
-      }
+    $("loginForm")
+      .addEventListener(
+        "submit",
+        async event => {
 
-      clearError();
-      setBusy(true);
+          event.preventDefault();
 
-      try {
-        await signInWithEmailAndPassword(
-          auth,
-          $("email").value.trim(),
-          $("password").value
-        );
-      } catch (error) {
-        showError(getErrorMessage(error));
-      } finally {
-        setBusy(false);
-      }
-    });
+          if (
+            busy ||
+            !initialized
+          ) {
+            return;
+          }
 
-    $("googleButton").addEventListener("click", async () => {
-      if (isBusy || !initialized) {
-        return;
-      }
+          clearError();
 
-      clearError();
-      setBusy(true);
+          setBusy(true);
 
-      try {
-        await signInWithPopup(
-          auth,
-          new GoogleAuthProvider()
-        );
-      } catch (error) {
-        if (error?.code === "auth/popup-blocked") {
           try {
-            await signInWithRedirect(
+
+            await signInWithEmailAndPassword(
               auth,
-              new GoogleAuthProvider()
+              $("email").value.trim(),
+              $("password").value
             );
 
-            // リダイレクトが始まるので、ここではボタン状態を戻さない
-            return;
-          } catch (redirectError) {
-            showError(getErrorMessage(redirectError));
+            /*
+              onAuthStateChanged側で
+              routeUser() が実行される。
+            */
+
+          } catch (error) {
+
+            console.error(
+              "メールログインエラー:",
+              error
+            );
+
+            showError(
+              errorMessage(error)
+            );
+
+            setBusy(false);
           }
-        } else {
-          showError(getErrorMessage(error));
         }
-      } finally {
-        setBusy(false);
-      }
-    });
-
-    $("maintenanceAdminLogin").addEventListener("click", () => {
-      showScreen(loginScreen);
-      clearError();
-
-      showError(
-        "管理者アカウントでログインしてください。"
       );
-    });
 
-    $("reloadButton").addEventListener("click", () => {
-      location.reload();
-    });
+    /* =====================================================
+       Googleログイン
+       ===================================================== */
 
-    async function initialize() {
-      if (initializationStarted) {
-        return;
-      }
+    googleButton.addEventListener(
+      "click",
+      async () => {
 
-      initializationStarted = true;
+        if (
+          busy ||
+          !initialized
+        ) {
+          return;
+        }
 
-      try {
-        await withTimeout(
-          persistenceReady,
-          15000,
-          "Firebase認証の初期化"
-        );
+        clearError();
+
+        setBusy(true);
 
         try {
-          await withTimeout(
-            getRedirectResult(auth),
-            15000,
-            "Googleログイン結果の確認"
+
+          await signInWithPopup(
+            auth,
+            new GoogleAuthProvider()
           );
+
         } catch (error) {
+
+          if (
+            error?.code ===
+            "auth/popup-blocked"
+          ) {
+
+            try {
+
+              await signInWithRedirect(
+                auth,
+                new GoogleAuthProvider()
+              );
+
+              return;
+
+            } catch (
+              redirectError
+            ) {
+
+              console.error(
+                "Googleリダイレクトログインエラー:",
+                redirectError
+              );
+
+              showError(
+                errorMessage(
+                  redirectError
+                )
+              );
+
+            }
+
+          } else {
+
+            console.error(
+              "Googleログインエラー:",
+              error
+            );
+
+            showError(
+              errorMessage(error)
+            );
+          }
+
+          setBusy(false);
+        }
+      }
+    );
+
+    /* =====================================================
+       メンテナンス中の管理者ログイン
+       ===================================================== */
+
+    $("maintenanceAdminLogin")
+      .addEventListener(
+        "click",
+        () => {
+
+          showScreen(
+            loginScreen
+          );
+
+          clearError();
+
+          $("email").focus();
+
+          showError(
+            "管理者アカウントでログインしてください。"
+          );
+        }
+      );
+
+    /* =====================================================
+       再読み込み
+       ===================================================== */
+
+    $("reloadButton")
+      .addEventListener(
+        "click",
+        () => {
+          location.reload();
+        }
+      );
+
+    /* =====================================================
+       初期化
+       ===================================================== */
+
+    async function initialize() {
+
+      try {
+
+        /*
+          Firebase Authenticationの
+          永続化設定を待つ。
+        */
+
+        await persistenceReady;
+
+        /*
+          Google redirectから戻ってきた場合。
+        */
+
+        try {
+
+          await getRedirectResult(
+            auth
+          );
+
+        } catch (error) {
+
           console.error(
-            "Googleログイン結果の確認エラー:",
+            "Googleリダイレクト結果取得エラー:",
             error
           );
-        }
 
-        const snapshot = await withTimeout(
-          getDoc(settingsRef),
-          15000,
-          "メンテナンス設定取得"
-        );
-
-        if (!snapshot.exists()) {
-          throw new Error(
-            "Firestoreに settings/system がありません。Firebase Consoleで作成してください。"
+          showError(
+            errorMessage(error)
           );
         }
 
-        maintenanceActive =
-          snapshot.data()?.maintenance === true;
-
-        settingsReady = true;
         initialized = true;
 
-        showScreen(loginScreen);
+        /*
+          ここから認証状態監視。
+        */
 
-        unsubscribeSettings = onSnapshot(
-          settingsRef,
-          snapshot => {
-            if (!snapshot.exists()) {
+        onAuthStateChanged(
+          auth,
+          async user => {
+
+            /*
+              すでに別ページへ
+              遷移処理中なら何もしない。
+            */
+
+            if (
+              redirecting
+            ) {
               return;
             }
 
-            const newValue =
-              snapshot.data()?.maintenance === true;
+            /*
+              未ログイン
+            */
 
-            const changed =
-              maintenanceActive !== newValue;
+            if (!user) {
 
-            maintenanceActive = newValue;
+              setBusy(false);
 
-            if (changed && auth.currentUser) {
-              redirecting = false;
+              showScreen(
+                loginScreen
+              );
 
-              routeUser(auth.currentUser).catch(showFatal);
+              return;
+            }
+
+            /*
+              ログイン済み
+            */
+
+            try {
+
+              setBusy(true);
+
+              await routeUser(
+                user
+              );
+
+            } catch (error) {
+
+              console.error(
+                "ログイン後処理エラー:",
+                error
+              );
+
+              showFatal(
+                error
+              );
+
+            } finally {
+
+              /*
+                遷移が始まった場合は
+                login画面に戻さない。
+              */
+
+              if (
+                !redirecting
+              ) {
+                setBusy(false);
+              }
             }
           },
+
           error => {
-            console.error("設定監視エラー:", error);
+
+            console.error(
+              "認証状態監視エラー:",
+              error
+            );
+
+            showFatal(
+              error
+            );
           }
         );
 
-        unsubscribeAuth = onAuthStateChanged(
-          auth,
-          user => {
-            if (user && settingsReady && !redirecting) {
-              routeUser(user).catch(showFatal);
-            } else if (
-              !user &&
-              settingsReady &&
-              !redirecting
-            ) {
-              showScreen(loginScreen);
-            }
-          },
-          showFatal
-        );
       } catch (error) {
-        showFatal(error);
+
+        showFatal(
+          error
+        );
       }
     }
 
-    window.addEventListener("pagehide", () => {
-      if (unsubscribeSettings) {
-        unsubscribeSettings();
-      }
-
-      if (unsubscribeAuth) {
-        unsubscribeAuth();
-      }
-    });
-
-    // 予期しない初期化エラーを画面に表示
-    window.addEventListener("error", event => {
-      if (errorScreen.hidden) {
-        showFatal(event.error || new Error(event.message));
-      }
-    });
-
-    window.addEventListener("unhandledrejection", event => {
-      if (errorScreen.hidden) {
-        showFatal(event.reason || new Error("不明な非同期エラー"));
-      }
-    });
-
     initialize();
+
   </script>
+
 </body>
 </html>
