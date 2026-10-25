@@ -1,350 +1,764 @@
-import {
-  requireRole,
-  auth
-} from "./auth.js";
+```javascript
+/* =========================================================
+   学習AIチャット 共通レイアウト
+   layout.js
+   ========================================================= */
 
 import {
-  signOut
-} from "./firebase.js";
-
-import {
+  auth,
   db,
-  collection,
-  query,
-  where,
-  orderBy,
-  limit,
-  getDocs
-} from "./firebase.js";
+  doc,
+  getDoc
+} from "./firebase-module.js";
 
 /* =========================================================
-   ナビゲーション設定
-   ※ 絵文字・記号アイコンは使用しない
+   パス処理
    ========================================================= */
 
-const STUDENT_LINKS = [
-  {
-    label: "ホーム",
-    href: "index.html"
-  },
-  {
-    label: "AIに質問",
-    href: "question.html"
-  },
-  {
-    label: "学習履歴",
-    href: "history.html"
-  },
-  {
-    label: "お知らせ",
-    href: "announcements.html"
-  },
-  {
-    label: "設定",
-    href: "settings.html"
-  }
-];
+function getRootPath() {
+  const path = location.pathname;
 
-const ADMIN_LINKS = [
-  {
-    label: "管理者ホーム",
-    href: "index.html"
-  },
-  {
-    label: "ユーザー管理",
-    href: "users.html"
-  },
-  {
-    label: "お知らせ管理",
-    href: "announcements.html"
-  },
-  {
-    label: "メンテナンス",
-    href: "maintenance.html"
-  },
-  {
-    label: "AI設定",
-    href: "ai-settings.html"
-  },
-  {
-    label: "操作ログ",
-    href: "logs.html"
-  },
-  {
-    label: "システム状態",
-    href: "system.html"
-  },
-  {
-    label: "管理者設定",
-    href: "settings.html"
+  if (
+    path.includes("/student/") ||
+    path.includes("/admin/")
+  ) {
+    return "../";
   }
-];
 
-let layoutStarted = false;
+  return "./";
+}
 
 /* =========================================================
-   共通DOM生成
+   サイドバーHTML
+   絵文字なし
    ========================================================= */
 
-function makeElement(
-  tag,
-  className = "",
-  text = ""
+function createSidebarHTML(
+  profile,
+  user
 ) {
-  const element =
-    document.createElement(tag);
+  const root =
+    getRootPath();
 
-  if (className) {
-    element.className =
-      className;
-  }
+  const displayName =
+    profile?.displayName ||
+    profile?.name ||
+    user?.displayName ||
+    "学習者";
 
-  if (text !== "") {
-    element.textContent =
-      text;
-  }
+  const role =
+    profile?.role || "student";
 
-  return element;
-}
+  const isAdmin =
+    role === "admin";
 
-/* =========================================================
-   エラー表示
-   ========================================================= */
+  const currentPath =
+    location.pathname;
 
-function showLayoutError(
-  message,
-  error = null
-) {
-  let box =
-    document.getElementById(
-      "layoutError"
-    );
+  const isActive =
+    fileName => {
+      return currentPath
+        .endsWith(fileName);
+    };
 
-  if (!box) {
-    box =
-      makeElement(
-        "div",
-        "layout-error"
-      );
+  const studentLinks = [
+    {
+      href: `${root}student/index.html`,
+      file: "index.html",
+      label: "ホーム"
+    },
+    {
+      href: `${root}student/question.html`,
+      file: "question.html",
+      label: "AIに質問"
+    },
+    {
+      href: `${root}student/history.html`,
+      file: "history.html",
+      label: "学習履歴"
+    },
+    {
+      href: `${root}student/announcements.html`,
+      file: "announcements.html",
+      label: "お知らせ"
+    },
+    {
+      href: `${root}student/settings.html`,
+      file: "settings.html",
+      label: "設定"
+    }
+  ];
 
-    box.id =
-      "layoutError";
+  const adminLinks = [
+    {
+      href: `${root}admin/index.html`,
+      file: "index.html",
+      label: "管理ホーム"
+    },
+    {
+      href: `${root}admin/users.html`,
+      file: "users.html",
+      label: "利用者管理"
+    },
+    {
+      href: `${root}admin/announcements.html`,
+      file: "announcements.html",
+      label: "お知らせ管理"
+    },
+    {
+      href: `${root}admin/settings.html`,
+      file: "settings.html",
+      label: "システム設定"
+    }
+  ];
 
-    const main =
-      document.querySelector(
-        "main"
-      );
+  const links =
+    isAdmin
+      ? adminLinks
+      : studentLinks;
 
-    (
-      main ||
-      document.body
-    ).prepend(box);
-  }
-
-  box.textContent =
-    error?.message
-      ? `${message} ${error.message}`
-      : message;
-}
-
-/* =========================================================
-   レスポンシブ判定
-   ========================================================= */
-
-function isMobile() {
-  return window.matchMedia(
-    "(max-width: 700px)"
-  ).matches;
-}
-
-/* =========================================================
-   サイドバー開閉
-   ========================================================= */
-
-function toggleSidebar() {
-  if (isMobile()) {
-    document.body.classList.toggle(
-      "sidebar-expanded"
-    );
-  } else {
-    document.body.classList.toggle(
-      "sidebar-collapsed"
-    );
-  }
-
-  updateToggleStates();
-}
-
-function updateToggleStates() {
-  const expanded =
-    isMobile()
-      ? document.body.classList.contains(
-          "sidebar-expanded"
-        )
-      : !document.body.classList.contains(
-          "sidebar-collapsed"
+  const navigation =
+    links.map(link => {
+      const active =
+        isActive(
+          link.file
         );
 
-  document
-    .querySelectorAll(
-      ".sidebar-toggle"
-    )
-    .forEach(button => {
-      button.setAttribute(
-        "aria-expanded",
-        String(expanded)
-      );
-    });
+      return `
+        <a
+          class="sidebar-link${active ? " active" : ""}"
+          href="${link.href}"
+          ${active ? 'aria-current="page"' : ""}
+        >
+          <span class="sidebar-link-text">
+            ${link.label}
+          </span>
+        </a>
+      `;
+    }).join("");
+
+  return `
+    <div class="sidebar-inner">
+
+      <div class="sidebar-header">
+
+        <a
+          class="sidebar-brand"
+          href="${
+            isAdmin
+              ? `${root}admin/index.html`
+              : `${root}student/index.html`
+          }"
+        >
+          <span class="sidebar-brand-title">
+            学習AIチャット
+          </span>
+        </a>
+
+        <button
+          id="sidebarCloseButton"
+          class="sidebar-close"
+          type="button"
+          aria-label="メニューを閉じる"
+        >
+          ×
+        </button>
+
+      </div>
+
+      <div class="sidebar-user">
+
+        <div class="sidebar-user-name">
+          ${escapeHTML(displayName)}
+        </div>
+
+        <div class="sidebar-user-role">
+          ${
+            isAdmin
+              ? "管理者"
+              : "学習者"
+          }
+        </div>
+
+      </div>
+
+      <nav
+        class="sidebar-nav"
+        aria-label="メインメニュー"
+      >
+        ${navigation}
+      </nav>
+
+      <div class="sidebar-bottom">
+
+        <button
+          id="sidebarLogoutButton"
+          class="sidebar-logout"
+          type="button"
+        >
+          ログアウト
+        </button>
+
+      </div>
+
+    </div>
+  `;
 }
 
-function bindSidebarToggle(
-  button
-) {
+/* =========================================================
+   HTMLエスケープ
+   ========================================================= */
+
+function escapeHTML(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+/* =========================================================
+   CSSを必要に応じて追加
+   ========================================================= */
+
+function ensureSidebarStyles() {
   if (
-    button.dataset.sidebarBound ===
-    "true"
+    document.getElementById(
+      "study-ai-layout-styles"
+    )
   ) {
     return;
   }
 
-  button.dataset.sidebarBound =
-    "true";
+  const style =
+    document.createElement("style");
 
-  button.type =
-    "button";
+  style.id =
+    "study-ai-layout-styles";
+
+  style.textContent = `
+    .app-layout {
+      min-height: 100vh;
+      display: flex;
+      width: 100%;
+    }
+
+    .sidebar {
+      width: 250px;
+      min-width: 250px;
+      min-height: 100vh;
+      background: #ffffff;
+      border-right: 1px solid #e2e8f0;
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+
+    .sidebar-inner {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-header {
+      min-height: 68px;
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .sidebar-brand {
+      color: #111827;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 17px;
+    }
+
+    .sidebar-brand:hover {
+      color: #2563eb;
+    }
+
+    .sidebar-close {
+      display: none;
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      margin: 0;
+      border: 1px solid #d1d5db;
+      border-radius: 7px;
+      background: #ffffff;
+      color: #374151;
+      cursor: pointer;
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .sidebar-user {
+      padding: 20px 18px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .sidebar-user-name {
+      color: #111827;
+      font-size: 15px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .sidebar-user-role {
+      margin-top: 5px;
+      color: #64748b;
+      font-size: 12px;
+    }
+
+    .sidebar-nav {
+      padding: 14px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .sidebar-link {
+      display: block;
+      width: 100%;
+      padding: 12px 13px;
+      border-radius: 8px;
+      color: #334155;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition:
+        background-color .15s,
+        color .15s;
+    }
+
+    .sidebar-link:hover {
+      background: #f1f5f9;
+      color: #1d4ed8;
+    }
+
+    .sidebar-link.active {
+      background: #e8f0fe;
+      color: #1d4ed8;
+      font-weight: 700;
+    }
+
+    .sidebar-bottom {
+      margin-top: auto;
+      padding: 14px 10px 20px;
+    }
+
+    .sidebar-logout {
+      width: 100%;
+      padding: 11px 13px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #334155;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .sidebar-logout:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+    }
+
+    .app-main {
+      flex: 1;
+      min-width: 0;
+      margin-left: 250px;
+      min-height: 100vh;
+    }
+
+    .page-header {
+      padding: 28px 32px 20px;
+      border-bottom: 1px solid #e2e8f0;
+      background: #ffffff;
+    }
+
+    .page-title {
+      margin: 0;
+      color: #111827;
+      font-size: 25px;
+    }
+
+    .page-header p {
+      margin: 8px 0 0;
+      color: #64748b;
+    }
+
+    .page-footer {
+      padding: 30px 20px;
+      color: #64748b;
+      text-align: center;
+      font-size: 11px;
+      line-height: 1.7;
+    }
+
+    .mobile-sidebar-button {
+      display: none;
+      position: fixed;
+      left: 14px;
+      top: 14px;
+      z-index: 1100;
+      width: 42px;
+      height: 42px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #111827;
+      cursor: pointer;
+      font-size: 22px;
+    }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 900;
+      background: rgba(15, 23, 42, .35);
+    }
+
+    @media (max-width: 800px) {
+
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform .2s ease;
+        box-shadow: 8px 0 24px rgba(15, 23, 42, .12);
+      }
+
+      .sidebar.sidebar-open {
+        transform: translateX(0);
+      }
+
+      .sidebar-close {
+        display: block;
+      }
+
+      .app-main {
+        margin-left: 0;
+      }
+
+      .mobile-sidebar-button {
+        display: block;
+      }
+
+      .sidebar-overlay.sidebar-overlay-visible {
+        display: block;
+      }
+
+      .page-header {
+        padding-left: 70px;
+      }
+    }
+  `;
+
+  document.head.appendChild(style);
+}
+
+/* =========================================================
+   モバイル用メニューボタン
+   ========================================================= */
+
+function ensureMobileMenuButton() {
+  let button =
+    document.getElementById(
+      "mobileSidebarButton"
+    );
+
+  if (button) {
+    return button;
+  }
+
+  button =
+    document.createElement("button");
+
+  button.id =
+    "mobileSidebarButton";
+
+  button.className =
+    "mobile-sidebar-button";
+
+  button.type = "button";
 
   button.setAttribute(
     "aria-label",
-    "サイドメニューを開閉"
+    "メニューを開く"
   );
+
+  button.textContent = "☰";
 
   button.addEventListener(
     "click",
-    toggleSidebar
+    () => {
+      const sidebar =
+        document.getElementById(
+          "appSidebar"
+        );
+
+      const overlay =
+        document.getElementById(
+          "sidebarOverlay"
+        );
+
+      if (!sidebar) {
+        return;
+      }
+
+      sidebar.classList.add(
+        "sidebar-open"
+      );
+
+      overlay?.classList.add(
+        "sidebar-overlay-visible"
+      );
+    }
+  );
+
+  document.body.appendChild(
+    button
+  );
+
+  return button;
+}
+
+/* =========================================================
+   オーバーレイ
+   ========================================================= */
+
+function ensureSidebarOverlay() {
+  let overlay =
+    document.getElementById(
+      "sidebarOverlay"
+    );
+
+  if (overlay) {
+    return overlay;
+  }
+
+  overlay =
+    document.createElement("div");
+
+  overlay.id =
+    "sidebarOverlay";
+
+  overlay.className =
+    "sidebar-overlay";
+
+  overlay.addEventListener(
+    "click",
+    closeSidebar
+  );
+
+  document.body.appendChild(
+    overlay
+  );
+
+  return overlay;
+}
+
+/* =========================================================
+   サイドバーを閉じる
+   ========================================================= */
+
+function closeSidebar() {
+  const sidebar =
+    document.getElementById(
+      "appSidebar"
+    );
+
+  const overlay =
+    document.getElementById(
+      "sidebarOverlay"
+    );
+
+  sidebar?.classList.remove(
+    "sidebar-open"
+  );
+
+  overlay?.classList.remove(
+    "sidebar-overlay-visible"
   );
 }
 
 /* =========================================================
-   現在ページのナビゲーション
+   サイドバーを開く
    ========================================================= */
 
-function setActiveNavigation() {
-  const currentFile =
-    location.pathname
-      .split("/")
-      .pop() ||
-    "index.html";
-
-  document
-    .querySelectorAll(
-      ".sidebar .nav-link, .sidebar .sidebar-link"
-    )
-    .forEach(link => {
-      const href =
-        link.getAttribute(
-          "href"
-        ) || "";
-
-      const targetFile =
-        href
-          .split("?")[0]
-          .split("#")[0]
-          .split("/")
-          .pop();
-
-      const active =
-        targetFile ===
-        currentFile;
-
-      link.classList.toggle(
-        "active",
-        active
-      );
-
-      if (active) {
-        link.setAttribute(
-          "aria-current",
-          "page"
-        );
-      } else {
-        link.removeAttribute(
-          "aria-current"
-        );
-      }
-    });
-}
-
-/* =========================================================
-   サイドバーセットアップ
-   ========================================================= */
-
-export function setupSidebar() {
-  document
-    .querySelectorAll(
-      ".sidebar-toggle"
-    )
-    .forEach(
-      bindSidebarToggle
+function openSidebar() {
+  const sidebar =
+    document.getElementById(
+      "appSidebar"
     );
 
-  setActiveNavigation();
+  const overlay =
+    document.getElementById(
+      "sidebarOverlay"
+    );
 
-  updateToggleStates();
+  if (!sidebar) {
+    return;
+  }
+
+  sidebar.classList.add(
+    "sidebar-open"
+  );
+
+  overlay?.classList.add(
+    "sidebar-overlay-visible"
+  );
 }
 
 /* =========================================================
-   ログアウト
+   サイドバー設定
    ========================================================= */
 
-export function setupLogout() {
-  document
-    .querySelectorAll(
-      "[data-logout], .logout-button"
-    )
-    .forEach(button => {
-      if (
-        button.dataset.logoutBound ===
-        "true"
-      ) {
-        return;
+export async function setupSidebar(
+  options = {}
+) {
+  const sidebar =
+    document.getElementById(
+      "appSidebar"
+    );
+
+  if (!sidebar) {
+    console.error(
+      "setupSidebar: #appSidebar が見つかりません。"
+    );
+
+    return false;
+  }
+
+  try {
+    /*
+      Firebaseのログインユーザーを取得。
+      ページ側で protectPage() が成功している
+      場合でも念のため確認する。
+    */
+
+    const user =
+      auth.currentUser;
+
+    if (!user) {
+      console.warn(
+        "setupSidebar: ログインユーザーが確認できません。"
+      );
+
+      return false;
+    }
+
+    /* -----------------------------------------
+       プロフィール取得
+       ----------------------------------------- */
+
+    let profile =
+      options.profile || null;
+
+    if (!profile) {
+      const snapshot =
+        await getDoc(
+          doc(
+            db,
+            "users",
+            user.uid
+          )
+        );
+
+      if (!snapshot.exists()) {
+        throw new Error(
+          "ユーザープロフィールが見つかりません。"
+        );
       }
 
-      button.dataset.logoutBound =
-        "true";
+      profile =
+        snapshot.data();
+    }
 
-      button.type =
-        "button";
+    /* -----------------------------------------
+       サイドバー描画
+       ----------------------------------------- */
 
-      button.addEventListener(
+    ensureSidebarStyles();
+
+    sidebar.innerHTML =
+      createSidebarHTML(
+        profile,
+        user
+      );
+
+    sidebar.hidden = false;
+
+    /* -----------------------------------------
+       モバイル機能
+       ----------------------------------------- */
+
+    ensureSidebarOverlay();
+
+    ensureMobileMenuButton();
+
+    const closeButton =
+      document.getElementById(
+        "sidebarCloseButton"
+      );
+
+    if (closeButton) {
+      closeButton.addEventListener(
+        "click",
+        closeSidebar
+      );
+    }
+
+    /* -----------------------------------------
+       ナビゲーションクリック
+       ----------------------------------------- */
+
+    sidebar
+      .querySelectorAll(
+        ".sidebar-link"
+      )
+      .forEach(link => {
+        link.addEventListener(
+          "click",
+          () => {
+            closeSidebar();
+          }
+        );
+      });
+
+    /* -----------------------------------------
+       ログアウト
+       ----------------------------------------- */
+
+    const logoutButton =
+      document.getElementById(
+        "sidebarLogoutButton"
+      );
+
+    if (logoutButton) {
+      logoutButton.addEventListener(
         "click",
         async () => {
           if (
-            button.disabled
+            logoutButton.disabled
           ) {
             return;
           }
 
-          button.disabled =
+          logoutButton.disabled =
             true;
 
+          logoutButton.textContent =
+            "ログアウト中...";
+
           try {
-            await signOut(
-              auth
-            );
-
-            const nested =
-              location.pathname.includes(
-                "/student/"
-              ) ||
-              location.pathname.includes(
-                "/admin/"
-              );
-
-            location.replace(
-              nested
-                ? "../login.html"
-                : "./login.html"
-            );
+            await signOutUser();
 
           } catch (error) {
             console.error(
@@ -352,256 +766,162 @@ export function setupLogout() {
               error
             );
 
-            button.disabled =
+            logoutButton.disabled =
               false;
 
-            showLayoutError(
-              "ログアウトに失敗しました。",
-              error
+            logoutButton.textContent =
+              "ログアウト";
+
+            alert(
+              "ログアウトに失敗しました。"
             );
           }
         }
       );
-    });
-}
-
-/* =========================================================
-   ナビゲーションリンク生成
-   ※ アイコン・絵文字は使用しない
-   ========================================================= */
-
-function createNavigationLink(
-  item,
-  currentFile
-) {
-  const link =
-    makeElement(
-      "a",
-      "sidebar-link"
-    );
-
-  link.href =
-    item.href;
-
-  const targetFile =
-    item.href
-      .split("?")[0]
-      .split("#")[0]
-      .split("/")
-      .pop();
-
-  if (
-    targetFile ===
-    currentFile
-  ) {
-    link.classList.add(
-      "active"
-    );
-
-    link.setAttribute(
-      "aria-current",
-      "page"
-    );
-  }
-
-  const label =
-    makeElement(
-      "span",
-      "sidebar-label",
-      item.label
-    );
-
-  link.append(
-    label
-  );
-
-  return link;
-}
-
-/* =========================================================
-   日付フォーマット
-   ========================================================= */
-
-function formatDate(
-  value
-) {
-  if (!value) {
-    return "";
-  }
-
-  let date;
-
-  try {
-    date =
-      typeof value.toDate ===
-      "function"
-        ? value.toDate()
-        : new Date(value);
-  } catch {
-    return "";
-  }
-
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
-    return "";
-  }
-
-  return new Intl.DateTimeFormat(
-    "ja-JP",
-    {
-      month: "numeric",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    }
-  ).format(date);
-}
-
-/* =========================================================
-   最近の会話
-   ========================================================= */
-
-async function renderRecentConversations(
-  sidebar,
-  user
-) {
-  const section =
-    makeElement(
-      "section",
-      "sidebar-history"
-    );
-
-  const heading =
-    makeElement(
-      "h2",
-      "sidebar-history-heading",
-      "最近の会話"
-    );
-
-  const list =
-    makeElement(
-      "div",
-      "sidebar-history-list"
-    );
-
-  list.id =
-    "sidebarRecentHistory";
-
-  list.textContent =
-    "履歴を読み込んでいます...";
-
-  section.append(
-    heading,
-    list
-  );
-
-  sidebar.append(
-    section
-  );
-
-  try {
-    const historyQuery =
-      query(
-        collection(
-          db,
-          "chatHistories"
-        ),
-        where(
-          "userId",
-          "==",
-          user.uid
-        ),
-        orderBy(
-          "updatedAt",
-          "desc"
-        ),
-        limit(8)
-      );
-
-    const snapshot =
-      await getDocs(
-        historyQuery
-      );
-
-    list.replaceChildren();
-
-    if (
-      snapshot.empty
-    ) {
-      list.textContent =
-        "まだ会話履歴はありません。";
-
-      return;
     }
 
-    snapshot.forEach(
-      conversationDoc => {
-        const data =
-          conversationDoc.data();
+    /*
+      重要：
+      サイドバー描画完了をイベントとして通知。
+    */
 
-        const link =
-          makeElement(
-            "a",
-            "sidebar-history-link"
-          );
-
-        link.href =
-          `question.html?conversationId=${encodeURIComponent(
-            conversationDoc.id
-          )}`;
-
-        const title =
-          makeElement(
-            "span",
-            "sidebar-history-title",
-            data.title ||
-              data.lastQuestion ||
-              "会話"
-          );
-
-        const date =
-          makeElement(
-            "small",
-            "sidebar-history-date",
-            formatDate(
-              data.updatedAt
-            )
-          );
-
-        link.append(
-          title,
-          date
-        );
-
-        list.append(
-          link
-        );
-      }
+    document.dispatchEvent(
+      new CustomEvent(
+        "study-ai-sidebar-ready",
+        {
+          detail: {
+            user,
+            profile
+          }
+        }
+      )
     );
+
+    return true;
 
   } catch (error) {
     console.error(
-      "会話履歴取得エラー:",
+      "サイドバー初期化エラー:",
       error
     );
 
-    list.textContent =
-      "履歴を読み込めませんでした。";
+    sidebar.innerHTML = `
+      <div
+        style="
+          padding:20px;
+          color:#b91c1c;
+          font-size:14px;
+          line-height:1.7;
+        "
+      >
+        サイドバーを読み込めませんでした。
+      </div>
+    `;
+
+    return false;
   }
 }
 
 /* =========================================================
-   サイドバー本体
+   ログアウト
    ========================================================= */
 
-async function renderSidebar(
-  role,
-  user,
-  profile
+async function signOutUser() {
+  await auth.signOut();
+
+  location.replace(
+    rootPath("login.html")
+  );
+}
+
+/* =========================================================
+   外部からログアウト設定
+   ========================================================= */
+
+export function setupLogout(
+  authInstance = auth,
+  signOutFunction = null
 ) {
+  const button =
+    document.getElementById(
+      "sidebarLogoutButton"
+    );
+
+  if (!button) {
+    return false;
+  }
+
+  /*
+    既にイベントが設定されている場合は
+    二重登録を防止。
+  */
+
+  if (
+    button.dataset.logoutReady ===
+    "true"
+  ) {
+    return true;
+  }
+
+  button.dataset.logoutReady =
+    "true";
+
+  button.addEventListener(
+    "click",
+    async () => {
+      if (
+        button.disabled
+      ) {
+        return;
+      }
+
+      button.disabled =
+        true;
+
+      button.textContent =
+        "ログアウト中...";
+
+      try {
+        if (
+          typeof signOutFunction ===
+          "function"
+        ) {
+          await signOutFunction(
+            authInstance
+          );
+        } else {
+          await authInstance.signOut();
+        }
+
+        location.replace(
+          rootPath(
+            "login.html"
+          )
+        );
+
+      } catch (error) {
+        console.error(
+          "ログアウトエラー:",
+          error
+        );
+
+        button.disabled =
+          false;
+
+        button.textContent =
+          "ログアウト";
+      }
+    }
+  );
+
+  return true;
+}
+
+/* =========================================================
+   現在ページのサイドバー表示
+   ========================================================= */
+
+export function refreshSidebar() {
   const sidebar =
     document.getElementById(
       "appSidebar"
@@ -611,311 +931,94 @@ async function renderSidebar(
     return;
   }
 
-  sidebar.replaceChildren();
-
-  /* -------------------------------------------------------
-     ブランド
-     ------------------------------------------------------- */
-
-  const brand =
-    makeElement(
-      "div",
-      "sidebar-header"
-    );
-
-  const brandTitle =
-    makeElement(
-      "strong",
-      "sidebar-brand-title",
-      role === "admin"
-        ? "運営管理コンソール"
-        : "学習AIチャット"
-    );
-
-  brand.append(
-    brandTitle
-  );
-
-  sidebar.append(
-    brand
-  );
-
-  /* -------------------------------------------------------
-     メニュー開閉ボタン
-     ※ 絵文字・記号ではなく文字表示
-     ------------------------------------------------------- */
-
-  const toggleRow =
-    makeElement(
-      "div",
-      "sidebar-toggle-row"
-    );
-
-  const toggle =
-    makeElement(
-      "button",
-      "sidebar-toggle",
-      "メニュー"
-    );
-
-  bindSidebarToggle(
-    toggle
-  );
-
-  toggleRow.append(
-    toggle
-  );
-
-  sidebar.append(
-    toggleRow
-  );
-
-  /* -------------------------------------------------------
-     ユーザー名
-     ------------------------------------------------------- */
-
-  const userName =
-    profile.displayName ||
-    user.displayName ||
-    user.email ||
-    "ユーザー";
-
-  const name =
-    makeElement(
-      "div",
-      "sidebar-user",
-      userName
-    );
-
-  sidebar.append(
-    name
-  );
-
-  /* -------------------------------------------------------
-     メインナビゲーション
-     ------------------------------------------------------- */
-
-  const nav =
-    makeElement(
-      "nav",
-      "sidebar-nav"
-    );
-
-  nav.setAttribute(
-    "aria-label",
-    "メインメニュー"
-  );
-
-  const currentFile =
-    location.pathname
-      .split("/")
-      .pop() ||
-    "index.html";
-
-  const links =
-    role === "admin"
-      ? ADMIN_LINKS
-      : STUDENT_LINKS;
-
-  links.forEach(
-    item => {
-      nav.append(
-        createNavigationLink(
-          item,
-          currentFile
-        )
-      );
-    }
-  );
-
-  sidebar.append(
-    nav
-  );
-
-  /* -------------------------------------------------------
-     学生用：最近の会話
-     ------------------------------------------------------- */
-
-  if (
-    role === "student"
-  ) {
-    await renderRecentConversations(
-      sidebar,
-      user
-    );
-  }
-
-  /* -------------------------------------------------------
-     ログアウト
-     ------------------------------------------------------- */
-
-  const logout =
-    makeElement(
-      "button",
-      "sidebar-link logout-button",
-      "ログアウト"
-    );
-
-  logout.type =
-    "button";
-
-  logout.dataset.logout =
-    "";
-
-  sidebar.append(
-    logout
-  );
-
-  setupSidebar();
-  setupLogout();
-}
-
-/* =========================================================
-   レイアウト開始
-   ========================================================= */
-
-async function startLayout() {
-  if (
-    layoutStarted
-  ) {
-    return;
-  }
-
-  const role =
-    document.body.dataset.role;
-
-  if (
-    role !== "student" &&
-    role !== "admin"
-  ) {
-    setupSidebar();
-    setupLogout();
-    return;
-  }
-
-  layoutStarted =
-    true;
-
-  try {
-    const result =
-      await requireRole(
-        role,
-        {
-          allowMaintenance:
-            role === "admin"
-        }
-      );
-
-    if (!result) {
-      return;
-    }
-
-    await renderSidebar(
-      role,
-      result.user,
-      result.profile
-    );
-
-    /* -------------------------------------------------------
-       現在のユーザー名
-       ------------------------------------------------------- */
-
-    const nameElement =
-      document.getElementById(
-        "currentUserName"
-      );
-
-    if (
-      nameElement
-    ) {
-      nameElement.textContent =
-        result.profile.displayName ||
-        result.user.displayName ||
-        result.user.email ||
-        "ユーザー";
-    }
-
-    /* -------------------------------------------------------
-       フッター
-       ------------------------------------------------------- */
-
-    const footer =
-      document.querySelector(
-        ".app-footer"
-      );
-
-    if (
-      footer
-    ) {
-      footer.textContent =
-        "© 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.";
-    }
-
-    /* -------------------------------------------------------
-       初期化完了
-       ------------------------------------------------------- */
-
-    document.documentElement.classList.remove(
-      "auth-pending"
-    );
-
-    document.body.classList.remove(
-      "auth-pending"
-    );
-
-  } catch (error) {
-    console.error(
-      "画面初期化エラー:",
-      error
-    );
-
-    showLayoutError(
-      "画面を初期化できませんでした。",
-      error
-    );
-
-    document.documentElement.classList.remove(
-      "auth-pending"
-    );
-
-    document.body.classList.remove(
-      "auth-pending"
-    );
-  }
-}
-
-/* =========================================================
-   初期実行
-   ========================================================= */
-
-if (
-  typeof document !==
-  "undefined"
-) {
-  if (
-    document.body &&
-    (
-      document.body.dataset.role ===
-        "student" ||
-      document.body.dataset.role ===
-        "admin"
+  sidebar
+    .querySelectorAll(
+      ".sidebar-link"
     )
-  ) {
-    startLayout();
+    .forEach(link => {
+      const href =
+        link.getAttribute(
+          "href"
+        );
 
-  } else {
-    setupSidebar();
-    setupLogout();
-  }
+      if (!href) {
+        return;
+      }
+
+      try {
+        const url =
+          new URL(
+            href,
+            location.href
+          );
+
+        const current =
+          new URL(
+            location.href
+          );
+
+        const active =
+          url.pathname ===
+          current.pathname;
+
+        link.classList.toggle(
+          "active",
+          active
+        );
+
+        if (active) {
+          link.setAttribute(
+            "aria-current",
+            "page"
+          );
+        } else {
+          link.removeAttribute(
+            "aria-current"
+          );
+        }
+
+      } catch {
+        /* 無効なURLは無視 */
+      }
+    });
 }
 
 /* =========================================================
-   画面サイズ変更時
+   自動初期化
    ========================================================= */
 
-window.addEventListener(
-  "resize",
-  () => {
-    updateToggleStates();
+export async function initializeLayout(
+  options = {}
+) {
+  /*
+    ページ読み込み時に #appSidebar が
+    既に存在する場合だけ初期化。
+  */
+
+  const sidebar =
+    document.getElementById(
+      "appSidebar"
+    );
+
+  if (!sidebar) {
+    return false;
   }
-);
+
+  return await setupSidebar(
+    options
+  );
+}
+
+/* =========================================================
+   グローバル公開
+   ========================================================= */
+
+window.StudyAILayout = {
+  setupSidebar,
+  setupLogout,
+  refreshSidebar,
+  initializeLayout,
+  openSidebar,
+  closeSidebar
+};
+```
