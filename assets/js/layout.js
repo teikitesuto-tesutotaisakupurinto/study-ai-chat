@@ -1,193 +1,454 @@
-/* =========================================================
-   学習AIチャット 共通レイアウト
-   ========================================================= */
-
 const NAV_ITEMS = [
   {
-    href: "index.html",
     label: "ホーム",
-    icon: "⌂"
+    href: "index.html",
+    key: "home"
   },
   {
-    href: "question.html",
     label: "AIに質問",
-    icon: "?"
+    href: "question.html",
+    key: "question"
   },
   {
-    href: "history.html",
     label: "学習履歴",
-    icon: "▤"
+    href: "history.html",
+    key: "history"
   },
   {
-    href: "announcements.html",
     label: "お知らせ",
-    icon: "!"
+    href: "announcements.html",
+    key: "announcements"
   },
   {
-    href: "settings.html",
     label: "設定",
-    icon: "⚙"
+    href: "settings.html",
+    key: "settings"
   }
 ];
 
 function isStudentPage() {
-  return location.pathname.includes("/student/");
+  return location.pathname.includes(
+    "/student/"
+  );
 }
 
-function getStudentRoot() {
-  return isStudentPage() ? "./" : "./student/";
+function studentPath(file) {
+  if (isStudentPage()) {
+    return `./${file}`;
+  }
+
+  return `./student/${file}`;
 }
 
-function getCurrentFile() {
-  const pathname = location.pathname;
-  const file = pathname.split("/").pop();
+function getCurrentKey() {
+  const file =
+    location.pathname
+      .split("/")
+      .pop()
+      ?.toLowerCase() || "";
 
-  return file || "index.html";
-}
-
-function createElement(tag, options = {}) {
-  const element = document.createElement(tag);
-
-  if (options.className) {
-    element.className = options.className;
+  if (file === "index.html") {
+    return "home";
   }
 
-  if (options.text) {
-    element.textContent = options.text;
+  if (
+    file === "question.html"
+  ) {
+    return "question";
   }
 
-  if (options.id) {
-    element.id = options.id;
+  if (
+    file === "history.html"
+  ) {
+    return "history";
   }
 
-  return element;
+  if (
+    file === "announcements.html"
+  ) {
+    return "announcements";
+  }
+
+  if (
+    file === "settings.html"
+  ) {
+    return "settings";
+  }
+
+  return "";
 }
 
 function createSidebar() {
-  const sidebar = createElement("aside", {
-    className: "student-sidebar"
-  });
+  const sidebar =
+    document.createElement("aside");
 
-  const brand = createElement("div", {
-    className: "sidebar-brand"
-  });
+  sidebar.id = "studySidebar";
+  sidebar.className =
+    "study-sidebar";
 
-  const brandTitle = createElement("div", {
-    className: "sidebar-brand-title",
-    text: "学習AIチャット"
-  });
+  sidebar.innerHTML = `
+    <div class="sidebar-inner">
 
-  const brandSubtitle = createElement("div", {
-    className: "sidebar-brand-subtitle",
-    text: "中学生向け学習サポート"
-  });
+      <div class="sidebar-brand">
+        <a href="${studentPath(
+          "index.html"
+        )}">
+          <span class="brand-title">
+            学習AIチャット
+          </span>
+          <span class="brand-subtitle">
+            学習専用AI
+          </span>
+        </a>
+      </div>
 
-  brand.append(
-    brandTitle,
-    brandSubtitle
-  );
+      <nav
+        class="sidebar-nav"
+        aria-label="メインメニュー"
+      >
+        ${NAV_ITEMS.map(item => `
+          <a
+            class="sidebar-link"
+            data-nav-key="${item.key}"
+            href="${studentPath(
+              item.href
+            )}"
+          >
+            <span class="sidebar-link-text">
+              ${item.label}
+            </span>
+          </a>
+        `).join("")}
+      </nav>
 
-  const navigation = createElement("nav", {
-    className: "sidebar-nav"
-  });
+      <div class="sidebar-bottom">
 
-  navigation.setAttribute(
-    "aria-label",
-    "メインメニュー"
-  );
+        <div
+          class="sidebar-user"
+          id="sidebarUser"
+        >
+          <div
+            class="sidebar-user-label"
+          >
+            ログイン中
+          </div>
 
-  const currentFile =
-    getCurrentFile();
+          <div
+            class="sidebar-user-name"
+            id="sidebarUserName"
+          >
+            読み込み中
+          </div>
+        </div>
 
-  for (const item of NAV_ITEMS) {
-    const link = document.createElement("a");
+        <button
+          id="sidebarLogout"
+          class="sidebar-logout"
+          type="button"
+        >
+          ログアウト
+        </button>
 
-    link.className =
-      "sidebar-nav-item";
+      </div>
 
-    link.href =
-      `${getStudentRoot()}${item.href}`;
-
-    link.dataset.page =
-      item.href;
-
-    if (
-      currentFile === item.href
-    ) {
-      link.classList.add("active");
-      link.setAttribute(
-        "aria-current",
-        "page"
-      );
-    }
-
-    const icon =
-      createElement("span", {
-        className:
-          "sidebar-nav-icon",
-        text: item.icon
-      });
-
-    const label =
-      createElement("span", {
-        className:
-          "sidebar-nav-label",
-        text: item.label
-      });
-
-    link.append(
-      icon,
-      label
-    );
-
-    navigation.append(link);
-  }
-
-  const bottom =
-    createElement("div", {
-      className:
-        "sidebar-bottom"
-    });
-
-  const logout =
-    createElement("button", {
-      className:
-        "sidebar-logout",
-      text: "ログアウト"
-    });
-
-  logout.type = "button";
-  logout.id = "sidebarLogout";
-
-  bottom.append(logout);
-
-  sidebar.append(
-    brand,
-    navigation,
-    bottom
-  );
+    </div>
+  `;
 
   return sidebar;
 }
 
-export function setupSidebar() {
-  const oldSidebar =
+function injectStyles() {
+  if (
+    document.getElementById(
+      "study-layout-style"
+    )
+  ) {
+    return;
+  }
+
+  const style =
+    document.createElement("style");
+
+  style.id =
+    "study-layout-style";
+
+  style.textContent = `
+    .study-sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: 240px;
+      background: #ffffff;
+      border-right: 1px solid #e2e8f0;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+
+    .sidebar-inner {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-brand {
+      padding: 24px 20px 20px;
+      border-bottom: 1px solid #edf1f5;
+    }
+
+    .sidebar-brand a {
+      display: block;
+      color: #0f172a;
+      text-decoration: none;
+    }
+
+    .brand-title {
+      display: block;
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: .01em;
+    }
+
+    .brand-subtitle {
+      display: block;
+      margin-top: 5px;
+      color: #64748b;
+      font-size: 12px;
+    }
+
+    .sidebar-nav {
+      display: grid;
+      gap: 4px;
+      padding: 16px 12px;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      min-height: 46px;
+      padding: 0 14px;
+      border-radius: 8px;
+      color: #334155;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      transition:
+        background-color .15s ease,
+        color .15s ease;
+    }
+
+    .sidebar-link:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .sidebar-link.active {
+      background: #e8f0fe;
+      color: #1d4ed8;
+    }
+
+    .sidebar-bottom {
+      margin-top: auto;
+      padding: 16px;
+      border-top: 1px solid #edf1f5;
+    }
+
+    .sidebar-user {
+      padding: 12px;
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+
+    .sidebar-user-label {
+      color: #64748b;
+      font-size: 11px;
+    }
+
+    .sidebar-user-name {
+      margin-top: 4px;
+      color: #0f172a;
+      font-size: 13px;
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+
+    .sidebar-logout {
+      width: 100%;
+      margin-top: 10px;
+      min-height: 42px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #fff;
+      color: #334155;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .sidebar-logout:hover {
+      background: #f8fafc;
+    }
+
+    .app-layout {
+      min-height: 100vh;
+    }
+
+    .app-main {
+      min-height: 100vh;
+      margin-left: 240px;
+      padding: 0;
+    }
+
+    .page-header {
+      padding: 34px 42px 24px;
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .page-title {
+      margin: 0;
+      color: #0f172a;
+      font-size: 26px;
+      line-height: 1.35;
+    }
+
+    .page-header p {
+      margin: 8px 0 0;
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .page-footer {
+      margin-top: 50px;
+      padding: 24px;
+      color: #94a3b8;
+      text-align: center;
+      font-size: 11px;
+    }
+
+    @media (max-width: 760px) {
+      .study-sidebar {
+        position: fixed;
+        width: 220px;
+        transform: translateX(-100%);
+        transition: transform .2s ease;
+      }
+
+      .study-sidebar.mobile-open {
+        transform: translateX(0);
+      }
+
+      .app-main {
+        margin-left: 0;
+      }
+
+      .page-header {
+        padding: 28px 20px 20px;
+      }
+
+      .page-title {
+        font-size: 22px;
+      }
+    }
+  `;
+
+  document.head.appendChild(style);
+}
+
+export function setupSidebar(
+  profile = null,
+  options = {}
+) {
+  injectStyles();
+
+  let sidebar =
     document.getElementById(
       "appSidebar"
     );
 
-  if (!oldSidebar) {
-    return null;
+  if (!sidebar) {
+    sidebar =
+      document.createElement("aside");
+
+    sidebar.id = "appSidebar";
+
+    const main =
+      document.querySelector(
+        "main"
+      );
+
+    if (
+      main &&
+      main.parentElement
+    ) {
+      main.parentElement.insertBefore(
+        sidebar,
+        main
+      );
+    } else {
+      document.body.prepend(
+        sidebar
+      );
+    }
   }
 
-  oldSidebar.replaceChildren();
+  sidebar.replaceWith(
+    createSidebar()
+  );
 
-  const sidebar =
-    createSidebar();
+  const newSidebar =
+    document.getElementById(
+      "studySidebar"
+    );
 
-  oldSidebar.appendChild(sidebar);
+  const currentKey =
+    getCurrentKey();
 
-  return sidebar;
+  newSidebar
+    .querySelectorAll(
+      ".sidebar-link"
+    )
+    .forEach(link => {
+      if (
+        link.dataset.navKey ===
+        currentKey
+      ) {
+        link.classList.add(
+          "active"
+        );
+        link.setAttribute(
+          "aria-current",
+          "page"
+        );
+      }
+    });
+
+  if (profile) {
+    setSidebarUser(profile);
+  }
+
+  if (
+    options.mobileButton !== false
+  ) {
+    setupMobileMenu();
+  }
+
+  return newSidebar;
+}
+
+export function setSidebarUser(
+  profile
+) {
+  const name =
+    profile?.displayName ||
+    profile?.name ||
+    "学習者";
+
+  const element =
+    document.getElementById(
+      "sidebarUserName"
+    );
+
+  if (element) {
+    element.textContent = name;
+  }
 }
 
 export function setupLogout(
@@ -207,41 +468,33 @@ export function setupLogout(
     "click",
     async () => {
       if (
-        button.dataset.busy === "true"
+        !confirm(
+          "ログアウトしますか？"
+        )
       ) {
         return;
       }
-
-      const confirmed =
-        window.confirm(
-          "ログアウトしますか？"
-        );
-
-      if (!confirmed) {
-        return;
-      }
-
-      button.dataset.busy =
-        "true";
 
       button.disabled = true;
       button.textContent =
         "ログアウト中...";
 
       try {
-        await signOutFunction(auth);
+        await signOutFunction(
+          auth
+        );
 
         location.replace(
-          "../login.html"
+          isStudentPage()
+            ? "../login.html"
+            : "./login.html"
         );
+
       } catch (error) {
         console.error(
           "ログアウトエラー:",
           error
         );
-
-        button.dataset.busy =
-          "false";
 
         button.disabled =
           false;
@@ -249,10 +502,89 @@ export function setupLogout(
         button.textContent =
           "ログアウト";
 
-        window.alert(
+        alert(
           "ログアウトに失敗しました。もう一度お試しください。"
         );
       }
+    }
+  );
+}
+
+function setupMobileMenu() {
+  if (
+    document.getElementById(
+      "mobileMenuButton"
+    )
+  ) {
+    return;
+  }
+
+  const button =
+    document.createElement(
+      "button"
+    );
+
+  button.id =
+    "mobileMenuButton";
+
+  button.type =
+    "button";
+
+  button.textContent =
+    "メニュー";
+
+  button.setAttribute(
+    "aria-label",
+    "メニューを開く"
+  );
+
+  button.style.cssText = `
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 1100;
+    display: none;
+    min-width: 82px;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 600;
+  `;
+
+  document.body.appendChild(
+    button
+  );
+
+  const update =
+    () => {
+      button.style.display =
+        window.innerWidth <= 760
+          ? "block"
+          : "none";
+    };
+
+  update();
+
+  window.addEventListener(
+    "resize",
+    update
+  );
+
+  button.addEventListener(
+    "click",
+    () => {
+      const sidebar =
+        document.getElementById(
+          "studySidebar"
+        );
+
+      sidebar?.classList.toggle(
+        "mobile-open"
+      );
     }
   );
 }
