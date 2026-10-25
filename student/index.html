@@ -2,15 +2,18 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <meta name="theme-color" content="#f4f7fb">
   <meta
-    name="description"
-    content="学習AIチャット"
+    name="viewport"
+    content="width=device-width, initial-scale=1"
   >
 
-  <title>ホーム | 学習AIチャット</title>
+  <meta
+    name="theme-color"
+    content="#f4f7fb"
+  >
+
+  <title>学習ホーム | 学習AIチャット</title>
 
   <link
     rel="stylesheet"
@@ -23,299 +26,22 @@
   >
 
   <style>
-    /* =====================================================
-       基本
-       ===================================================== */
-
-    :root {
-      --primary: #2563eb;
-      --primary-dark: #1d4ed8;
-      --text: #172033;
-      --muted: #64748b;
-      --border: #e2e8f0;
-      --background: #f4f7fb;
-      --white: #ffffff;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
-      margin: 0;
-      min-height: 100%;
-      background: var(--background);
-      color: var(--text);
-    }
-
-    body {
-      font-family:
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Noto Sans JP",
-        "Hiragino Kaku Gothic ProN",
-        Meiryo,
-        sans-serif;
-      font-synthesis: none;
-    }
-
-    a {
-      color: inherit;
-    }
-
-    button,
-    input,
-    textarea {
-      font: inherit;
-    }
-
-    /* =====================================================
-       レイアウト
-       ===================================================== */
-
-    .app-layout {
-      min-height: 100vh;
-      display: flex;
-    }
-
-    /*
-      サイドバーは外部データを必要としない。
-      JSでHTMLを直接生成する。
-    */
-
-    .sidebar {
-      width: 250px;
-      min-width: 250px;
-      min-height: 100vh;
-
-      background: #ffffff;
-
-      border-right:
-        1px solid
-        #e2e8f0;
-
-      position: fixed;
-      inset: 0 auto 0 0;
-
-      z-index: 1000;
-
-      overflow-y: auto;
-    }
-
-    .app-main {
-      width: 100%;
-      min-width: 0;
-
-      margin-left: 250px;
-
-      padding:
-        28px
-        34px
-        40px;
-    }
-
-    /* =====================================================
-       独立サイドバー
-       ===================================================== */
-
-    .local-sidebar {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .local-sidebar-header {
-      padding: 24px 20px 20px;
-
-      border-bottom:
-        1px solid
-        #e2e8f0;
-    }
-
-    .local-sidebar-brand {
-      font-size: 19px;
-      font-weight: 800;
-
-      letter-spacing:
-        -.025em;
-    }
-
-    .local-sidebar-subtitle {
-      margin-top: 5px;
-
-      font-size: 12px;
-
-      color:
-        #64748b;
-    }
-
-    .local-sidebar-nav {
-      padding: 16px 12px;
-
-      display: grid;
-      gap: 5px;
-    }
-
-    .local-sidebar-link {
-      display: flex;
-      align-items: center;
-
-      min-height: 46px;
-
-      padding:
-        0 14px;
-
-      border-radius: 9px;
-
-      color:
-        #334155;
-
-      text-decoration: none;
-
-      font-size: 14px;
-      font-weight: 600;
-
-      transition:
-        background .15s,
-        color .15s;
-    }
-
-    .local-sidebar-link:hover {
-      background:
-        #f1f5f9;
-    }
-
-    .local-sidebar-link.active {
-      background:
-        #eff6ff;
-
-      color:
-        #1d4ed8;
-    }
-
-    .local-sidebar-bottom {
-      margin-top: auto;
-
-      padding: 14px 12px 18px;
-
-      border-top:
-        1px solid
-        #e2e8f0;
-    }
-
-    .local-sidebar-logout {
-      width: 100%;
-
-      min-height: 44px;
-
-      border:
-        1px solid
-        #cbd5e1;
-
-      border-radius: 9px;
-
-      background:
-        #ffffff;
-
-      color:
-        #334155;
-
-      cursor: pointer;
-
-      font-weight: 700;
-    }
-
-    .local-sidebar-logout:hover {
-      background:
-        #f8fafc;
-    }
-
-    .local-sidebar-version {
-      margin-top: 12px;
-
-      text-align: center;
-
-      color:
-        #94a3b8;
-
-      font-size: 10px;
-
-      line-height: 1.6;
-    }
-
-    /* =====================================================
-       モバイル
-       ===================================================== */
-
-    .mobile-sidebar-button {
-      display: none;
-    }
-
-    /* =====================================================
-       ヘッダー
-       ===================================================== */
-
-    .page-header {
-      margin-bottom: 28px;
-    }
-
-    .page-title {
-      margin: 0;
-
-      font-size:
-        clamp(
-          26px,
-          4vw,
-          34px
-        );
-
-      letter-spacing:
-        -.04em;
-    }
-
-    .page-description {
-      margin:
-        8px 0 0;
-
-      color:
-        var(--muted);
-
-      line-height:
-        1.8;
-    }
-
-    /* =====================================================
-       ホームカード
-       ===================================================== */
 
     .home-section {
-      margin:
-        0 0 24px;
+      margin: 24px 0;
     }
 
     .home-card {
       display: block;
+      padding: 24px;
 
-      padding:
-        28px;
+      border: 1px solid #dbe3ef;
+      border-radius: 14px;
 
-      border:
-        1px solid
-        #dbe3ef;
+      background: #fff;
+      color: inherit;
 
-      border-radius:
-        16px;
-
-      background:
-        #ffffff;
-
-      color:
-        inherit;
-
-      text-decoration:
-        none;
+      text-decoration: none;
 
       transition:
         border-color .15s,
@@ -324,134 +50,42 @@
     }
 
     .home-card:hover {
-      border-color:
-        #93c5fd;
-
+      border-color: #2563eb;
       box-shadow:
-        0 8px 26px
+        0 8px 24px
         rgb(15 23 42 / 8%);
 
-      transform:
-        translateY(-1px);
+      transform: translateY(-1px);
     }
 
     .home-card h2 {
-      margin:
-        0 0 8px;
-
-      font-size:
-        21px;
+      margin-top: 0;
     }
 
     .home-card p {
-      margin: 0;
-
-      color:
-        #475569;
-
-      line-height:
-        1.8;
-    }
-
-    .home-card-action {
-      margin-top: 20px;
-
-      display: inline-flex;
-
-      min-height: 42px;
-
-      padding:
-        0 17px;
-
-      align-items: center;
-
-      border-radius:
-        8px;
-
-      background:
-        #2563eb;
-
-      color:
-        #ffffff;
-
-      font-size:
-        14px;
-
-      font-weight:
-        700;
-    }
-
-    /* =====================================================
-       最近の学習
-       ===================================================== */
-
-    .card {
-      padding:
-        24px;
-
-      border:
-        1px solid
-        var(--border);
-
-      border-radius:
-        16px;
-
-      background:
-        #ffffff;
-    }
-
-    .card h2 {
-      margin:
-        0 0 8px;
-
-      font-size:
-        20px;
-    }
-
-    .card-description {
-      margin:
-        0;
-
-      color:
-        #64748b;
-
-      line-height:
-        1.8;
+      margin-bottom: 0;
+      color: #475569;
+      line-height: 1.8;
     }
 
     .history-list {
-      display:
-        grid;
-
-      gap:
-        10px;
-
-      margin-top:
-        18px;
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
     }
 
     .history-item {
-      display:
-        block;
+      display: block;
 
-      padding:
-        16px 18px;
+      padding: 15px 16px;
 
-      border:
-        1px solid
-        #e2e8f0;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
 
-      border-radius:
-        11px;
+      color: inherit;
+      text-decoration: none;
 
-      color:
-        inherit;
-
-      text-decoration:
-        none;
-
-      overflow-wrap:
-        anywhere;
+      overflow-wrap: anywhere;
 
       transition:
         background .15s,
@@ -459,172 +93,26 @@
     }
 
     .history-item:hover {
-      background:
-        #f8fafc;
-
-      border-color:
-        #94a3b8;
+      background: #f8fafc;
+      border-color: #94a3b8;
     }
 
     .history-title {
-      font-weight:
-        700;
-
-      line-height:
-        1.6;
+      font-weight: 700;
+      margin-bottom: 5px;
     }
 
     .history-date {
-      margin-top:
-        5px;
-
-      color:
-        #64748b;
-
-      font-size:
-        12px;
-    }
-
-    .history-empty {
-      padding:
-        24px 12px;
-
-      text-align:
-        center;
-
-      color:
-        #64748b;
-
-      font-size:
-        14px;
+      color: #64748b;
+      font-size: .85rem;
     }
 
     .home-error {
-      margin-top:
-        14px;
-
-      color:
-        #b91c1c;
-
-      white-space:
-        pre-wrap;
-
-      overflow-wrap:
-        anywhere;
-
-      font-size:
-        13px;
+      color: #b91c1c;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
     }
 
-    /* =====================================================
-       フッター
-       ===================================================== */
-
-    .page-footer {
-      margin-top:
-        40px;
-
-      padding:
-        20px 0;
-
-      text-align:
-        center;
-
-      color:
-        #94a3b8;
-
-      font-size:
-        11px;
-
-      line-height:
-        1.7;
-    }
-
-    /* =====================================================
-       モバイル
-       ===================================================== */
-
-    @media (max-width: 800px) {
-
-      .sidebar {
-        transform:
-          translateX(-100%);
-
-        transition:
-          transform .2s;
-      }
-
-      .sidebar.mobile-open {
-        transform:
-          translateX(0);
-
-        box-shadow:
-          8px 0 30px
-          rgb(15 23 42 / 12%);
-      }
-
-      .app-main {
-        margin-left:
-          0;
-
-        padding:
-          22px
-          18px
-          30px;
-      }
-
-      .mobile-sidebar-button {
-        display:
-          inline-flex;
-
-        align-items:
-          center;
-
-        justify-content:
-          center;
-
-        width:
-          44px;
-
-        height:
-          44px;
-
-        margin-bottom:
-          18px;
-
-        border:
-          1px solid
-          #cbd5e1;
-
-        border-radius:
-          9px;
-
-        background:
-          #ffffff;
-
-        color:
-          #172033;
-
-        cursor:
-          pointer;
-
-        font-size:
-          20px;
-      }
-    }
-
-    @media (max-width: 500px) {
-
-      .home-card {
-        padding:
-          21px;
-      }
-
-      .card {
-        padding:
-          19px;
-      }
-    }
   </style>
 </head>
 
@@ -632,42 +120,21 @@
 
   <div class="app-layout">
 
-    <!--
-      このサイドバーはFirebase/Supabase/AIから完全独立。
-      ページ読み込み時にローカルJavaScriptだけで生成する。
-    -->
-    <aside
-      id="appSidebar"
-      class="sidebar"
-      aria-label="メインメニュー"
-    ></aside>
+    <!-- サイドバー専用コンテナ -->
+    <div id="appSidebar"></div>
 
     <main
       id="appMain"
       class="app-main"
     >
 
-      <button
-        id="mobileSidebarButton"
-        class="mobile-sidebar-button"
-        type="button"
-        aria-label="メニューを開く"
-        aria-expanded="false"
-        hidden
-      >
-        ☰
-      </button>
-
       <header class="page-header">
 
         <h1 class="page-title">
-          学習AIチャット
+          学習ホーム
         </h1>
 
-        <p
-          id="welcome"
-          class="page-description"
-        >
+        <p id="welcome">
           学習を始めましょう。
         </p>
 
@@ -686,18 +153,17 @@
 
           <p>
             中学生向けの学習AIに質問できます。
-            分からない問題や勉強内容を質問してみましょう。
+            過去の会話を続けることもできます。
           </p>
-
-          <span class="home-card-action">
-            AIに質問する
-          </span>
 
         </a>
 
       </section>
 
-      <section class="home-section">
+      <section
+        id="history"
+        class="home-section"
+      >
 
         <div class="card">
 
@@ -705,7 +171,7 @@
             最近の学習
           </h2>
 
-          <p class="card-description">
+          <p>
             過去の会話を選択すると、
             その会話の続きから質問できます。
           </p>
@@ -713,11 +179,8 @@
           <div
             id="recent-history"
             class="history-list"
-            aria-live="polite"
           >
-            <div class="history-empty">
-              履歴を読み込んでいます...
-            </div>
+            履歴を読み込んでいます...
           </div>
 
           <p
@@ -745,766 +208,16 @@
     src="../assets/js/firebase.js"
   ></script>
 
-  <script type="module">
-
-    /*
-     * =====================================================
-     * 独立サイドバー
-     * =====================================================
-     *
-     * Firebase/Supabase/AIには一切依存しない。
-     */
-
-    const sidebar =
-      document.getElementById(
-        "appSidebar"
-      );
-
-    const mobileButton =
-      document.getElementById(
-        "mobileSidebarButton"
-      );
-
-    function getCurrentPage() {
-
-      const path =
-        location.pathname
-          .split("/")
-          .pop();
-
-      if (
-        path === "index.html" ||
-        path === ""
-      ) {
-        return "home";
-      }
-
-      if (
-        path === "question.html"
-      ) {
-        return "question";
-      }
-
-      if (
-        path === "history.html"
-      ) {
-        return "history";
-      }
-
-      if (
-        path === "announcements.html"
-      ) {
-        return "announcements";
-      }
-
-      if (
-        path === "settings.html"
-      ) {
-        return "settings";
-      }
-
-      return "";
-    }
-
-    function createSidebar() {
-
-      if (!sidebar) {
-        return;
-      }
-
-      const currentPage =
-        getCurrentPage();
-
-      sidebar.replaceChildren();
-
-      const wrapper =
-        document.createElement("div");
-
-      wrapper.className =
-        "local-sidebar";
-
-      /* ヘッダー */
-
-      const header =
-        document.createElement("div");
-
-      header.className =
-        "local-sidebar-header";
-
-      const brand =
-        document.createElement("div");
-
-      brand.className =
-        "local-sidebar-brand";
-
-      brand.textContent =
-        "学習AIチャット";
-
-      const subtitle =
-        document.createElement("div");
-
-      subtitle.className =
-        "local-sidebar-subtitle";
-
-      subtitle.textContent =
-        "学習専用サービス";
-
-      header.append(
-        brand,
-        subtitle
-      );
-
-      /* ナビゲーション */
-
-      const nav =
-        document.createElement("nav");
-
-      nav.className =
-        "local-sidebar-nav";
-
-      const links = [
-        {
-          key: "home",
-          label: "ホーム",
-          href: "./index.html"
-        },
-        {
-          key: "question",
-          label: "AIに質問",
-          href: "./question.html"
-        },
-        {
-          key: "history",
-          label: "学習履歴",
-          href: "./history.html"
-        },
-        {
-          key: "announcements",
-          label: "お知らせ",
-          href: "./announcements.html"
-        },
-        {
-          key: "settings",
-          label: "設定",
-          href: "./settings.html"
-        }
-      ];
-
-      for (
-        const item of links
-      ) {
-
-        const link =
-          document.createElement("a");
-
-        link.className =
-          "local-sidebar-link";
-
-        link.href =
-          item.href;
-
-        link.textContent =
-          item.label;
-
-        if (
-          item.key === currentPage
-        ) {
-          link.classList.add(
-            "active"
-          );
-
-          link.setAttribute(
-            "aria-current",
-            "page"
-          );
-        }
-
-        link.addEventListener(
-          "click",
-          () => {
-            closeMobileSidebar();
-          }
-        );
-
-        nav.append(link);
-      }
-
-      /* 下部 */
-
-      const bottom =
-        document.createElement("div");
-
-      bottom.className =
-        "local-sidebar-bottom";
-
-      const logout =
-        document.createElement("button");
-
-      logout.type =
-        "button";
-
-      logout.className =
-        "local-sidebar-logout";
-
-      logout.textContent =
-        "ログアウト";
-
-      /*
-       * ログアウトだけFirebaseを使用。
-       * サイドバーそのものの表示には影響しない。
-       */
-
-      logout.addEventListener(
-        "click",
-        async () => {
-
-          logout.disabled = true;
-          logout.textContent =
-            "ログアウト中...";
-
-          try {
-
-            const firebase =
-              await import(
-                "../assets/js/firebase.js"
-              );
-
-            await firebase.signOut(
-              firebase.auth
-            );
-
-            location.replace(
-              "../login.html"
-            );
-
-          } catch (error) {
-
-            console.error(
-              "ログアウトエラー:",
-              error
-            );
-
-            logout.disabled = false;
-
-            logout.textContent =
-              "ログアウト";
-
-            alert(
-              "ログアウトできませんでした。\n" +
-              (
-                error?.message ||
-                String(error)
-              )
-            );
-          }
-        }
-      );
-
-      const version =
-        document.createElement("div");
-
-      version.className =
-        "local-sidebar-version";
-
-      version.textContent =
-        "Regular Test Preparation Worksheet Administration Office";
-
-      bottom.append(
-        logout,
-        version
-      );
-
-      wrapper.append(
-        header,
-        nav,
-        bottom
-      );
-
-      sidebar.append(
-        wrapper
-      );
-    }
-
-    function openMobileSidebar() {
-
-      sidebar.classList.add(
-        "mobile-open"
-      );
-
-      mobileButton.setAttribute(
-        "aria-expanded",
-        "true"
-      );
-    }
-
-    function closeMobileSidebar() {
-
-      sidebar.classList.remove(
-        "mobile-open"
-      );
-
-      mobileButton.setAttribute(
-        "aria-expanded",
-        "false"
-      );
-    }
-
-    function setupMobileSidebar() {
-
-      if (
-        !mobileButton
-      ) {
-        return;
-      }
-
-      if (
-        window.innerWidth <= 800
-      ) {
-        mobileButton.hidden =
-          false;
-      }
-
-      mobileButton.addEventListener(
-        "click",
-        () => {
-
-          if (
-            sidebar.classList.contains(
-              "mobile-open"
-            )
-          ) {
-            closeMobileSidebar();
-          } else {
-            openMobileSidebar();
-          }
-
-        }
-      );
-
-      window.addEventListener(
-        "resize",
-        () => {
-
-          if (
-            window.innerWidth > 800
-          ) {
-            closeMobileSidebar();
-            mobileButton.hidden =
-              true;
-          } else {
-            mobileButton.hidden =
-              false;
-          }
-
-        }
-      );
-    }
-
-    /*
-     * サイドバーは最優先で構築。
-     *
-     * Firebase初期化やFirestore取得が
-     * 失敗してもここは表示される。
-     */
-
-    createSidebar();
-    setupMobileSidebar();
-
-
-    /* =====================================================
-       Firebase部分
-       ===================================================== */
-
-    const historyContainer =
-      document.getElementById(
-        "recent-history"
-      );
-
-    const historyError =
-      document.getElementById(
-        "history-error"
-      );
-
-    const welcome =
-      document.getElementById(
-        "welcome"
-      );
-
-    function formatDate(value) {
-
-      if (!value) {
-        return "日時未設定";
-      }
-
-      const date =
-        typeof value.toDate ===
-        "function"
-          ? value.toDate()
-          : new Date(value);
-
-      if (
-        Number.isNaN(
-          date.getTime()
-        )
-      ) {
-        return "日時未設定";
-      }
-
-      return new Intl.DateTimeFormat(
-        "ja-JP",
-        {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit"
-        }
-      ).format(date);
-    }
-
-    function showHistoryError(
-      message
-    ) {
-
-      historyError.textContent =
-        message;
-
-      historyError.hidden =
-        false;
-    }
-
-    async function loadRecentConversations(
-      db,
-      uid
-    ) {
-
-      historyContainer.replaceChildren();
-
-      try {
-
-        /*
-         * 複合インデックスを必要としない
-         * クエリに変更。
-         *
-         * userIdだけで取得して、
-         * updatedAtはJavaScript側で並び替える。
-         */
-
-        const {
-          collection,
-          query,
-          where,
-          getDocs
-        } =
-          await import(
-            "../assets/js/firebase.js"
-          );
-
-        const historyQuery =
-          query(
-            collection(
-              db,
-              "chatHistories"
-            ),
-            where(
-              "userId",
-              "==",
-              uid
-            )
-          );
-
-        const snapshot =
-          await getDocs(
-            historyQuery
-          );
-
-        if (
-          snapshot.empty
-        ) {
-
-          const empty =
-            document.createElement(
-              "div"
-            );
-
-          empty.className =
-            "history-empty";
-
-          empty.textContent =
-            "まだ学習履歴はありません。";
-
-          historyContainer.append(
-            empty
-          );
-
-          return;
-        }
-
-        const items =
-          snapshot.docs
-            .map(
-              docSnapshot => ({
-                id:
-                  docSnapshot.id,
-                data:
-                  docSnapshot.data()
-              })
-            )
-            .sort(
-              (a, b) => {
-
-                const aTime =
-                  a.data.updatedAt
-                    ?.toMillis
-                    ? a.data.updatedAt.toMillis()
-                    : 0;
-
-                const bTime =
-                  b.data.updatedAt
-                    ?.toMillis
-                    ? b.data.updatedAt.toMillis()
-                    : 0;
-
-                return (
-                  bTime -
-                  aTime
-                );
-              }
-            )
-            .slice(
-              0,
-              10
-            );
-
-        for (
-          const item of items
-        ) {
-
-          const data =
-            item.data;
-
-          const link =
-            document.createElement(
-              "a"
-            );
-
-          link.className =
-            "history-item";
-
-          link.href =
-            `question.html?conversationId=${
-              encodeURIComponent(
-                item.id
-              )
-            }`;
-
-          const title =
-            document.createElement(
-              "div"
-            );
-
-          title.className =
-            "history-title";
-
-          title.textContent =
-            data.title ||
-            data.lastQuestion ||
-            "新しい会話";
-
-          const date =
-            document.createElement(
-              "div"
-            );
-
-          date.className =
-            "history-date";
-
-          date.textContent =
-            `最終更新：${
-              formatDate(
-                data.updatedAt
-              )
-            }`;
-
-          link.append(
-            title,
-            date
-          );
-
-          historyContainer.append(
-            link
-          );
-        }
-
-      } catch (error) {
-
-        console.error(
-          "学習履歴取得エラー:",
-          error
-        );
-
-        historyContainer.replaceChildren();
-
-        const errorElement =
-          document.createElement(
-            "div"
-          );
-
-        errorElement.className =
-          "history-empty";
-
-        errorElement.textContent =
-          "学習履歴を読み込めませんでした。";
-
-        historyContainer.append(
-          errorElement
-        );
-
-        showHistoryError(
-          `${error?.code || "error"}: ${
-            error?.message ||
-            String(error)
-          }`
-        );
-      }
-    }
-
-
-    /* =====================================================
-       認証後の処理
-       ===================================================== */
-
-    async function initializeFirebaseContent() {
-
-      try {
-
-        const firebase =
-          await import(
-            "../assets/js/firebase.js"
-          );
-
-        await firebase.persistenceReady;
-
-        const user =
-          await new Promise(
-            (
-              resolve,
-              reject
-            ) => {
-
-              const unsubscribe =
-                firebase.onAuthStateChanged(
-                  firebase.auth,
-                  currentUser => {
-
-                    unsubscribe();
-
-                    resolve(
-                      currentUser
-                    );
-                  },
-                  reject
-                );
-
-            }
-          );
-
-        if (!user) {
-
-          location.replace(
-            "../login.html"
-          );
-
-          return;
-        }
-
-        /*
-         * プロフィール取得
-         */
-
-        const profileSnapshot =
-          await firebase.getDoc(
-            firebase.doc(
-              firebase.db,
-              "users",
-              user.uid
-            )
-          );
-
-        if (
-          !profileSnapshot.exists()
-        ) {
-
-          throw new Error(
-            "利用者プロフィールが見つかりません。"
-          );
-        }
-
-        const profile =
-          profileSnapshot.data();
-
-        if (
-          profile.status !==
-          "active"
-        ) {
-
-          await firebase.signOut(
-            firebase.auth
-          );
-
-          location.replace(
-            "../login.html"
-          );
-
-          return;
-        }
-
-        const displayName =
-          profile.displayName ||
-          profile.name ||
-          user.displayName ||
-          "学習者";
-
-        welcome.textContent =
-          `${displayName}さん、学習を始めましょう。`;
-
-        /*
-         * 履歴
-         */
-
-        await loadRecentConversations(
-          firebase.db,
-          user.uid
-        );
-
-      } catch (error) {
-
-        console.error(
-          "Firebaseコンテンツ初期化エラー:",
-          error
-        );
-
-        /*
-         * 重要：
-         * Firebaseが失敗しても
-         * サイドバーは残す。
-         */
-
-        welcome.textContent =
-          "学習を始めましょう。";
-
-        showHistoryError(
-          `${error?.code || "error"}: ${
-            error?.message ||
-            String(error)
-          }`
-        );
-      }
-    }
-
-    initializeFirebaseContent();
-
-  </script>
+  <!-- 認証 -->
+  <script
+    type="module"
+    src="../assets/js/auth.js"
+  ></script>
+
+  <!-- サイドバー -->
+  <script
+    src="../assets/js/sidebar.js"
+  ></script>
 
 </body>
 </html>
