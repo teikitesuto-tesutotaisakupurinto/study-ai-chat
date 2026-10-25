@@ -1,0 +1,242 @@
+:root {
+  --sidebar-width: 252px;
+  --sidebar-bg: #ffffff;
+  --sidebar-border: #e2e8f0;
+  --sidebar-text: #334155;
+  --sidebar-muted: #64748b;
+  --sidebar-hover: #f1f5f9;
+  --sidebar-active: #eaf2ff;
+  --sidebar-active-text: #1d4ed8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.app-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+
+  width: var(--sidebar-width);
+  height: 100vh;
+
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sidebar-inner {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 22px 14px;
+}
+
+.sidebar-brand {
+  padding: 4px 10px 24px;
+}
+
+.sidebar-brand-title {
+  color: #172033;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.sidebar-brand-subtitle {
+  margin-top: 7px;
+  color: var(--sidebar-muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.sidebar-link {
+  width: 100%;
+  min-height: 46px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 10px 12px;
+
+  border: 0;
+  border-radius: 10px;
+
+  background: transparent;
+  color: var(--sidebar-text);
+
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+
+  text-decoration: none;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.sidebar-link:hover {
+  background: var(--sidebar-hover);
+  color: #172033;
+}
+
+.sidebar-link.active {
+  background: var(--sidebar-active);
+  color: var(--sidebar-active-text);
+}
+
+.sidebar-icon {
+  width: 22px;
+  min-width: 22px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 18px;
+  line-height: 1;
+}
+
+.sidebar-label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.sidebar-bottom {
+  margin-top: auto;
+}
+
+.sidebar-divider {
+  height: 1px;
+  margin: 18px 6px 10px;
+
+  background: var(--sidebar-border);
+}
+
+.sidebar-logout {
+  color: #475569;
+}
+
+.sidebar-logout:hover {
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.sidebar-loading {
+  padding: 14px 12px;
+  color: var(--sidebar-muted);
+  font-size: 13px;
+}
+
+/* ========================================
+   本文側
+   ======================================== */
+
+.app-layout {
+  min-height: 100vh;
+}
+
+.app-main {
+  min-height: 100vh;
+  margin-left: var(--sidebar-width);
+}
+
+/* ========================================
+   スマートフォン
+   ======================================== */
+
+@media (max-width: 760px) {
+
+  :root {
+    --sidebar-width: 220px;
+  }
+
+  .app-sidebar {
+    width: var(--sidebar-width);
+  }
+
+  .sidebar-inner {
+    padding: 18px 10px;
+  }
+
+  .sidebar-brand {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .sidebar-brand-title {
+    font-size: 17px;
+  }
+
+  .sidebar-brand-subtitle {
+    font-size: 10px;
+  }
+
+}
+
+/* ========================================
+   小型画面
+   ======================================== */
+
+@media (max-width: 520px) {
+
+  :root {
+    --sidebar-width: 0px;
+  }
+
+  .app-sidebar {
+    position: static;
+
+    width: 100%;
+    height: auto;
+
+    border-right: 0;
+    border-bottom: 1px solid var(--sidebar-border);
+  }
+
+  .sidebar-inner {
+    min-height: auto;
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .sidebar-link {
+    width: auto;
+    flex: 0 0 auto;
+  }
+
+  .sidebar-label {
+    white-space: nowrap;
+  }
+
+  .sidebar-bottom {
+    margin-top: 8px;
+  }
+
+  .sidebar-divider {
+    margin-top: 8px;
+  }
+
+  .app-main {
+    margin-left: 0;
+  }
+}
