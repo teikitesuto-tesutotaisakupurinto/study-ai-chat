@@ -1,6 +1,50 @@
-(function () {
-  "use strict";
 
+import {
+  initializeApp,
+  getApps,
+  getApp
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+
+import {
+  getAuth,
+  setPersistence,
+  browserLocalPersistence,
+  onAuthStateChanged,
+  signOut,
+  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  sendPasswordResetEmail
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  limit,
+  serverTimestamp,
+  onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+/*
+ * Firebase Console
+ * → プロジェクトの設定
+ * → マイアプリ
+ * → WebアプリのSDK設定
+ *
+ * 以下を実際のfirebaseConfigに置き換える。
+ */
+const firebaseConfig = {
   const firebaseConfig = {
   apiKey: "AIzaSyByt8kGALyS8AU8SR6PzWFEPXfgHY5iynk",
   authDomain: "studychat-1b39d.firebaseapp.com",
@@ -10,22 +54,55 @@
   appId: "1:982302014286:web:abf319aadb1ed919727c1f"
 };
 
-  window.FIREBASE_CONFIG = firebaseConfig;
+/*
+ * 既存コードとの互換性用。
+ * 新しいコードでは firebaseConfig を使用する。
+ */
+window.FIREBASE_CONFIG = firebaseConfig;
 
-  if (!window.firebase) {
-    throw new Error(
-      "Firebase SDKが読み込まれていません。"
-    );
-  }
+const app = getApps().length
+  ? getApp()
+  : initializeApp(firebaseConfig);
 
-  if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-  }
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-  window.firebaseApp = firebase.app();
-  window.firebaseAuth = firebase.auth();
-  window.firebaseDb = firebase.firestore();
+/*
+ * ブラウザを閉じてもログイン状態を保持する。
+ * ログイン処理の前に persistenceReady を待つ。
+ */
+const persistenceReady = setPersistence(
+  auth,
+  browserLocalPersistence
+);
 
-  window.auth = window.firebaseAuth;
-  window.db = window.firebaseDb;
-})();
+export {
+  app,
+  auth,
+  db,
+  firebaseConfig,
+  persistenceReady,
+
+  onAuthStateChanged,
+  signOut,
+  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  sendPasswordResetEmail,
+
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  limit,
+  serverTimestamp,
+  onSnapshot
+};
