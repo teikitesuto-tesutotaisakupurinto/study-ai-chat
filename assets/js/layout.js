@@ -1,277 +1,198 @@
-import {
-  auth,
-  signOut
-} from "./firebase.js";
-
 /* =========================================================
-   パス
+   学習AIチャット 共通レイアウト
    ========================================================= */
 
-function getRootPath() {
-  const path =
-    location.pathname;
-
-  if (
-    path.includes("/student/") ||
-    path.includes("/admin/")
-  ) {
-    return "../";
+const NAV_ITEMS = [
+  {
+    href: "index.html",
+    label: "ホーム",
+    icon: "⌂"
+  },
+  {
+    href: "question.html",
+    label: "AIに質問",
+    icon: "?"
+  },
+  {
+    href: "history.html",
+    label: "学習履歴",
+    icon: "▤"
+  },
+  {
+    href: "announcements.html",
+    label: "お知らせ",
+    icon: "!"
+  },
+  {
+    href: "settings.html",
+    label: "設定",
+    icon: "⚙"
   }
+];
 
-  return "./";
+function isStudentPage() {
+  return location.pathname.includes("/student/");
 }
 
-/* =========================================================
-   サイドバー
-   ========================================================= */
+function getStudentRoot() {
+  return isStudentPage() ? "./" : "./student/";
+}
 
-export function setupSidebar(
-  options = {}
-) {
-  const sidebar =
-    document.getElementById(
-      "appSidebar"
-    );
+function getCurrentFile() {
+  const pathname = location.pathname;
+  const file = pathname.split("/").pop();
 
-  if (!sidebar) {
-    console.warn(
-      "appSidebar が見つかりません。"
-    );
+  return file || "index.html";
+}
 
-    return;
+function createElement(tag, options = {}) {
+  const element = document.createElement(tag);
+
+  if (options.className) {
+    element.className = options.className;
   }
 
-  const root =
-    getRootPath();
+  if (options.text) {
+    element.textContent = options.text;
+  }
 
-  const profile =
-    options.profile || null;
+  if (options.id) {
+    element.id = options.id;
+  }
 
-  const displayName =
-    profile?.displayName ||
-    profile?.name ||
-    auth.currentUser?.displayName ||
-    "学習者";
+  return element;
+}
 
-  /*
-    絵文字なし。
-    学習AIチャット専用の正式なメニュー。
-  */
+function createSidebar() {
+  const sidebar = createElement("aside", {
+    className: "student-sidebar"
+  });
 
-  sidebar.innerHTML = "";
+  const brand = createElement("div", {
+    className: "sidebar-brand"
+  });
 
-  const inner =
-    document.createElement(
-      "div"
-    );
+  const brandTitle = createElement("div", {
+    className: "sidebar-brand-title",
+    text: "学習AIチャット"
+  });
 
-  inner.className =
-    "sidebar-inner";
-
-  /* ブランド */
-
-  const brand =
-    document.createElement(
-      "div"
-    );
-
-  brand.className =
-    "sidebar-brand";
-
-  const brandLink =
-    document.createElement(
-      "a"
-    );
-
-  brandLink.href =
-    `${root}student/index.html`;
-
-  brandLink.textContent =
-    "学習AIチャット";
+  const brandSubtitle = createElement("div", {
+    className: "sidebar-brand-subtitle",
+    text: "中学生向け学習サポート"
+  });
 
   brand.append(
-    brandLink
+    brandTitle,
+    brandSubtitle
   );
 
-  inner.append(
-    brand
-  );
+  const navigation = createElement("nav", {
+    className: "sidebar-nav"
+  });
 
-  /* 利用者 */
-
-  const userBox =
-    document.createElement(
-      "div"
-    );
-
-  userBox.className =
-    "sidebar-user";
-
-  const userLabel =
-    document.createElement(
-      "div"
-    );
-
-  userLabel.className =
-    "sidebar-user-label";
-
-  userLabel.textContent =
-    "ログイン中";
-
-  const userName =
-    document.createElement(
-      "div"
-    );
-
-  userName.className =
-    "sidebar-user-name";
-
-  userName.textContent =
-    displayName;
-
-  userBox.append(
-    userLabel,
-    userName
-  );
-
-  inner.append(
-    userBox
-  );
-
-  /* ナビゲーション */
-
-  const nav =
-    document.createElement(
-      "nav"
-    );
-
-  nav.className =
-    "sidebar-nav";
-
-  nav.setAttribute(
+  navigation.setAttribute(
     "aria-label",
     "メインメニュー"
   );
 
-  const items = [
-    {
-      label: "ホーム",
-      href: `${root}student/index.html`
-    },
-    {
-      label: "AIに質問",
-      href: `${root}student/question.html`
-    },
-    {
-      label: "学習履歴",
-      href: `${root}student/history.html`
-    },
-    {
-      label: "お知らせ",
-      href: `${root}student/announcements.html`
-    },
-    {
-      label: "設定",
-      href: `${root}student/settings.html`
-    }
-  ];
+  const currentFile =
+    getCurrentFile();
 
-  for (
-    const item of items
-  ) {
-    const link =
-      document.createElement(
-        "a"
-      );
+  for (const item of NAV_ITEMS) {
+    const link = document.createElement("a");
 
     link.className =
-      "sidebar-link";
+      "sidebar-nav-item";
 
     link.href =
+      `${getStudentRoot()}${item.href}`;
+
+    link.dataset.page =
       item.href;
 
-    link.textContent =
-      item.label;
-
-    const currentPath =
-      location.pathname;
-
-    const targetPath =
-      new URL(
-        item.href,
-        location.href
-      ).pathname;
-
     if (
-      currentPath ===
-      targetPath
+      currentFile === item.href
     ) {
-      link.classList.add(
-        "active"
-      );
-
+      link.classList.add("active");
       link.setAttribute(
         "aria-current",
         "page"
       );
     }
 
-    nav.append(
-      link
+    const icon =
+      createElement("span", {
+        className:
+          "sidebar-nav-icon",
+        text: item.icon
+      });
+
+    const label =
+      createElement("span", {
+        className:
+          "sidebar-nav-label",
+        text: item.label
+      });
+
+    link.append(
+      icon,
+      label
     );
+
+    navigation.append(link);
   }
 
-  inner.append(
-    nav
-  );
-
-  /* 下部 */
-
   const bottom =
-    document.createElement(
-      "div"
-    );
-
-  bottom.className =
-    "sidebar-bottom";
+    createElement("div", {
+      className:
+        "sidebar-bottom"
+    });
 
   const logout =
-    document.createElement(
-      "button"
-    );
+    createElement("button", {
+      className:
+        "sidebar-logout",
+      text: "ログアウト"
+    });
 
-  logout.type =
-    "button";
+  logout.type = "button";
+  logout.id = "sidebarLogout";
 
-  logout.className =
-    "sidebar-logout";
+  bottom.append(logout);
 
-  logout.id =
-    "sidebarLogout";
-
-  logout.textContent =
-    "ログアウト";
-
-  bottom.append(
-    logout
-  );
-
-  inner.append(
+  sidebar.append(
+    brand,
+    navigation,
     bottom
   );
 
-  sidebar.append(
-    inner
-  );
+  return sidebar;
 }
 
-/* =========================================================
-   ログアウト
-   ========================================================= */
+export function setupSidebar() {
+  const oldSidebar =
+    document.getElementById(
+      "appSidebar"
+    );
+
+  if (!oldSidebar) {
+    return null;
+  }
+
+  oldSidebar.replaceChildren();
+
+  const sidebar =
+    createSidebar();
+
+  oldSidebar.appendChild(sidebar);
+
+  return sidebar;
+}
 
 export function setupLogout(
-  firebaseAuth = auth,
-  firebaseSignOut = signOut
+  auth,
+  signOutFunction
 ) {
   const button =
     document.getElementById(
@@ -282,21 +203,11 @@ export function setupLogout(
     return;
   }
 
-  if (
-    button.dataset.logoutReady ===
-    "true"
-  ) {
-    return;
-  }
-
-  button.dataset.logoutReady =
-    "true";
-
   button.addEventListener(
     "click",
     async () => {
       if (
-        button.disabled
+        button.dataset.busy === "true"
       ) {
         return;
       }
@@ -310,25 +221,27 @@ export function setupLogout(
         return;
       }
 
-      button.disabled =
-        true;
+      button.dataset.busy =
+        "true";
 
+      button.disabled = true;
       button.textContent =
         "ログアウト中...";
 
       try {
-        await firebaseSignOut(
-          firebaseAuth
-        );
+        await signOutFunction(auth);
 
         location.replace(
-          `${getRootPath()}login.html`
+          "../login.html"
         );
       } catch (error) {
         console.error(
           "ログアウトエラー:",
           error
         );
+
+        button.dataset.busy =
+          "false";
 
         button.disabled =
           false;
