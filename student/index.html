@@ -1,271 +1,624 @@
-<script type="module">
-  import {
-    auth,
-    db,
-    doc,
-    getDoc,
-    collection,
-    query,
-    where,
-    orderBy,
-    limit,
-    getDocs,
-    signOut
-  } from "../assets/js/firebase-module.js";
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
 
-  import { protectPage } from "../assets/js/auth.js";
-  import {
-    setupSidebar,
-    setupLogout
-  } from "../assets/js/layout.js";
+  <title>ホーム | 学習AIチャット</title>
 
-  const $ = selector =>
-    document.querySelector(selector);
+  <link rel="stylesheet" href="../assets/css/common.css">
+  <link rel="stylesheet" href="../assets/css/student.css">
 
-  function formatDate(value) {
-    if (!value) {
-      return "日時未設定";
+  <style>
+    .home-section {
+      margin: 24px 0;
     }
 
-    const date =
-      typeof value?.toDate === "function"
-        ? value.toDate()
-        : new Date(value);
-
-    if (Number.isNaN(date.getTime())) {
-      return "日時未設定";
+    .home-card {
+      display: block;
+      padding: 22px;
+      border: 1px solid #dbe3ef;
+      border-radius: 14px;
+      background: #fff;
+      color: inherit;
+      text-decoration: none;
+      transition:
+        border-color .15s,
+        box-shadow .15s;
     }
 
-    return new Intl.DateTimeFormat("ja-JP", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit"
-    }).format(date);
-  }
-
-  function showHistoryError(message) {
-    const error =
-      $("#history-error");
-
-    if (!error) {
-      return;
+    .home-card:hover {
+      border-color: #2563eb;
+      box-shadow: 0 5px 18px rgb(15 23 42 / 8%);
     }
 
-    error.textContent =
-      message;
-
-    error.hidden = false;
-  }
-
-  async function loadRecentConversations(uid) {
-    const container =
-      $("#recent-history");
-
-    if (!container) {
-      return;
+    .home-card h2 {
+      margin-top: 0;
     }
 
-    container.replaceChildren();
+    .home-card p {
+      margin-bottom: 0;
+      color: #475569;
+    }
 
-    try {
-      /*
-       * Firestoreの複合インデックスがない場合でも、
-       * ホーム全体をエラーにしない。
-       *
-       * まず userId だけで取得し、
-       * JavaScript側で updatedAt 順に並べる。
-       */
+    .history-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
 
-      const historyQuery =
-        query(
-          collection(
-            db,
-            "chatHistories"
-          ),
-          where(
-            "userId",
-            "==",
-            uid
-          ),
-          limit(30)
-        );
+    .history-item {
+      display: block;
+      padding: 14px 16px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      color: inherit;
+      text-decoration: none;
+      overflow-wrap: anywhere;
+      background: #fff;
+    }
 
-      const snapshot =
-        await getDocs(
-          historyQuery
-        );
+    .history-item:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+    }
 
-      if (snapshot.empty) {
-        container.textContent =
-          "まだ会話履歴はありません。";
+    .history-title {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
 
-        return;
+    .history-date {
+      font-size: .85rem;
+      color: #64748b;
+    }
+
+    .home-error {
+      color: #b91c1c;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .empty-history {
+      padding: 18px;
+      color: #64748b;
+      background: #f8fafc;
+      border-radius: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="app-layout">
+
+    <!--
+      ログイン認証後、JavaScriptで必ずここにサイドバーを生成する。
+    -->
+    <aside
+      id="appSidebar"
+      class="sidebar"
+      aria-label="メインメニュー">
+    </aside>
+
+    <main
+      id="appMain"
+      class="app-main">
+
+      <header class="page-header">
+        <h1 class="page-title">学習ホーム</h1>
+
+        <p id="welcome">
+          学習を始めましょう。
+        </p>
+      </header>
+
+      <section class="home-section">
+
+        <a
+          class="home-card"
+          href="./question.html">
+
+          <h2>AI学習チャット</h2>
+
+          <p>
+            中学生向けの学習AIに質問できます。
+            過去の会話を続けることもできます。
+          </p>
+
+        </a>
+
+      </section>
+
+      <section class="home-section">
+
+        <div class="card">
+
+          <h2>最近の学習</h2>
+
+          <p>
+            過去の会話を選択すると、
+            その会話の続きから質問できます。
+          </p>
+
+          <div
+            id="recent-history"
+            class="history-list"
+            aria-live="polite">
+
+            履歴を読み込んでいます...
+
+          </div>
+
+          <p
+            id="history-error"
+            class="home-error"
+            hidden>
+          </p>
+
+        </div>
+
+      </section>
+
+      <footer class="page-footer">
+        © 2026 定期テスト対策プリント運営事務局. All Rights Reserved.
+      </footer>
+
+    </main>
+
+  </div>
+
+
+  <!-- Firebase Compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+
+  <!-- Firebase設定 -->
+  <script src="../assets/js/firebase.js"></script>
+
+
+  <script type="module">
+
+    import {
+      auth,
+      db,
+      doc,
+      getDoc,
+      collection,
+      query,
+      where,
+      getDocs,
+      signOut
+    } from "../assets/js/firebase-module.js";
+
+
+    import {
+      protectPage
+    } from "../assets/js/auth.js";
+
+
+    import {
+      setupSidebar,
+      setupLogout
+    } from "../assets/js/layout.js";
+
+
+    const $ = selector =>
+      document.querySelector(selector);
+
+
+    /* =====================================================
+       日付表示
+       ===================================================== */
+
+    function formatDate(value) {
+
+      if (!value) {
+        return "日時未設定";
       }
 
-      const conversations =
-        snapshot.docs
-          .map(docSnapshot => ({
-            id:
-              docSnapshot.id,
+      let date;
 
-            data:
-              docSnapshot.data()
-          }))
-          .sort((a, b) => {
-            const aTime =
-              a.data.updatedAt
-                ?.toMillis?.() || 0;
+      try {
 
-            const bTime =
-              b.data.updatedAt
-                ?.toMillis?.() || 0;
+        if (
+          typeof value.toDate === "function"
+        ) {
 
-            return bTime - aTime;
-          })
-          .slice(0, 10);
+          date = value.toDate();
 
-      for (
-        const item of conversations
-      ) {
-        const data =
-          item.data;
+        } else {
 
-        const link =
-          document.createElement(
-            "a"
-          );
+          date = new Date(value);
 
-        link.className =
-          "history-item";
+        }
 
-        link.href =
-          `question.html?conversationId=${encodeURIComponent(
-            item.id
-          )}`;
+      } catch {
 
-        const title =
-          document.createElement(
-            "div"
-          );
+        return "日時未設定";
 
-        title.className =
-          "history-title";
-
-        title.textContent =
-          data.title ||
-          data.lastQuestion ||
-          "新しい会話";
-
-        const date =
-          document.createElement(
-            "div"
-          );
-
-        date.className =
-          "history-date";
-
-        date.textContent =
-          `最終更新：${formatDate(
-            data.updatedAt
-          )}`;
-
-        link.append(
-          title,
-          date
-        );
-
-        container.append(
-          link
-        );
       }
 
-    } catch (error) {
-      console.error(
-        "会話履歴の取得に失敗しました:",
-        error
-      );
-
-      container.textContent =
-        "履歴を読み込めませんでした。";
-
-      showHistoryError(
-        `${error?.code || "error"}: ${
-          error?.message ||
-          String(error)
-        }`
-      );
-    }
-  }
-
-  async function initialize() {
-    try {
-      /*
-       * =====================================================
-       * ① Firebase認証
-       * =====================================================
-       */
-
-      const result =
-        await protectPage(
-          "student"
-        );
 
       if (
-        !result ||
-        !result.user
+        Number.isNaN(date.getTime())
       ) {
-        return;
+
+        return "日時未設定";
+
       }
 
-      const user =
-        result.user;
 
-      /*
-       * =====================================================
-       * ② 認証成功した瞬間にサイドバーを表示
-       *
-       * 履歴取得より先。
-       * 履歴取得失敗でもサイドバーは消えない。
-       * =====================================================
-       */
+      return new Intl.DateTimeFormat(
+        "ja-JP",
+        {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        }
+      ).format(date);
+
+    }
+
+
+    /* =====================================================
+       エラー表示
+       ===================================================== */
+
+    function showHistoryError(
+      message
+    ) {
+
+      const error =
+        $("#history-error");
+
+      error.textContent =
+        message;
+
+      error.hidden = false;
+
+    }
+
+
+    /* =====================================================
+       最近の会話
+       
+       重要：
+       where + orderBy を使わない。
+       
+       これにより
+       「The query requires an index」
+       を回避する。
+       ===================================================== */
+
+    async function loadRecentConversations(
+      uid
+    ) {
+
+      const container =
+        $("#recent-history");
+
+
+      container.replaceChildren();
+
 
       try {
-        setupSidebar();
-      } catch (sidebarError) {
+
+        const historyQuery =
+          query(
+            collection(
+              db,
+              "chatHistories"
+            ),
+
+            where(
+              "userId",
+              "==",
+              uid
+            )
+          );
+
+
+        const snapshot =
+          await getDocs(
+            historyQuery
+          );
+
+
+        if (
+          snapshot.empty
+        ) {
+
+          const empty =
+            document.createElement(
+              "div"
+            );
+
+          empty.className =
+            "empty-history";
+
+          empty.textContent =
+            "まだ会話履歴はありません。";
+
+          container.append(
+            empty
+          );
+
+          return;
+
+        }
+
+
+        /*
+          FirestoreのorderByを使わず、
+          JavaScript側で更新日時順に並べる。
+        */
+
+        const conversations =
+          snapshot.docs
+            .map(docSnapshot => ({
+              id:
+                docSnapshot.id,
+
+              data:
+                docSnapshot.data()
+            }))
+
+
+            .sort(
+              (a, b) => {
+
+                const aTime =
+                  getTimestamp(
+                    a.data.updatedAt
+                  );
+
+                const bTime =
+                  getTimestamp(
+                    b.data.updatedAt
+                  );
+
+                return bTime - aTime;
+
+              }
+            )
+
+
+            .slice(
+              0,
+              10
+            );
+
+
+        for (
+          const item of conversations
+        ) {
+
+          const data =
+            item.data;
+
+
+          const link =
+            document.createElement(
+              "a"
+            );
+
+
+          link.className =
+            "history-item";
+
+
+          link.href =
+            `./question.html?conversationId=${encodeURIComponent(
+              item.id
+            )}`;
+
+
+          const title =
+            document.createElement(
+              "div"
+            );
+
+
+          title.className =
+            "history-title";
+
+
+          title.textContent =
+            data.title ||
+            data.lastQuestion ||
+            "新しい会話";
+
+
+          const date =
+            document.createElement(
+              "div"
+            );
+
+
+          date.className =
+            "history-date";
+
+
+          date.textContent =
+            `最終更新：${formatDate(
+              data.updatedAt
+            )}`;
+
+
+          link.append(
+            title,
+            date
+          );
+
+
+          container.append(
+            link
+          );
+
+        }
+
+
+      } catch (error) {
+
         console.error(
-          "サイドバー初期化エラー:",
-          sidebarError
+          "会話履歴の取得に失敗しました:",
+          error
         );
+
+
+        container.textContent =
+          "履歴を読み込めませんでした。";
+
+
+        showHistoryError(
+          `${error?.code || "error"}: ${
+            error?.message ||
+            String(error)
+          }`
+        );
+
       }
 
-      /*
-       * ログアウトも認証成功直後に設定
-       */
+    }
+
+
+    /* =====================================================
+       Firestore Timestamp → number
+       ===================================================== */
+
+    function getTimestamp(
+      value
+    ) {
+
+      if (!value) {
+        return 0;
+      }
+
 
       try {
+
+        if (
+          typeof value.toMillis ===
+          "function"
+        ) {
+
+          return value.toMillis();
+
+        }
+
+
+        if (
+          typeof value.toDate ===
+          "function"
+        ) {
+
+          return value
+            .toDate()
+            .getTime();
+
+        }
+
+
+        const time =
+          new Date(value)
+            .getTime();
+
+
+        return Number.isNaN(time)
+          ? 0
+          : time;
+
+
+      } catch {
+
+        return 0;
+
+      }
+
+    }
+
+
+    /* =====================================================
+       初期化
+       ===================================================== */
+
+    async function initialize() {
+
+      try {
+
+        /*
+          ==================================================
+          ① 最初に認証・権限を確認
+          ==================================================
+        */
+
+        const result =
+          await protectPage(
+            "student"
+          );
+
+
+        if (
+          !result ||
+          !result.user
+        ) {
+
+          return;
+
+        }
+
+
+        /*
+          ==================================================
+          ② ログイン確認後、即サイドバー表示
+          
+          Firestore履歴取得より先に実行する。
+          
+          これが重要。
+          ==================================================
+        */
+
+        setupSidebar();
+
+
+        /*
+          ==================================================
+          ③ ログアウト処理
+          ==================================================
+        */
+
         setupLogout(
           auth,
           signOut
         );
-      } catch (logoutError) {
-        console.error(
-          "ログアウト初期化エラー:",
-          logoutError
-        );
-      }
 
-      /*
-       * =====================================================
-       * ③ ユーザープロフィール
-       * =====================================================
-       */
 
-      let profileSnapshot;
+        /*
+          ==================================================
+          ④ ユーザー情報
+          ==================================================
+        */
 
-      try {
-        profileSnapshot =
+        const user =
+          result.user;
+
+
+        /*
+          ==================================================
+          ⑤ users/{uid}
+          ==================================================
+        */
+
+        const profileSnapshot =
           await getDoc(
             doc(
               db,
@@ -273,109 +626,113 @@
               user.uid
             )
           );
+
+
+        if (
+          !profileSnapshot.exists()
+        ) {
+
+          throw new Error(
+            "利用者プロフィールが見つかりません。"
+          );
+
+        }
+
+
+        const profile =
+          profileSnapshot.data();
+
+
+        /*
+          ==================================================
+          ⑥ status確認
+          ==================================================
+        */
+
+        if (
+          profile.status !==
+          "active"
+        ) {
+
+          await signOut(
+            auth
+          );
+
+
+          location.replace(
+            "../login.html"
+          );
+
+
+          return;
+
+        }
+
+
+        /*
+          ==================================================
+          ⑦ 表示名
+          ==================================================
+        */
+
+        const displayName =
+          profile.displayName ||
+          profile.name ||
+          user.displayName ||
+          "学習者";
+
+
+        $("#welcome").textContent =
+          `${displayName}さん、学習を始めましょう。`;
+
+
+        /*
+          ==================================================
+          ⑧ 最近の会話
+          ==================================================
+        */
+
+        await loadRecentConversations(
+          user.uid
+        );
+
+
       } catch (error) {
+
         console.error(
-          "プロフィール取得エラー:",
+          "ホーム画面の初期化に失敗しました:",
           error
         );
 
-        showHistoryError(
-          "ユーザー情報を取得できませんでした。"
-        );
 
-        return;
-      }
+        /*
+          サイドバーは先に表示しているので、
+          履歴取得失敗時でも画面全体を消さない。
+        */
 
-      if (
-        !profileSnapshot.exists()
-      ) {
-        await signOut(auth);
-
-        location.replace(
-          "../login.html"
-        );
-
-        return;
-      }
-
-      const profile =
-        profileSnapshot.data();
-
-      if (
-        profile.status !==
-        "active"
-      ) {
-        await signOut(auth);
-
-        location.replace(
-          "../login.html"
-        );
-
-        return;
-      }
-
-      const displayName =
-        profile.displayName ||
-        profile.name ||
-        user.displayName ||
-        "学習者";
-
-      const welcome =
-        $("#welcome");
-
-      if (welcome) {
-        welcome.textContent =
-          `${displayName}さん、学習を始めましょう。`;
-      }
-
-      /*
-       * =====================================================
-       * ④ 履歴
-       *
-       * ここで失敗してもサイドバーには影響しない。
-       * =====================================================
-       */
-
-      await loadRecentConversations(
-        user.uid
-      );
-
-    } catch (error) {
-      console.error(
-        "ホーム画面の初期化に失敗しました:",
-        error
-      );
-
-      /*
-       * protectPage後に発生したエラーでも、
-       * サイドバーだけは再度表示を試みる。
-       */
-
-      try {
-        setupSidebar();
-      } catch (sidebarError) {
-        console.error(
-          "サイドバー再初期化エラー:",
-          sidebarError
-        );
-      }
-
-      const welcome =
-        $("#welcome");
-
-      if (welcome) {
-        welcome.textContent =
+        $("#welcome").textContent =
           "ホーム画面を読み込めませんでした。";
+
+
+        showHistoryError(
+          `${error?.code || "error"}: ${
+            error?.message ||
+            String(error)
+          }`
+        );
+
       }
 
-      showHistoryError(
-        `${error?.code || "error"}: ${
-          error?.message ||
-          String(error)
-        }`
-      );
     }
-  }
 
-  initialize();
-</script>
+
+    /*
+      実行
+    */
+
+    initialize();
+
+  </script>
+
+</body>
+</html>
