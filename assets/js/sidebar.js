@@ -1,336 +1,401 @@
-(() => {
+/* =========================================================
+   学習AIチャット 独立サイドバー
+   ---------------------------------------------------------
+   Firebase
+   Firestore
+   Supabase
+   AI API
+   認証状態
+
+   ↑ すべてに依存しない
+   ========================================================= */
+
+(function () {
   "use strict";
 
-  const SIDEBAR_FILE =
-    "assets/html/sidebar.html";
+  const SIDEBAR_ID = "independentSidebar";
 
-  const SIDEBAR_CSS =
-    "assets/css/sidebar.css";
+  const MENU_ITEMS = [
+    {
+      href: "index.html",
+      label: "学習ホーム",
+      icon: "⌂"
+    },
+    {
+      href: "question.html",
+      label: "AI学習チャット",
+      icon: "＋"
+    }
+  ];
 
-  function getRootPath() {
-    const path = location.pathname;
+  function getBasePath() {
+    const path = window.location.pathname;
 
-    if (
-      path.includes("/student/") ||
-      path.includes("/admin/")
-    ) {
-      return "../";
+    if (path.includes("/student/")) {
+      return "./";
     }
 
-    return "./";
+    return "./student/";
   }
 
-  function getCurrentPage() {
-    const path =
-      location.pathname
-        .replace(/\\/g, "/")
-        .toLowerCase();
+  function getCurrentFile() {
+    const pathname =
+      window.location.pathname;
 
-    if (
-      path.endsWith("/student/index.html") ||
-      path.endsWith("/student/") ||
-      path.endsWith("/index.html")
-    ) {
-      return "home";
-    }
+    const file =
+      pathname.substring(
+        pathname.lastIndexOf("/") + 1
+      );
 
-    if (
-      path.endsWith("/student/question.html") ||
-      path.endsWith("/question.html")
-    ) {
-      return "question";
-    }
-
-    return "";
+    return file || "index.html";
   }
 
-  function loadCss() {
+  function createElement(tag, className) {
+    const element =
+      document.createElement(tag);
+
+    if (className) {
+      element.className = className;
+    }
+
+    return element;
+  }
+
+  function createSidebar() {
+    const existing =
+      document.getElementById(
+        SIDEBAR_ID
+      );
+
+    if (existing) {
+      return existing;
+    }
+
+    const sidebar =
+      createElement(
+        "aside",
+        "app-sidebar"
+      );
+
+    sidebar.id = SIDEBAR_ID;
+
+    sidebar.setAttribute(
+      "aria-label",
+      "メインメニュー"
+    );
+
+    /* -------------------------------------------------------
+       ブランド
+       ------------------------------------------------------- */
+
+    const brand =
+      createElement(
+        "div",
+        "sidebar-brand"
+      );
+
+    const brandLink =
+      document.createElement("a");
+
+    brandLink.href =
+      getBasePath() + "index.html";
+
+    brandLink.textContent =
+      "学習AIチャット";
+
+    brand.appendChild(
+      brandLink
+    );
+
+    sidebar.appendChild(
+      brand
+    );
+
+    /* -------------------------------------------------------
+       ナビゲーション
+       ------------------------------------------------------- */
+
+    const nav =
+      createElement(
+        "nav",
+        "sidebar-nav"
+      );
+
+    const sectionTitle =
+      createElement(
+        "div",
+        "sidebar-section-title"
+      );
+
+    sectionTitle.textContent =
+      "学習メニュー";
+
+    nav.appendChild(
+      sectionTitle
+    );
+
+    const currentFile =
+      getCurrentFile();
+
+    for (
+      const item of MENU_ITEMS
+    ) {
+      const link =
+        document.createElement("a");
+
+      link.className =
+        "sidebar-link";
+
+      const target =
+        item.href;
+
+      link.href =
+        getBasePath() + target;
+
+      if (
+        currentFile === target
+      ) {
+        link.classList.add(
+          "active"
+        );
+
+        link.setAttribute(
+          "aria-current",
+          "page"
+        );
+      }
+
+      const icon =
+        createElement(
+          "span",
+          "sidebar-icon"
+        );
+
+      icon.setAttribute(
+        "aria-hidden",
+        "true"
+      );
+
+      icon.textContent =
+        item.icon;
+
+      const label =
+        createElement(
+          "span",
+          "sidebar-label"
+        );
+
+      label.textContent =
+        item.label;
+
+      link.append(
+        icon,
+        label
+      );
+
+      nav.appendChild(
+        link
+      );
+    }
+
+    sidebar.appendChild(
+      nav
+    );
+
+    /* -------------------------------------------------------
+       空き領域
+       ------------------------------------------------------- */
+
+    const spacer =
+      createElement(
+        "div",
+        "sidebar-spacer"
+      );
+
+    sidebar.appendChild(
+      spacer
+    );
+
+    /* -------------------------------------------------------
+       フッター
+       ------------------------------------------------------- */
+
+    const footer =
+      createElement(
+        "footer",
+        "sidebar-footer"
+      );
+
+    const footerText =
+      createElement(
+        "p",
+        "sidebar-footer-text"
+      );
+
+    footerText.textContent =
+      "© 2026 定期テスト対策プリント運営事務局";
+
+    footer.appendChild(
+      footerText
+    );
+
+    sidebar.appendChild(
+      footer
+    );
+
+    return sidebar;
+  }
+
+  function createMobileControls() {
     if (
-      document.querySelector(
-        'link[data-sidebar-css="true"]'
+      document.getElementById(
+        "sidebarMenuButton"
       )
     ) {
       return;
     }
 
-    const link =
-      document.createElement("link");
-
-    link.rel = "stylesheet";
-
-    link.href =
-      getRootPath() +
-      SIDEBAR_CSS;
-
-    link.dataset.sidebarCss = "true";
-
-    document.head.appendChild(link);
-  }
-
-  async function loadSidebarHtml() {
-    const response =
-      await fetch(
-        getRootPath() +
-        SIDEBAR_FILE,
-        {
-          cache: "no-store"
-        }
-      );
-
-    if (!response.ok) {
-      throw new Error(
-        `サイドバーの読み込みに失敗しました。HTTP ${response.status}`
-      );
-    }
-
-    return await response.text();
-  }
-
-  function setActivePage() {
-    const current =
-      getCurrentPage();
-
-    const links =
-      document.querySelectorAll(
-        "[data-sidebar-page]"
-      );
-
-    links.forEach(link => {
-      const page =
-        link.dataset.sidebarPage;
-
-      link.classList.toggle(
-        "active",
-        page === current
-      );
-
-      if (page === current) {
-        link.setAttribute(
-          "aria-current",
-          "page"
-        );
-      } else {
-        link.removeAttribute(
-          "aria-current"
-        );
-      }
-    });
-  }
-
-  function setupLogout() {
     const button =
-      document.getElementById(
-        "sidebarLogoutButton"
+      createElement(
+        "button",
+        "sidebar-menu-button"
       );
 
-    if (!button) {
-      return;
+    button.id =
+      "sidebarMenuButton";
+
+    button.type =
+      "button";
+
+    button.setAttribute(
+      "aria-label",
+      "メニューを開く"
+    );
+
+    button.setAttribute(
+      "aria-expanded",
+      "false"
+    );
+
+    button.textContent =
+      "☰";
+
+    const overlay =
+      createElement(
+        "div",
+        "sidebar-overlay"
+      );
+
+    overlay.id =
+      "sidebarOverlay";
+
+    function closeMenu() {
+      const sidebar =
+        document.getElementById(
+          SIDEBAR_ID
+        );
+
+      if (!sidebar) {
+        return;
+      }
+
+      sidebar.classList.remove(
+        "open"
+      );
+
+      overlay.classList.remove(
+        "open"
+      );
+
+      button.setAttribute(
+        "aria-expanded",
+        "false"
+      );
     }
 
-    /*
-      Firebaseをここでは直接importしない。
+    function openMenu() {
+      const sidebar =
+        document.getElementById(
+          SIDEBAR_ID
+        );
 
-      logoutが必要な場合だけ、
-      既存のlogout処理が存在すれば呼び出す。
-    */
+      if (!sidebar) {
+        return;
+      }
+
+      sidebar.classList.add(
+        "open"
+      );
+
+      overlay.classList.add(
+        "open"
+      );
+
+      button.setAttribute(
+        "aria-expanded",
+        "true"
+      );
+    }
 
     button.addEventListener(
       "click",
-      async () => {
+      function () {
+        const sidebar =
+          document.getElementById(
+            SIDEBAR_ID
+          );
 
         if (
-          button.dataset.busy === "true"
+          sidebar?.classList.contains(
+            "open"
+          )
         ) {
-          return;
-        }
-
-        button.dataset.busy =
-          "true";
-
-        const original =
-          button.querySelector(
-            ".sidebar-label"
-          )?.textContent ||
-          "ログアウト";
-
-        const label =
-          button.querySelector(
-            ".sidebar-label"
-          );
-
-        if (label) {
-          label.textContent =
-            "ログアウト中...";
-        }
-
-        try {
-
-          /*
-            logout処理は、
-            ページ側から登録できる。
-
-            window.studyChatLogout
-            があれば実行する。
-          */
-
-          if (
-            typeof window.studyChatLogout ===
-            "function"
-          ) {
-            await window.studyChatLogout();
-          } else {
-            /*
-              ログアウト処理が登録されていない場合は、
-              ログイン画面へ移動するだけにする。
-            */
-
-            location.href =
-              getRootPath() +
-              "login.html";
-          }
-
-        } catch (error) {
-
-          console.error(
-            "サイドバーのログアウトエラー:",
-            error
-          );
-
-          alert(
-            "ログアウトに失敗しました。\n" +
-            (
-              error?.message ||
-              String(error)
-            )
-          );
-
-        } finally {
-
-          button.dataset.busy =
-            "false";
-
-          if (label) {
-            label.textContent =
-              original;
-          }
+          closeMenu();
+        } else {
+          openMenu();
         }
       }
     );
+
+    overlay.addEventListener(
+      "click",
+      closeMenu
+    );
+
+    document.body.appendChild(
+      button
+    );
+
+    document.body.appendChild(
+      overlay
+    );
   }
 
-  async function init() {
-
+  function initSidebar() {
     /*
-      既に存在する場合は二重生成しない。
+      DOMContentLoadedを待つだけ。
+
+      Firebase等の初期化を待たない。
+      したがって Firebase が落ちても
+      サイドバーは生成される。
     */
 
-    let container =
-      document.getElementById(
-        "appSidebar"
-      );
+    const sidebar =
+      createSidebar();
 
-    if (!container) {
-      return;
-    }
+    document.body.prepend(
+      sidebar
+    );
 
-    /*
-      サイドバー表示に必要なのは
-      HTML + CSSだけ。
-    */
+    document.body.classList.add(
+      "has-independent-sidebar"
+    );
 
-    loadCss();
-
-    /*
-      先にローディング表示。
-    */
-
-    container.innerHTML = `
-      <div class="sidebar-loading">
-        メニューを読み込んでいます...
-      </div>
-    `;
-
-    try {
-
-      const html =
-        await loadSidebarHtml();
-
-      container.innerHTML =
-        html;
-
-      setActivePage();
-
-      setupLogout();
-
-    } catch (error) {
-
-      console.error(
-        "サイドバー読み込みエラー:",
-        error
-      );
-
-      /*
-        エラーでも真っ白にしない。
-      */
-
-      container.innerHTML = `
-        <aside class="app-sidebar">
-          <div class="sidebar-inner">
-
-            <div class="sidebar-brand">
-              <div class="sidebar-brand-title">
-                学習AIチャット
-              </div>
-
-              <div class="sidebar-brand-subtitle">
-                定期テスト対策プリント運営事務局
-              </div>
-            </div>
-
-            <nav class="sidebar-nav">
-
-              <a
-                class="sidebar-link"
-                href="${getRootPath()}student/index.html"
-              >
-                <span class="sidebar-icon">⌂</span>
-                <span class="sidebar-label">
-                  学習ホーム
-                </span>
-              </a>
-
-              <a
-                class="sidebar-link"
-                href="${getRootPath()}student/question.html"
-              >
-                <span class="sidebar-icon">＋</span>
-                <span class="sidebar-label">
-                  AI学習チャット
-                </span>
-              </a>
-
-            </nav>
-
-          </div>
-        </aside>
-      `;
-
-      setActivePage();
-      setupLogout();
-    }
+    createMobileControls();
   }
 
   /*
-    他のJavaScriptからも利用可能。
-  */
-
-  window.StudyChatSidebar = {
-    init,
-    setActivePage
-  };
-
-  /*
-    DOM完成後に起動。
+    できるだけ早く実行
   */
 
   if (
@@ -339,13 +404,20 @@
   ) {
     document.addEventListener(
       "DOMContentLoaded",
-      init,
+      initSidebar,
       {
         once: true
       }
     );
   } else {
-    init();
+    initSidebar();
   }
 
+  /*
+    外部から再描画可能
+  */
+
+  window.IndependentSidebar = {
+    init: initSidebar
+  };
 })();
