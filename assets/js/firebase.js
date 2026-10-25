@@ -31,9 +31,12 @@ import {
   where,
   orderBy,
   limit,
-  onSnapshot,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+
+/* =========================================================
+   Firebase設定
+   ========================================================= */
 
 const firebaseConfig = {
   apiKey: "AIzaSyByt8kGALyS8AU8SR6PzWFEPXfgHY5iynk",
@@ -44,24 +47,55 @@ const firebaseConfig = {
   appId: "1:982302014286:web:abf319aadb1ed919727c1f"
 };
 
-// 旧コードとの互換性を維持
-if (typeof window !== "undefined") {
-  window.FIREBASE_CONFIG = firebaseConfig;
+/*
+  他の古いコードから参照される場合に備える
+*/
+window.FIREBASE_CONFIG = firebaseConfig;
+
+/* =========================================================
+   Firebase初期化
+   ========================================================= */
+
+let app;
+
+try {
+  app = getApps().length > 0
+    ? getApp()
+    : initializeApp(firebaseConfig);
+} catch (error) {
+  console.error(
+    "Firebase初期化エラー:",
+    error
+  );
+
+  throw error;
 }
 
-// Firebaseアプリを初期化
-const app = getApps().length
-  ? getApp()
-  : initializeApp(firebaseConfig);
+/* =========================================================
+   Authentication
+   ========================================================= */
 
 const auth = getAuth(app);
-const db = getFirestore(app);
 
-// ログイン状態をブラウザに保存
-const persistenceReady = setPersistence(
-  auth,
-  browserLocalPersistence
-);
+/*
+  ログイン状態をブラウザに保持
+*/
+const persistenceReady =
+  setPersistence(
+    auth,
+    browserLocalPersistence
+  );
+
+/* =========================================================
+   Firestore
+   ========================================================= */
+
+const db =
+  getFirestore(app);
+
+/* =========================================================
+   エクスポート
+   ========================================================= */
 
 export {
   app,
@@ -69,25 +103,32 @@ export {
   db,
   firebaseConfig,
   persistenceReady,
+
   onAuthStateChanged,
   signOut,
+
   signInWithEmailAndPassword,
+
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
+
   sendPasswordResetEmail,
+
   doc,
   getDoc,
   setDoc,
   updateDoc,
+
   collection,
   addDoc,
   getDocs,
+
   query,
   where,
   orderBy,
   limit,
-  onSnapshot,
+
   serverTimestamp
 };
