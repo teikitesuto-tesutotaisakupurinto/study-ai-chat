@@ -9,10 +9,12 @@
 
   <meta
     name="theme-color"
-    content="#f4f7fb"
+    content="#ffffff"
   >
 
-  <title>ホーム | 学習AIチャット</title>
+  <title>
+    ホーム | 学習AIチャット
+  </title>
 
   <link
     rel="stylesheet"
@@ -20,155 +22,195 @@
   >
 
   <style>
-    .home-container {
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #f8fafc;
+      color: #0f172a;
+      font-family:
+        Arial,
+        "Noto Sans JP",
+        sans-serif;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    .home-content {
       max-width: 1100px;
       margin: 0 auto;
+      padding: 34px 42px 0;
     }
 
-    .welcome-card {
+    .hero {
       padding: 28px;
+      border: 1px solid #dbe3ef;
       border-radius: 16px;
-      background:
-        linear-gradient(
-          135deg,
-          #2563eb,
-          #3b82f6
-        );
-      color: #fff;
+      background: #ffffff;
       box-shadow:
-        0 8px 24px
-        rgba(37,99,235,.16);
+        0 3px 12px
+        rgb(15 23 42 / 4%);
     }
 
-    .welcome-card h2 {
+    .hero-label {
+      margin: 0 0 8px;
+      color: #2563eb;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .hero h2 {
       margin: 0;
-      font-size: 25px;
+      font-size: 24px;
+      line-height: 1.45;
     }
 
-    .welcome-card p {
-      margin: 9px 0 0;
-      opacity: .9;
-      line-height: 1.7;
+    .hero p {
+      margin: 12px 0 0;
+      color: #64748b;
+      line-height: 1.8;
     }
 
-    .question-card {
-      display: block;
-      margin-top: 18px;
-      padding: 22px;
-
-      border: 1px solid #dbe4f1;
-      border-radius: 14px;
-
-      background: #fff;
+    .question-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      margin-top: 20px;
+      padding: 0 22px;
+      border-radius: 9px;
+      background: #2563eb;
+      color: #ffffff;
       text-decoration: none;
-
-      transition:
-        transform .15s ease,
-        box-shadow .15s ease,
-        border-color .15s ease;
+      font-size: 14px;
+      font-weight: 700;
     }
 
-    .question-card:hover {
-      transform: translateY(-2px);
-      border-color: #8fb5f5;
-      box-shadow:
-        0 8px 22px
-        rgba(15,23,42,.07);
+    .question-button:hover {
+      background: #1d4ed8;
     }
 
-    .question-card h2 {
+    .home-section {
+      margin-top: 26px;
+    }
+
+    .section-card {
+      padding: 24px;
+      border: 1px solid #dbe3ef;
+      border-radius: 14px;
+      background: #ffffff;
+    }
+
+    .section-card h2 {
       margin: 0;
       font-size: 18px;
     }
 
-    .question-card p {
+    .section-description {
       margin: 8px 0 0;
       color: #64748b;
-      line-height: 1.7;
-    }
-
-    .section {
-      margin-top: 30px;
-    }
-
-    .section h2 {
-      margin: 0 0 5px;
-      font-size: 20px;
-    }
-
-    .section-description {
-      margin: 0 0 15px;
-      color: #64748b;
       font-size: 13px;
+      line-height: 1.7;
     }
 
     .history-list {
       display: grid;
       gap: 10px;
+      margin-top: 18px;
     }
 
     .history-item {
       display: block;
       padding: 16px;
-
-      border: 1px solid #e1e7ef;
-      border-radius: 11px;
-
-      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #ffffff;
+      color: inherit;
       text-decoration: none;
     }
 
     .history-item:hover {
-      border-color: #a7bde0;
-      background: #fafcff;
+      border-color: #93c5fd;
+      background: #f8fbff;
     }
 
     .history-title {
+      color: #0f172a;
+      font-size: 14px;
       font-weight: 700;
-      line-height: 1.5;
+      line-height: 1.6;
     }
 
     .history-date {
-      margin-top: 5px;
-      color: #7b8798;
+      margin-top: 6px;
+      color: #64748b;
       font-size: 12px;
     }
 
-    .empty {
-      padding: 25px;
-      border: 1px dashed #ccd5e2;
-      border-radius: 12px;
-      color: #718096;
-      background: #fff;
+    .empty-history {
+      padding: 18px;
+      border-radius: 9px;
+      background: #f8fafc;
+      color: #64748b;
+      font-size: 13px;
       text-align: center;
-      font-size: 14px;
     }
 
-    .error {
-      padding: 14px;
-      border-radius: 9px;
-      background: #fff2f2;
-      color: #b42318;
+    .home-error {
+      margin-top: 14px;
+      padding: 12px;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      background: #fef2f2;
+      color: #b91c1c;
       font-size: 13px;
       line-height: 1.7;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
+    }
+
+    .loading {
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    @media (max-width: 760px) {
+      .home-content {
+        padding: 24px 16px 0;
+      }
+
+      .hero {
+        padding: 22px;
+      }
+
+      .hero h2 {
+        font-size: 21px;
+      }
+
+      .section-card {
+        padding: 20px;
+      }
     }
   </style>
 </head>
 
 <body>
 
-<div class="app-layout">
+  <div class="app-layout">
 
-  <aside
-    id="appSidebar"
-    aria-label="メインメニュー"
-  ></aside>
+    <aside
+      id="appSidebar"
+      class="sidebar"
+    ></aside>
 
-  <main class="app-main">
-
-    <div class="home-container">
+    <main
+      id="appMain"
+      class="app-main"
+    >
 
       <header class="page-header">
         <h1 class="page-title">
@@ -180,369 +222,334 @@
         </p>
       </header>
 
-      <section
-        class="welcome-card"
-      >
-        <h2>
-          <span id="welcomeName">
-            学習者
-          </span>
-          さん、今日も勉強しよう
-        </h2>
+      <div class="home-content">
 
-        <p>
-          分からない問題や、授業で気になったことをAIに質問できます。
-        </p>
-      </section>
+        <section class="hero">
 
-      <a
-        class="question-card"
-        href="./question.html"
-      >
-        <h2>
-          AIに質問する
-        </h2>
+          <p class="hero-label">
+            学習AIチャット
+          </p>
 
-        <p>
-          数学・英語・国語・理科・社会などの学習について質問できます。
-        </p>
-      </a>
+          <h2>
+            分からないところを、
+            AIに質問してみよう。
+          </h2>
 
-      <section class="section">
+          <p>
+            中学生の学習をサポートする
+            学習専用AIです。
+            数学・英語・国語・理科・社会などの
+            学習について質問できます。
+          </p>
 
-        <h2>
-          最近の学習
-        </h2>
+          <a
+            class="question-button"
+            href="question.html"
+          >
+            AIに質問する
+          </a>
 
-        <p class="section-description">
-          過去の会話を選択すると、その会話の続きから質問できます。
-        </p>
+        </section>
 
-        <div
-          id="recent-history"
-          class="history-list"
-        >
-          <div class="empty">
-            履歴を読み込んでいます...
+        <section class="home-section">
+
+          <div class="section-card">
+
+            <h2>
+              最近の学習
+            </h2>
+
+            <p class="section-description">
+              過去の会話を選択すると、
+              その会話の続きから質問できます。
+            </p>
+
+            <div
+              id="recent-history"
+              class="history-list"
+              aria-live="polite"
+            >
+              <div class="loading">
+                履歴を読み込んでいます...
+              </div>
+            </div>
+
+            <p
+              id="history-error"
+              class="home-error"
+              hidden
+            ></p>
+
           </div>
-        </div>
 
-        <div
-          id="history-error"
-          class="error"
-          hidden
-        ></div>
+        </section>
 
-      </section>
+      </div>
 
       <footer class="page-footer">
-        © 2026 定期テスト対策プリント運営事務局. All Rights Reserved.
+        © 2026 定期テスト対策プリント運営事務局.
+        All Rights Reserved.
       </footer>
 
-    </div>
+    </main>
 
-  </main>
+  </div>
 
-</div>
+  <script type="module">
 
-<script type="module">
+    import {
+      auth,
+      persistenceReady,
+      signOut
+    } from "../assets/js/firebase-module.js";
 
-import {
-  auth,
-  db,
-  collection,
-  getDocs,
-  query,
-  where,
-  signOut
-} from "../assets/js/firebase-module.js";
+    import {
+      protectPage,
+      getRecentConversations
+    } from "../assets/js/auth.js";
 
-import {
-  protectPage
-} from "../assets/js/auth.js";
+    import {
+      setupSidebar,
+      setupLogout,
+      setSidebarUser
+    } from "../assets/js/layout.js";
 
-import {
-  setupSidebar,
-  setupLogout
-} from "../assets/js/layout.js";
+    const $ =
+      id =>
+        document.getElementById(id);
 
-const $ = id =>
-  document.getElementById(id);
+    function formatDate(value) {
 
-function formatDate(value) {
-
-  if (!value) {
-    return "日時未設定";
-  }
-
-  let date;
-
-  if (
-    typeof value.toDate ===
-    "function"
-  ) {
-    date = value.toDate();
-  } else {
-    date = new Date(value);
-  }
-
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
-    return "日時未設定";
-  }
-
-  return new Intl.DateTimeFormat(
-    "ja-JP",
-    {
-      year: "numeric",
-      month: "numeric",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    }
-  ).format(date);
-}
-
-async function loadRecentConversations(
-  uid
-) {
-
-  const container =
-    $("recent-history");
-
-  const errorBox =
-    $("history-error");
-
-  container.replaceChildren();
-
-  errorBox.hidden = true;
-
-  try {
-
-    /*
-      composite indexを要求する
-      orderByは使用しない。
-
-      本人のデータだけ取得し、
-      JavaScript側で並び替える。
-    */
-
-    const q =
-      query(
-        collection(
-          db,
-          "chatHistories"
-        ),
-        where(
-          "userId",
-          "==",
-          uid
-        )
-      );
-
-    const snapshot =
-      await getDocs(q);
-
-    if (snapshot.empty) {
-
-      const empty =
-        document.createElement("div");
-
-      empty.className =
-        "empty";
-
-      empty.textContent =
-        "まだ学習履歴はありません。";
-
-      container.append(
-        empty
-      );
-
-      return;
-    }
-
-    const items =
-      snapshot.docs
-        .map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }))
-        .sort((a, b) => {
-
-          const aTime =
-            a.updatedAt?.toMillis
-              ? a.updatedAt.toMillis()
-              : new Date(
-                  a.updatedAt || 0
-                ).getTime();
-
-          const bTime =
-            b.updatedAt?.toMillis
-              ? b.updatedAt.toMillis()
-              : new Date(
-                  b.updatedAt || 0
-                ).getTime();
-
-          return bTime - aTime;
-        })
-        .slice(0, 10);
-
-    for (
-      const item of items
-    ) {
-
-      const link =
-        document.createElement("a");
-
-      link.className =
-        "history-item";
-
-      link.href =
-        `./question.html?conversationId=${
-          encodeURIComponent(item.id)
-        }`;
-
-      const title =
-        document.createElement("div");
-
-      title.className =
-        "history-title";
-
-      title.textContent =
-        item.title ||
-        item.lastQuestion ||
-        "新しい会話";
+      if (!value) {
+        return "日時未設定";
+      }
 
       const date =
-        document.createElement("div");
+        new Date(value);
 
-      date.className =
-        "history-date";
+      if (
+        Number.isNaN(
+          date.getTime()
+        )
+      ) {
+        return "日時未設定";
+      }
 
-      date.textContent =
-        `最終更新：${
-          formatDate(
-            item.updatedAt
-          )
-        }`;
+      return new Intl.DateTimeFormat(
+        "ja-JP",
+        {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        }
+      ).format(date);
+    }
 
-      link.append(
-        title,
-        date
-      );
+    function showHistoryError(
+      message
+    ) {
 
-      container.append(
-        link
+      const error =
+        $("history-error");
+
+      error.textContent =
+        message;
+
+      error.hidden = false;
+    }
+
+    function renderHistory(
+      conversations
+    ) {
+
+      const container =
+        $("recent-history");
+
+      container.replaceChildren();
+
+      if (
+        !Array.isArray(
+          conversations
+        ) ||
+        conversations.length === 0
+      ) {
+
+        const empty =
+          document.createElement(
+            "div"
+          );
+
+        empty.className =
+          "empty-history";
+
+        empty.textContent =
+          "まだ学習履歴はありません。";
+
+        container.appendChild(
+          empty
+        );
+
+        return;
+      }
+
+      conversations.forEach(
+        item => {
+
+          const link =
+            document.createElement(
+              "a"
+            );
+
+          link.className =
+            "history-item";
+
+          link.href =
+            `question.html?conversationId=${
+              encodeURIComponent(
+                item.id
+              )
+            }`;
+
+          const title =
+            document.createElement(
+              "div"
+            );
+
+          title.className =
+            "history-title";
+
+          title.textContent =
+            item.title ||
+            item.lastQuestion ||
+            "新しい会話";
+
+          const date =
+            document.createElement(
+              "div"
+            );
+
+          date.className =
+            "history-date";
+
+          date.textContent =
+            `最終更新：${
+              formatDate(
+                item.updatedAt
+              )
+            }`;
+
+          link.append(
+            title,
+            date
+          );
+
+          container.appendChild(
+            link
+          );
+        }
       );
     }
 
-  } catch (error) {
+    async function initialize() {
 
-    console.error(
-      "履歴取得エラー:",
-      error
-    );
+      try {
 
-    container.replaceChildren();
+        await persistenceReady;
 
-    const errorText =
-      document.createElement("div");
+        const result =
+          await protectPage(
+            "student"
+          );
 
-    errorText.className =
-      "error";
+        if (
+          !result ||
+          !result.user
+        ) {
+          return;
+        }
 
-    errorText.textContent =
-      "履歴を読み込めませんでした。";
+        const profile =
+          result.profile;
 
-    container.append(
-      errorText
-    );
+        /*
+         * サイドバーは認証成功直後に必ず生成
+         */
+        setupSidebar(
+          profile
+        );
 
-    errorBox.textContent =
-      `${error.code || "error"}: ${
-        error.message ||
-        String(error)
-      }`;
+        setupLogout(
+          auth,
+          signOut
+        );
 
-    errorBox.hidden = false;
-  }
-}
+        setSidebarUser(
+          profile
+        );
 
-async function initialize() {
+        const displayName =
+          profile.displayName ||
+          profile.name ||
+          result.user.displayName ||
+          "学習者";
 
-  try {
+        $("welcome").textContent =
+          `${displayName}さん、学習を始めましょう。`;
 
-    const result =
-      await protectPage(
-        "student"
-      );
+        try {
 
-    if (!result) {
-      return;
+          const result =
+            await getRecentConversations(
+              10
+            );
+
+          renderHistory(
+            result.conversations || []
+          );
+
+        } catch (error) {
+
+          console.error(
+            "最近の学習取得エラー:",
+            error
+          );
+
+          $("recent-history")
+            .textContent =
+              "履歴を読み込めませんでした。";
+
+          showHistoryError(
+            `${error.code || "error"}: ${
+              error.message ||
+              String(error)
+            }`
+          );
+        }
+
+      } catch (error) {
+
+        console.error(
+          "ホーム画面初期化エラー:",
+          error
+        );
+
+        $("welcome").textContent =
+          "ホーム画面を読み込めませんでした。";
+
+        showHistoryError(
+          `${error.code || "error"}: ${
+            error.message ||
+            String(error)
+          }`
+        );
+      }
     }
 
-    /*
-      認証成功後に必ずサイドバーを生成
-    */
+    initialize();
 
-    setupSidebar();
-
-    setupLogout(
-      auth,
-      signOut
-    );
-
-    const user =
-      result.user;
-
-    const profile =
-      result.profile;
-
-    const name =
-      profile.displayName ||
-      profile.name ||
-      user.displayName ||
-      "学習者";
-
-    $("welcome").textContent =
-      `${name}さん、学習を始めましょう。`;
-
-    $("welcomeName").textContent =
-      name;
-
-    await loadRecentConversations(
-      user.uid
-    );
-
-  } catch (error) {
-
-    console.error(
-      "ホーム初期化エラー:",
-      error
-    );
-
-    $("welcome").textContent =
-      "ホーム画面を読み込めませんでした。";
-
-    const errorBox =
-      $("history-error");
-
-    errorBox.textContent =
-      `${error.code || "error"}: ${
-        error.message ||
-        String(error)
-      }`;
-
-    errorBox.hidden = false;
-  }
-}
-
-initialize();
-
-</script>
+  </script>
 
 </body>
 </html>
