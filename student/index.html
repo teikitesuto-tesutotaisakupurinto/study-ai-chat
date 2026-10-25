@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -9,190 +10,578 @@
 
   <meta
     name="theme-color"
-    content="#ffffff"
+    content="#f4f7fb"
   >
 
-  <title>
-    ホーム | 学習AIチャット
-  </title>
+  <meta
+    name="description"
+    content="学習AIチャットの学習ホーム"
+  >
+
+  <title>ホーム | 学習AIチャット</title>
 
   <link
     rel="stylesheet"
     href="../assets/css/common.css"
   >
 
+  <link
+    rel="stylesheet"
+    href="../assets/css/student.css"
+  >
+
   <style>
-    * {
-      box-sizing: border-box;
+    /* =====================================================
+       基本
+       ===================================================== */
+
+    :root {
+      font-family:
+        system-ui,
+        -apple-system,
+        "Noto Sans JP",
+        "Hiragino Kaku Gothic ProN",
+        Meiryo,
+        sans-serif;
+
+      color: #172033;
+      background: #f4f7fb;
     }
 
-    body {
-      margin: 0;
-      background: #f8fafc;
-      color: #0f172a;
-      font-family:
-        Arial,
-        "Noto Sans JP",
-        sans-serif;
+    * {
+      box-sizing: border-box;
     }
 
     [hidden] {
       display: none !important;
     }
 
-    .home-content {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 34px 42px 0;
-    }
-
-    .hero {
-      padding: 28px;
-      border: 1px solid #dbe3ef;
-      border-radius: 16px;
-      background: #ffffff;
-      box-shadow:
-        0 3px 12px
-        rgb(15 23 42 / 4%);
-    }
-
-    .hero-label {
-      margin: 0 0 8px;
-      color: #2563eb;
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    .hero h2 {
+    body {
       margin: 0;
-      font-size: 24px;
-      line-height: 1.45;
+      min-height: 100vh;
+      background: #f4f7fb;
     }
 
-    .hero p {
-      margin: 12px 0 0;
-      color: #64748b;
-      line-height: 1.8;
+    /* =====================================================
+       サイドバー
+       Firestore / Supabase / AI通信に完全依存しない
+       ===================================================== */
+
+    #appSidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+
+      width: 250px;
+      height: 100vh;
+
+      background: #ffffff;
+
+      border-right: 1px solid #e2e8f0;
+
+      z-index: 1000;
+
+      overflow-y: auto;
+      overflow-x: hidden;
     }
 
-    .question-button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 46px;
-      margin-top: 20px;
-      padding: 0 22px;
-      border-radius: 9px;
-      background: #2563eb;
-      color: #ffffff;
+    #appSidebar .sidebar-inner {
+      min-height: 100vh;
+
+      display: flex;
+      flex-direction: column;
+    }
+
+    #appSidebar .sidebar-brand {
+      padding: 24px 20px 20px;
+
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    #appSidebar .sidebar-brand-link {
+      display: block;
+
+      color: #172033;
+
       text-decoration: none;
+    }
+
+    #appSidebar .sidebar-brand-title {
+      display: block;
+
+      font-size: 18px;
+      line-height: 1.4;
+
+      font-weight: 800;
+
+      letter-spacing: -.02em;
+    }
+
+    #appSidebar .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+
+      gap: 4px;
+
+      padding: 14px 12px;
+    }
+
+    #appSidebar .sidebar-link {
+      display: flex;
+      align-items: center;
+
+      min-height: 46px;
+
+      padding: 0 14px;
+
+      border-radius: 9px;
+
+      color: #475569;
+
+      text-decoration: none;
+
+      font-size: 14px;
+      font-weight: 600;
+
+      transition:
+        background-color .15s ease,
+        color .15s ease;
+    }
+
+    #appSidebar .sidebar-link:hover {
+      background: #f1f5f9;
+      color: #172033;
+    }
+
+    #appSidebar .sidebar-link.active {
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+
+    #appSidebar .sidebar-bottom {
+      margin-top: auto;
+
+      padding: 16px 12px 20px;
+
+      border-top: 1px solid #e2e8f0;
+    }
+
+    #appSidebar .sidebar-logout {
+      width: 100%;
+
+      min-height: 44px;
+
+      padding: 0 14px;
+
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+
+      background: #ffffff;
+      color: #334155;
+
+      cursor: pointer;
+
+      font: inherit;
+
       font-size: 14px;
       font-weight: 700;
     }
 
-    .question-button:hover {
-      background: #1d4ed8;
+    #appSidebar .sidebar-logout:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+    }
+
+    #appSidebar .sidebar-logout:disabled {
+      cursor: wait;
+      opacity: .6;
+    }
+
+    /* =====================================================
+       メイン
+       ===================================================== */
+
+    #appMain {
+      min-height: 100vh;
+
+      margin-left: 250px;
+
+      padding: 0;
+    }
+
+    .page-header {
+      padding: 38px 40px 30px;
+
+      background: #ffffff;
+
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .page-title {
+      margin: 0;
+
+      font-size: 30px;
+      line-height: 1.3;
+
+      font-weight: 800;
+
+      letter-spacing: -.03em;
+    }
+
+    #welcome {
+      margin: 10px 0 0;
+
+      color: #64748b;
+
+      font-size: 15px;
+      line-height: 1.8;
+    }
+
+    /* =====================================================
+       コンテンツ
+       ===================================================== */
+
+    .home-content {
+      width: min(
+        100%,
+        1050px
+      );
+
+      margin: 0 auto;
+
+      padding: 34px 40px 50px;
     }
 
     .home-section {
-      margin-top: 26px;
+      margin: 0 0 28px;
     }
 
-    .section-card {
-      padding: 24px;
+    .home-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .home-card {
+      display: block;
+
+      padding: 26px;
+
       border: 1px solid #dbe3ef;
       border-radius: 14px;
+
       background: #ffffff;
+
+      color: inherit;
+
+      text-decoration: none;
+
+      transition:
+        border-color .15s ease,
+        box-shadow .15s ease,
+        transform .15s ease;
     }
 
-    .section-card h2 {
+    .home-card:hover {
+      border-color: #2563eb;
+
+      box-shadow:
+        0 8px 24px
+        rgb(15 23 42 / 8%);
+
+      transform: translateY(-1px);
+    }
+
+    .home-card h2 {
       margin: 0;
-      font-size: 18px;
+
+      color: #172033;
+
+      font-size: 21px;
+      line-height: 1.5;
     }
 
-    .section-description {
-      margin: 8px 0 0;
+    .home-card p {
+      margin: 9px 0 0;
+
       color: #64748b;
-      font-size: 13px;
-      line-height: 1.7;
+
+      font-size: 14px;
+      line-height: 1.8;
     }
+
+    /* =====================================================
+       通常カード
+       ===================================================== */
+
+    .card {
+      padding: 26px;
+
+      border: 1px solid #dbe3ef;
+      border-radius: 14px;
+
+      background: #ffffff;
+
+      box-shadow:
+        0 2px 10px
+        rgb(15 23 42 / 3%);
+    }
+
+    .card h2 {
+      margin: 0;
+
+      font-size: 21px;
+      line-height: 1.5;
+    }
+
+    .card-description {
+      margin: 8px 0 0;
+
+      color: #64748b;
+
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    /* =====================================================
+       最近の学習
+       ===================================================== */
 
     .history-list {
       display: grid;
+
       gap: 10px;
-      margin-top: 18px;
+
+      margin-top: 20px;
     }
 
     .history-item {
       display: block;
-      padding: 16px;
+
+      padding: 16px 18px;
+
       border: 1px solid #e2e8f0;
       border-radius: 10px;
+
       background: #ffffff;
+
       color: inherit;
+
       text-decoration: none;
+
+      transition:
+        background-color .15s ease,
+        border-color .15s ease;
     }
 
     .history-item:hover {
-      border-color: #93c5fd;
-      background: #f8fbff;
+      background: #f8fafc;
+
+      border-color: #94a3b8;
     }
 
     .history-title {
-      color: #0f172a;
-      font-size: 14px;
-      font-weight: 700;
+      margin: 0 0 5px;
+
+      color: #172033;
+
+      font-size: 15px;
       line-height: 1.6;
+
+      font-weight: 700;
+
+      overflow-wrap: anywhere;
     }
 
     .history-date {
-      margin-top: 6px;
       color: #64748b;
+
       font-size: 12px;
+      line-height: 1.6;
     }
 
-    .empty-history {
-      padding: 18px;
-      border-radius: 9px;
-      background: #f8fafc;
+    .history-empty {
+      padding: 20px;
+
+      border: 1px dashed #cbd5e1;
+      border-radius: 10px;
+
       color: #64748b;
-      font-size: 13px;
+
+      background: #f8fafc;
+
+      font-size: 14px;
+      line-height: 1.8;
+
       text-align: center;
     }
 
+    /* =====================================================
+       ローディング
+       ===================================================== */
+
+    .history-loading {
+      padding: 20px;
+
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+
+      color: #64748b;
+
+      background: #f8fafc;
+
+      font-size: 14px;
+
+      text-align: center;
+    }
+
+    /* =====================================================
+       エラー
+       ===================================================== */
+
     .home-error {
       margin-top: 14px;
-      padding: 12px;
+
+      padding: 13px 15px;
+
       border: 1px solid #fecaca;
-      border-radius: 8px;
+      border-radius: 9px;
+
       background: #fef2f2;
+
       color: #b91c1c;
+
       font-size: 13px;
       line-height: 1.7;
+
+      white-space: pre-wrap;
+
+      overflow-wrap: anywhere;
+    }
+
+    /* =====================================================
+       システムエラー
+       ===================================================== */
+
+    .system-error {
+      margin-bottom: 28px;
+
+      padding: 16px 18px;
+
+      border: 1px solid #fecaca;
+      border-radius: 10px;
+
+      background: #fff7f7;
+
+      color: #991b1b;
+    }
+
+    .system-error-title {
+      margin: 0 0 6px;
+
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .system-error-message {
+      margin: 0;
+
+      font-size: 13px;
+      line-height: 1.8;
+
       white-space: pre-wrap;
       overflow-wrap: anywhere;
     }
 
-    .loading {
-      color: #64748b;
-      font-size: 13px;
+    /* =====================================================
+       フッター
+       ===================================================== */
+
+    .page-footer {
+      margin-top: 42px;
+
+      padding: 22px 0 10px;
+
+      color: #94a3b8;
+
+      font-size: 11px;
+      line-height: 1.7;
+
+      text-align: center;
     }
 
+    /* =====================================================
+       モバイル
+       ===================================================== */
+
     @media (max-width: 760px) {
+
+      #appSidebar {
+        position: relative;
+
+        width: 100%;
+        height: auto;
+
+        min-height: 0;
+
+        border-right: 0;
+
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      #appSidebar .sidebar-inner {
+        min-height: 0;
+      }
+
+      #appSidebar .sidebar-brand {
+        padding: 18px 16px;
+      }
+
+      #appSidebar .sidebar-nav {
+        display: grid;
+
+        grid-template-columns:
+          repeat(2, minmax(0, 1fr));
+
+        padding: 10px 12px;
+      }
+
+      #appSidebar .sidebar-link {
+        min-height: 44px;
+      }
+
+      #appSidebar .sidebar-bottom {
+        margin-top: 0;
+
+        padding: 10px 12px 14px;
+      }
+
+      #appMain {
+        margin-left: 0;
+      }
+
+      .page-header {
+        padding: 28px 20px 24px;
+      }
+
+      .page-title {
+        font-size: 25px;
+      }
+
       .home-content {
-        padding: 24px 16px 0;
+        padding:
+          24px
+          18px
+          40px;
+      }
+    }
+
+    @media (max-width: 420px) {
+
+      #appSidebar .sidebar-nav {
+        grid-template-columns: 1fr;
       }
 
-      .hero {
-        padding: 22px;
-      }
-
-      .hero h2 {
-        font-size: 21px;
-      }
-
-      .section-card {
-        padding: 20px;
+      .home-card,
+      .card {
+        padding: 21px;
       }
     }
   </style>
@@ -200,140 +589,555 @@
 
 <body>
 
-  <div class="app-layout">
+  <!-- =====================================================
+       サイドバー
+       ここはJavaScriptだけで生成する。
+       Firestore / Supabase / AI通信には依存しない。
+       ===================================================== -->
 
-    <aside
-      id="appSidebar"
-      class="sidebar"
-    ></aside>
+  <aside
+    id="appSidebar"
+    class="sidebar"
+    aria-label="メインメニュー"
+  ></aside>
 
-    <main
-      id="appMain"
-      class="app-main"
-    >
 
-      <header class="page-header">
-        <h1 class="page-title">
-          学習ホーム
-        </h1>
+  <!-- =====================================================
+       メイン
+       ===================================================== -->
 
-        <p id="welcome">
-          学習を始めましょう。
-        </p>
-      </header>
+  <main
+    id="appMain"
+    class="app-main"
+  >
 
-      <div class="home-content">
+    <header class="page-header">
 
-        <section class="hero">
+      <h1 class="page-title">
+        学習ホーム
+      </h1>
 
-          <p class="hero-label">
-            学習AIチャット
-          </p>
+      <p id="welcome">
+        学習を始めましょう。
+      </p>
+
+    </header>
+
+
+    <div class="home-content">
+
+      <!-- =================================================
+           システム状態
+           ================================================= -->
+
+      <section
+        id="system-error"
+        class="system-error"
+        hidden
+      >
+
+        <h2 class="system-error-title">
+          一部の情報を読み込めませんでした
+        </h2>
+
+        <p
+          id="system-error-message"
+          class="system-error-message"
+        ></p>
+
+      </section>
+
+
+      <!-- =================================================
+           AI学習
+           ================================================= -->
+
+      <section class="home-section">
+
+        <a
+          class="home-card"
+          href="question.html"
+        >
 
           <h2>
-            分からないところを、
-            AIに質問してみよう。
+            AI学習チャット
           </h2>
 
           <p>
-            中学生の学習をサポートする
-            学習専用AIです。
-            数学・英語・国語・理科・社会などの
-            学習について質問できます。
+            中学生向けの学習AIに質問できます。
+            過去の会話を続けることもできます。
           </p>
 
-          <a
-            class="question-button"
-            href="question.html"
+        </a>
+
+      </section>
+
+
+      <!-- =================================================
+           最近の学習
+           ================================================= -->
+
+      <section class="home-section">
+
+        <div class="card">
+
+          <h2>
+            最近の学習
+          </h2>
+
+          <p class="card-description">
+            過去の会話を選択すると、
+            その会話の続きから質問できます。
+          </p>
+
+          <div
+            id="recent-history"
+            class="history-list"
+            aria-live="polite"
           >
-            AIに質問する
-          </a>
 
-        </section>
-
-        <section class="home-section">
-
-          <div class="section-card">
-
-            <h2>
-              最近の学習
-            </h2>
-
-            <p class="section-description">
-              過去の会話を選択すると、
-              その会話の続きから質問できます。
-            </p>
-
-            <div
-              id="recent-history"
-              class="history-list"
-              aria-live="polite"
-            >
-              <div class="loading">
-                履歴を読み込んでいます...
-              </div>
+            <div class="history-loading">
+              履歴を読み込んでいます...
             </div>
-
-            <p
-              id="history-error"
-              class="home-error"
-              hidden
-            ></p>
 
           </div>
 
-        </section>
+          <p
+            id="history-error"
+            class="home-error"
+            hidden
+          ></p>
 
-      </div>
+        </div>
+
+      </section>
+
+
+      <!-- =================================================
+           フッター
+           ================================================= -->
 
       <footer class="page-footer">
-        © 2026 定期テスト対策プリント運営事務局.
-        All Rights Reserved.
+        © 2026 定期テスト対策プリント運営事務局. All Rights Reserved.
       </footer>
 
-    </main>
+    </div>
 
-  </div>
+  </main>
 
-  <script type="module">
+
+  <!-- =====================================================
+       Firebase
+       ===================================================== -->
+
+  <script
+    type="module"
+  >
 
     import {
       auth,
+      db,
       persistenceReady,
-      signOut
-    } from "../assets/js/firebase-module.js";
+      onAuthStateChanged,
+      signOut,
+      doc,
+      getDoc,
+      collection,
+      query,
+      where,
+      getDocs
+    } from "../assets/js/firebase.js";
 
-    import {
-      protectPage,
-      getRecentConversations
-    } from "../assets/js/auth.js";
 
-    import {
-      setupSidebar,
-      setupLogout,
-      setSidebarUser
-    } from "../assets/js/layout.js";
+    /* =====================================================
+       DOM
+       ===================================================== */
 
     const $ =
-      id =>
-        document.getElementById(id);
+      (selector) =>
+        document.querySelector(selector);
 
-    function formatDate(value) {
+
+    /* =====================================================
+       サイドバー
+       完全ローカル生成
+       ===================================================== */
+
+    function createSidebar() {
+
+      const sidebar =
+        $("#appSidebar");
+
+      if (!sidebar) {
+        return false;
+      }
+
+
+      const currentPage =
+        location.pathname
+          .split("/")
+          .pop() ||
+        "index.html";
+
+
+      sidebar.innerHTML = `
+
+        <div class="sidebar-inner">
+
+          <div class="sidebar-brand">
+
+            <a
+              class="sidebar-brand-link"
+              href="index.html"
+            >
+
+              <span class="sidebar-brand-title">
+                学習AIチャット
+              </span>
+
+            </a>
+
+          </div>
+
+
+          <nav
+            class="sidebar-nav"
+            aria-label="メインメニュー"
+          >
+
+            <a
+              class="sidebar-link ${
+                currentPage === "index.html"
+                  ? "active"
+                  : ""
+              }"
+              href="index.html"
+              ${
+                currentPage === "index.html"
+                  ? 'aria-current="page"'
+                  : ""
+              }
+            >
+              <span>
+                ホーム
+              </span>
+            </a>
+
+
+            <a
+              class="sidebar-link ${
+                currentPage === "question.html"
+                  ? "active"
+                  : ""
+              }"
+              href="question.html"
+              ${
+                currentPage === "question.html"
+                  ? 'aria-current="page"'
+                  : ""
+              }
+            >
+              <span>
+                AIに質問
+              </span>
+            </a>
+
+
+            <a
+              class="sidebar-link ${
+                currentPage === "history.html"
+                  ? "active"
+                  : ""
+              }"
+              href="history.html"
+              ${
+                currentPage === "history.html"
+                  ? 'aria-current="page"'
+                  : ""
+              }
+            >
+              <span>
+                学習履歴
+              </span>
+            </a>
+
+
+            <a
+              class="sidebar-link ${
+                currentPage === "announcements.html"
+                  ? "active"
+                  : ""
+              }"
+              href="announcements.html"
+              ${
+                currentPage === "announcements.html"
+                  ? 'aria-current="page"'
+                  : ""
+              }
+            >
+              <span>
+                お知らせ
+              </span>
+            </a>
+
+
+            <a
+              class="sidebar-link ${
+                currentPage === "settings.html"
+                  ? "active"
+                  : ""
+              }"
+              href="settings.html"
+              ${
+                currentPage === "settings.html"
+                  ? 'aria-current="page"'
+                  : ""
+              }
+            >
+              <span>
+                設定
+              </span>
+            </a>
+
+          </nav>
+
+
+          <div class="sidebar-bottom">
+
+            <button
+              id="sidebarLogoutButton"
+              class="sidebar-logout"
+              type="button"
+            >
+              ログアウト
+            </button>
+
+          </div>
+
+        </div>
+      `;
+
+
+      /*
+        ここまで完全にローカル処理。
+
+        Firestore:
+        使用しない
+
+        Supabase:
+        使用しない
+
+        AI:
+        使用しない
+      */
+
+      return true;
+    }
+
+
+    /* =====================================================
+       ログアウト
+       ===================================================== */
+
+    function setupLogout() {
+
+      const button =
+        $("#sidebarLogoutButton");
+
+      if (!button) {
+        return;
+      }
+
+
+      button.addEventListener(
+        "click",
+        async () => {
+
+          if (
+            button.disabled
+          ) {
+            return;
+          }
+
+
+          button.disabled = true;
+
+          button.textContent =
+            "ログアウト中...";
+
+
+          try {
+
+            await signOut(auth);
+
+            location.replace(
+              "../login.html"
+            );
+
+          } catch (error) {
+
+            console.error(
+              "ログアウトエラー:",
+              error
+            );
+
+
+            button.disabled = false;
+
+            button.textContent =
+              "ログアウト";
+
+
+            alert(
+              "ログアウトできませんでした。\n" +
+              (
+                error?.message ||
+                String(error)
+              )
+            );
+          }
+
+        }
+      );
+    }
+
+
+    /* =====================================================
+       エラー表示
+       ===================================================== */
+
+    function showSystemError(
+      message
+    ) {
+
+      const box =
+        $("#system-error");
+
+      const text =
+        $("#system-error-message");
+
+
+      if (!box || !text) {
+        return;
+      }
+
+
+      text.textContent =
+        message;
+
+      box.hidden = false;
+    }
+
+
+    /* =====================================================
+       Firestoreプロフィール
+       ===================================================== */
+
+    async function getProfile(
+      uid
+    ) {
+
+      const snapshot =
+        await getDoc(
+          doc(
+            db,
+            "users",
+            uid
+          )
+        );
+
+
+      if (
+        !snapshot.exists()
+      ) {
+
+        throw new Error(
+          `ユーザープロフィールが見つかりません。users/${uid}`
+        );
+      }
+
+
+      return snapshot.data();
+    }
+
+
+    /* =====================================================
+       Firestoreシステム設定
+       ===================================================== */
+
+    async function getSystemSettings() {
+
+      const snapshot =
+        await getDoc(
+          doc(
+            db,
+            "settings",
+            "system"
+          )
+        );
+
+
+      if (
+        !snapshot.exists()
+      ) {
+
+        throw new Error(
+          "Firestoreの settings/system が見つかりません。"
+        );
+      }
+
+
+      return snapshot.data();
+    }
+
+
+    /* =====================================================
+       日付
+       ===================================================== */
+
+    function formatDate(
+      value
+    ) {
 
       if (!value) {
         return "日時未設定";
       }
 
-      const date =
-        new Date(value);
+
+      let date;
+
+
+      try {
+
+        if (
+          typeof value.toDate ===
+          "function"
+        ) {
+
+          date =
+            value.toDate();
+
+        } else {
+
+          date =
+            new Date(value);
+        }
+
+      } catch {
+
+        return "日時未設定";
+      }
+
 
       if (
         Number.isNaN(
           date.getTime()
         )
       ) {
+
         return "日時未設定";
       }
+
 
       return new Intl.DateTimeFormat(
         "ja-JP",
@@ -347,63 +1151,197 @@
       ).format(date);
     }
 
-    function showHistoryError(
-      message
+
+    /* =====================================================
+       timestamp比較
+       ===================================================== */
+
+    function getTimestampNumber(
+      value
     ) {
 
-      const error =
-        $("history-error");
+      if (!value) {
+        return 0;
+      }
 
-      error.textContent =
-        message;
 
-      error.hidden = false;
+      try {
+
+        if (
+          typeof value.toMillis ===
+          "function"
+        ) {
+
+          return value.toMillis();
+        }
+
+
+        if (
+          typeof value.toDate ===
+          "function"
+        ) {
+
+          return value
+            .toDate()
+            .getTime();
+        }
+
+
+        const number =
+          new Date(value).getTime();
+
+
+        return Number.isNaN(number)
+          ? 0
+          : number;
+
+      } catch {
+
+        return 0;
+      }
     }
 
-    function renderHistory(
-      conversations
+
+    /* =====================================================
+       最近の会話
+       ===================================================== */
+
+    async function loadRecentConversations(
+      uid
     ) {
 
       const container =
-        $("recent-history");
+        $("#recent-history");
 
-      container.replaceChildren();
 
-      if (
-        !Array.isArray(
-          conversations
-        ) ||
-        conversations.length === 0
-      ) {
+      const errorBox =
+        $("#history-error");
 
-        const empty =
-          document.createElement(
-            "div"
-          );
 
-        empty.className =
-          "empty-history";
-
-        empty.textContent =
-          "まだ学習履歴はありません。";
-
-        container.appendChild(
-          empty
-        );
-
+      if (!container) {
         return;
       }
 
-      conversations.forEach(
-        item => {
+
+      /*
+        最初にローディング表示
+      */
+
+      container.innerHTML = `
+        <div class="history-loading">
+          履歴を読み込んでいます...
+        </div>
+      `;
+
+
+      if (errorBox) {
+        errorBox.hidden = true;
+        errorBox.textContent = "";
+      }
+
+
+      try {
+
+        /*
+          重要：
+
+          以前の
+
+          where("userId", "==", uid)
+          orderBy("updatedAt", "desc")
+
+          という複合クエリは使用しない。
+
+          これにより
+          「The query requires an index」
+          を避ける。
+
+          取得後にJavaScript側で並べ替える。
+        */
+
+        const historyQuery =
+          query(
+            collection(
+              db,
+              "chatHistories"
+            ),
+
+            where(
+              "userId",
+              "==",
+              uid
+            )
+          );
+
+
+        const snapshot =
+          await getDocs(
+            historyQuery
+          );
+
+
+        const conversations =
+          snapshot.docs
+            .map(
+              item => ({
+                id: item.id,
+                ...item.data()
+              })
+            )
+            .sort(
+              (a, b) =>
+                getTimestampNumber(
+                  b.updatedAt
+                ) -
+                getTimestampNumber(
+                  a.updatedAt
+                )
+            )
+            .slice(
+              0,
+              10
+            );
+
+
+        container.replaceChildren();
+
+
+        if (
+          conversations.length === 0
+        ) {
+
+          const empty =
+            document.createElement(
+              "div"
+            );
+
+          empty.className =
+            "history-empty";
+
+          empty.textContent =
+            "まだ会話履歴はありません。";
+
+          container.appendChild(
+            empty
+          );
+
+          return;
+        }
+
+
+        for (
+          const item of conversations
+        ) {
 
           const link =
             document.createElement(
               "a"
             );
 
+
           link.className =
             "history-item";
+
 
           link.href =
             `question.html?conversationId=${
@@ -412,26 +1350,32 @@
               )
             }`;
 
+
           const title =
             document.createElement(
               "div"
             );
 
+
           title.className =
             "history-title";
+
 
           title.textContent =
             item.title ||
             item.lastQuestion ||
             "新しい会話";
 
+
           const date =
             document.createElement(
               "div"
             );
 
+
           date.className =
             "history-date";
+
 
           date.textContent =
             `最終更新：${
@@ -440,116 +1384,450 @@
               )
             }`;
 
+
           link.append(
             title,
             date
           );
 
+
           container.appendChild(
             link
           );
         }
-      );
+
+
+      } catch (error) {
+
+        console.error(
+          "会話履歴の取得に失敗しました:",
+          error
+        );
+
+
+        /*
+          サイドバーには触らない。
+          ホームの履歴だけエラー表示。
+        */
+
+        container.innerHTML = "";
+
+
+        const empty =
+          document.createElement(
+            "div"
+          );
+
+
+        empty.className =
+          "history-empty";
+
+
+        empty.textContent =
+          "現在、学習履歴を読み込めません。";
+
+
+        container.appendChild(
+          empty
+        );
+
+
+        if (errorBox) {
+
+          errorBox.textContent =
+            `学習履歴：${
+              error?.code ||
+              "error"
+            }\n${
+              error?.message ||
+              String(error)
+            }`;
+
+          errorBox.hidden =
+            false;
+        }
+      }
     }
 
-    async function initialize() {
+
+    /* =====================================================
+       メイン初期化
+       ===================================================== */
+
+    async function initialize(
+      user
+    ) {
+
+      /*
+        ====================================================
+        最重要
+
+        ログイン済みユーザーを確認したら、
+        Firestoreを触る前にサイドバーを生成する。
+
+        ここでは
+
+        Firestore → 使用しない
+        Supabase  → 使用しない
+        AI        → 使用しない
+
+        ====================================================
+      */
+
+      const sidebarReady =
+        createSidebar();
+
+
+      if (sidebarReady) {
+        setupLogout();
+      }
+
+
+      /*
+        ====================================================
+        ここから先はFirestore。
+
+        失敗してもサイドバーは残す。
+        ====================================================
+      */
+
+      $("#welcome").textContent =
+        "アカウントを確認しています...";
+
+
+      let profile;
+
+
+      try {
+
+        profile =
+          await getProfile(
+            user.uid
+          );
+
+      } catch (error) {
+
+        console.error(
+          "プロフィール取得エラー:",
+          error
+        );
+
+
+        /*
+          サイドバーはそのまま。
+        */
+
+        $("#welcome").textContent =
+          "学習ホーム";
+
+
+        showSystemError(
+          `ユーザー情報を取得できませんでした。\n${
+            error?.code ||
+            "error"
+          }: ${
+            error?.message ||
+            String(error)
+          }`
+        );
+
+
+        return;
+      }
+
+
+      /*
+        ====================================================
+        アカウント状態
+        ====================================================
+      */
+
+      if (
+        profile.status !==
+        "active"
+      ) {
+
+        try {
+          await signOut(auth);
+        } catch (error) {
+          console.error(
+            "無効アカウントのログアウト失敗:",
+            error
+          );
+        }
+
+
+        location.replace(
+          "../login.html"
+        );
+
+
+        return;
+      }
+
+
+      /*
+        ====================================================
+        権限
+        ====================================================
+      */
+
+      if (
+        profile.role !==
+          "student" &&
+        profile.role !==
+          "admin"
+      ) {
+
+        try {
+          await signOut(auth);
+        } catch (error) {
+          console.error(
+            "権限不正アカウントのログアウト失敗:",
+            error
+          );
+        }
+
+
+        location.replace(
+          "../login.html"
+        );
+
+
+        return;
+      }
+
+
+      /*
+        ====================================================
+        管理者
+        ====================================================
+      */
+
+      if (
+        profile.role ===
+        "admin"
+      ) {
+
+        location.replace(
+          "../admin/index.html"
+        );
+
+
+        return;
+      }
+
+
+      /*
+        ====================================================
+        名前
+        ====================================================
+      */
+
+      const displayName =
+        profile.displayName ||
+        profile.name ||
+        user.displayName ||
+        "学習者";
+
+
+      $("#welcome").textContent =
+        `${displayName}さん、学習を始めましょう。`;
+
+
+      /*
+        ====================================================
+        メンテナンス
+
+        ログイン後に取得する。
+        ====================================================
+      */
+
+      let settings;
+
+
+      try {
+
+        settings =
+          await getSystemSettings();
+
+      } catch (error) {
+
+        console.error(
+          "システム設定取得エラー:",
+          error
+        );
+
+
+        /*
+          サイドバーは残す。
+        */
+
+        showSystemError(
+          `システム設定を取得できませんでした。\n${
+            error?.code ||
+            "error"
+          }: ${
+            error?.message ||
+            String(error)
+          }`
+        );
+
+
+        /*
+          設定取得不能時は勝手に
+          メンテナンス画面へ送らない。
+        */
+
+      }
+
+
+      if (
+        settings &&
+        settings.maintenance === true
+      ) {
+
+        location.replace(
+          "../maintenance.html"
+        );
+
+
+        return;
+      }
+
+
+      /*
+        ====================================================
+        最近の学習
+
+        AI通信とは完全に独立。
+        ====================================================
+      */
+
+      await loadRecentConversations(
+        user.uid
+      );
+
+    }
+
+
+    /* =====================================================
+       Firebase Auth監視
+       ===================================================== */
+
+    async function start() {
 
       try {
 
         await persistenceReady;
 
-        const result =
-          await protectPage(
-            "student"
-          );
 
-        if (
-          !result ||
-          !result.user
-        ) {
-          return;
-        }
-
-        const profile =
-          result.profile;
-
-        /*
-         * サイドバーは認証成功直後に必ず生成
-         */
-        setupSidebar(
-          profile
-        );
-
-        setupLogout(
+        onAuthStateChanged(
           auth,
-          signOut
+          async user => {
+
+            /*
+              ログインしていない
+            */
+
+            if (!user) {
+
+              location.replace(
+                "../login.html"
+              );
+
+              return;
+            }
+
+
+            /*
+              ログイン済み
+              ↓
+              ここで即サイドバー生成
+              ↓
+              Firestoreへ進む
+            */
+
+            try {
+
+              await initialize(
+                user
+              );
+
+            } catch (error) {
+
+              console.error(
+                "ホーム初期化エラー:",
+                error
+              );
+
+
+              /*
+                ここでもサイドバーを
+                消さない。
+              */
+
+              const sidebar =
+                $("#appSidebar");
+
+
+              if (
+                sidebar &&
+                !sidebar.innerHTML.trim()
+              ) {
+
+                createSidebar();
+                setupLogout();
+              }
+
+
+              $("#welcome").textContent =
+                "学習ホーム";
+
+
+              showSystemError(
+                `ホームの一部を読み込めませんでした。\n${
+                  error?.code ||
+                  "error"
+                }: ${
+                  error?.message ||
+                  String(error)
+                }`
+              );
+            }
+
+          }
         );
 
-        setSidebarUser(
-          profile
-        );
-
-        const displayName =
-          profile.displayName ||
-          profile.name ||
-          result.user.displayName ||
-          "学習者";
-
-        $("welcome").textContent =
-          `${displayName}さん、学習を始めましょう。`;
-
-        try {
-
-          const result =
-            await getRecentConversations(
-              10
-            );
-
-          renderHistory(
-            result.conversations || []
-          );
-
-        } catch (error) {
-
-          console.error(
-            "最近の学習取得エラー:",
-            error
-          );
-
-          $("recent-history")
-            .textContent =
-              "履歴を読み込めませんでした。";
-
-          showHistoryError(
-            `${error.code || "error"}: ${
-              error.message ||
-              String(error)
-            }`
-          );
-        }
 
       } catch (error) {
 
         console.error(
-          "ホーム画面初期化エラー:",
+          "Firebase認証初期化エラー:",
           error
         );
 
-        $("welcome").textContent =
-          "ホーム画面を読み込めませんでした。";
 
-        showHistoryError(
-          `${error.code || "error"}: ${
-            error.message ||
-            String(error)
-          }`
+        /*
+          Authそのものが初期化できない
+          場合だけログイン画面へ戻す。
+        */
+
+        location.replace(
+          "../login.html"
         );
       }
     }
 
-    initialize();
+
+    /* =====================================================
+       開始
+       ===================================================== */
+
+    start();
 
   </script>
 
 </body>
 </html>
+```
