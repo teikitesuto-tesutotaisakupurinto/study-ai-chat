@@ -1,44 +1,7 @@
-import {
-  initializeApp,
-  getApps,
-  getApp
-} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+(function () {
+  "use strict";
 
-import {
-  getAuth,
-  setPersistence,
-  browserLocalPersistence,
-  onAuthStateChanged,
-  signOut,
-  signInWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
-  sendPasswordResetEmail
-} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
-
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  limit,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
-
-/* =========================================================
-   Firebase設定
-   ========================================================= */
-
-const firebaseConfig = {
+  const firebaseConfig = {
   apiKey: "AIzaSyByt8kGALyS8AU8SR6PzWFEPXfgHY5iynk",
   authDomain: "studychat-1b39d.firebaseapp.com",
   projectId: "studychat-1b39d",
@@ -47,88 +10,22 @@ const firebaseConfig = {
   appId: "1:982302014286:web:abf319aadb1ed919727c1f"
 };
 
-/*
-  他の古いコードから参照される場合に備える
-*/
-window.FIREBASE_CONFIG = firebaseConfig;
+  window.FIREBASE_CONFIG = firebaseConfig;
 
-/* =========================================================
-   Firebase初期化
-   ========================================================= */
+  if (!window.firebase) {
+    throw new Error(
+      "Firebase SDKが読み込まれていません。"
+    );
+  }
 
-let app;
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
 
-try {
-  app = getApps().length > 0
-    ? getApp()
-    : initializeApp(firebaseConfig);
-} catch (error) {
-  console.error(
-    "Firebase初期化エラー:",
-    error
-  );
+  window.firebaseApp = firebase.app();
+  window.firebaseAuth = firebase.auth();
+  window.firebaseDb = firebase.firestore();
 
-  throw error;
-}
-
-/* =========================================================
-   Authentication
-   ========================================================= */
-
-const auth = getAuth(app);
-
-/*
-  ログイン状態をブラウザに保持
-*/
-const persistenceReady =
-  setPersistence(
-    auth,
-    browserLocalPersistence
-  );
-
-/* =========================================================
-   Firestore
-   ========================================================= */
-
-const db =
-  getFirestore(app);
-
-/* =========================================================
-   エクスポート
-   ========================================================= */
-
-export {
-  app,
-  auth,
-  db,
-  firebaseConfig,
-  persistenceReady,
-
-  onAuthStateChanged,
-  signOut,
-
-  signInWithEmailAndPassword,
-
-  GoogleAuthProvider,
-  signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
-
-  sendPasswordResetEmail,
-
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-
-  collection,
-  addDoc,
-  getDocs,
-
-  query,
-  where,
-  orderBy,
-  limit,
-
-  serverTimestamp
-};
+  window.auth = window.firebaseAuth;
+  window.db = window.firebaseDb;
+})();
