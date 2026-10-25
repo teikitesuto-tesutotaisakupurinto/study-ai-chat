@@ -1,41 +1,15 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#ffffff">
-  <meta
-    name="description"
-    content="中学生向け学習AIチャット"
-  >
-
+  <meta name="theme-color" content="#f4f7fb">
+  <meta name="description" content="学習AIチャット">
   <title>AI学習チャット | 学習AIチャット</title>
 
   <style>
     :root {
-      --sidebar-width: 250px;
-
-      --bg: #f7f8fa;
-      --surface: #ffffff;
-      --surface-soft: #f8fafc;
-
-      --text: #172033;
-      --muted: #64748b;
-
-      --border: #e2e8f0;
-
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-
-      --user-bg: #2563eb;
-      --user-text: #ffffff;
-
-      --assistant-bg: #ffffff;
-
-      --danger-bg: #fff1f2;
-      --danger-border: #fecdd3;
-      --danger-text: #9f1239;
-
       font-family:
         system-ui,
         -apple-system,
@@ -45,6 +19,8 @@
         Meiryo,
         sans-serif;
 
+      color: #172033;
+      background: #f4f7fb;
       font-synthesis: none;
     }
 
@@ -52,169 +28,43 @@
       box-sizing: border-box;
     }
 
-    html,
-    body {
-      margin: 0;
-      width: 100%;
-      min-height: 100%;
-      background: var(--bg);
-      color: var(--text);
-    }
-
-    body {
-      min-height: 100vh;
-    }
-
-    button,
-    textarea,
-    input {
-      font: inherit;
-    }
-
-    button {
-      cursor: pointer;
-    }
-
     [hidden] {
       display: none !important;
     }
 
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        linear-gradient(
+          180deg,
+          #f8fafc 0%,
+          #f4f7fb 100%
+        );
+    }
+
+    button,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      -webkit-tap-highlight-color: transparent;
+    }
+
     /* =====================================================
-       全体
+       アプリ全体
        ===================================================== */
 
     .app {
       min-height: 100vh;
       display: flex;
-    }
-
-    /* =====================================================
-       サイドバー
-       Firestore / Supabase / AI通信とは完全独立
-       ===================================================== */
-
-    .sidebar {
-      position: fixed;
-      inset: 0 auto 0 0;
-      width: var(--sidebar-width);
-
-      display: flex;
       flex-direction: column;
-
-      background: #ffffff;
-      border-right: 1px solid var(--border);
-
-      z-index: 1000;
-    }
-
-    .sidebar-header {
-      height: 68px;
-
-      display: flex;
-      align-items: center;
-
-      padding: 0 20px;
-
-      border-bottom: 1px solid var(--border);
-    }
-
-    .sidebar-brand {
-      font-size: 17px;
-      font-weight: 800;
-      color: var(--text);
-      text-decoration: none;
-      letter-spacing: -0.02em;
-    }
-
-    .sidebar-nav {
-      flex: 1;
-
-      padding: 18px 12px;
-
-      overflow-y: auto;
-    }
-
-    .sidebar-section-title {
-      padding: 0 10px;
-      margin: 0 0 8px;
-
-      font-size: 11px;
-      font-weight: 800;
-
-      color: #94a3b8;
-      letter-spacing: 0.06em;
-    }
-
-    .sidebar-link {
-      width: 100%;
-
-      display: flex;
-      align-items: center;
-
-      min-height: 46px;
-
-      padding: 0 12px;
-      margin-bottom: 4px;
-
-      border-radius: 10px;
-
-      color: #475569;
-      text-decoration: none;
-
-      font-size: 14px;
-      font-weight: 600;
-
-      transition:
-        background .15s,
-        color .15s;
-    }
-
-    .sidebar-link:hover {
-      background: #f1f5f9;
-      color: #172033;
-    }
-
-    .sidebar-link.active {
-      background: #eff6ff;
-      color: #2563eb;
-    }
-
-    .sidebar-link-icon {
-      width: 22px;
-      flex: 0 0 22px;
-
-      margin-right: 9px;
-
-      text-align: center;
-
-      font-size: 15px;
-      font-weight: 800;
-    }
-
-    .sidebar-footer {
-      padding: 14px 16px;
-
-      border-top: 1px solid var(--border);
-
-      font-size: 11px;
-      line-height: 1.7;
-      color: #94a3b8;
-    }
-
-    /* =====================================================
-       メイン
-       ===================================================== */
-
-    .main {
-      min-width: 0;
-      flex: 1;
-
-      margin-left: var(--sidebar-width);
-
-      display: flex;
-      flex-direction: column;
-
-      min-height: 100vh;
     }
 
     /* =====================================================
@@ -224,88 +74,104 @@
     .topbar {
       position: sticky;
       top: 0;
+      z-index: 50;
 
       height: 64px;
 
       display: flex;
       align-items: center;
 
-      padding: 0 24px;
+      padding: 0 22px;
 
-      background: rgba(255,255,255,.94);
+      background: rgba(255, 255, 255, .94);
+      border-bottom: 1px solid #e2e8f0;
+
       backdrop-filter: blur(12px);
-
-      border-bottom: 1px solid var(--border);
-
-      z-index: 100;
+      -webkit-backdrop-filter: blur(12px);
     }
 
-    .topbar-inner {
-      width: 100%;
-      max-width: 1000px;
-
-      margin: 0 auto;
+    .topbar-left {
+      min-width: 0;
 
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-    }
-
-    .topbar-title {
-      margin: 0;
-
-      font-size: 17px;
-      font-weight: 800;
-
-      letter-spacing: -0.02em;
+      gap: 12px;
     }
 
     .back-button {
-      border: 1px solid var(--border);
-      background: #ffffff;
+      width: 40px;
+      height: 40px;
 
-      color: #475569;
+      display: grid;
+      place-items: center;
 
-      min-height: 38px;
+      border: 1px solid #dbe3ef;
+      border-radius: 10px;
 
-      padding: 0 13px;
+      background: #fff;
+      color: #334155;
 
-      border-radius: 9px;
-
-      font-size: 13px;
-      font-weight: 700;
+      cursor: pointer;
     }
 
     .back-button:hover {
       background: #f8fafc;
     }
 
+    .back-button:active {
+      transform: translateY(1px);
+    }
+
+    .brand {
+      min-width: 0;
+    }
+
+    .brand-title {
+      margin: 0;
+
+      font-size: 17px;
+      font-weight: 750;
+
+      letter-spacing: -.02em;
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .brand-subtitle {
+      margin: 2px 0 0;
+
+      color: #64748b;
+
+      font-size: 11px;
+
+      white-space: nowrap;
+    }
+
     /* =====================================================
-       チャット
+       メイン
        ===================================================== */
 
-    .chat-shell {
+    .chat-main {
+      flex: 1;
+
       width: 100%;
-      max-width: 1000px;
+      max-width: 980px;
 
       margin: 0 auto;
-
-      flex: 1;
 
       display: flex;
       flex-direction: column;
 
-      min-height: calc(100vh - 64px);
+      padding: 26px 20px 120px;
     }
 
-    .chat-content {
-      flex: 1;
+    /* =====================================================
+       会話エリア
+       ===================================================== */
 
-      padding: 30px 24px 160px;
-    }
-
-    .conversation {
+    .messages {
       width: 100%;
 
       display: flex;
@@ -314,37 +180,49 @@
       gap: 22px;
     }
 
-    /* =====================================================
-       初期画面
-       ===================================================== */
-
     .empty-state {
       min-height: 55vh;
 
-      display: flex;
-      flex-direction: column;
-
-      align-items: center;
-      justify-content: center;
+      display: grid;
+      place-items: center;
 
       text-align: center;
     }
 
-    .empty-title {
-      margin: 0;
-
-      font-size: 30px;
-      font-weight: 800;
-
-      letter-spacing: -0.04em;
+    .empty-inner {
+      max-width: 580px;
+      padding: 40px 20px;
     }
 
-    .empty-description {
-      margin: 13px 0 0;
+    .empty-icon {
+      width: 58px;
+      height: 58px;
 
-      max-width: 560px;
+      margin: 0 auto 18px;
 
-      color: var(--muted);
+      display: grid;
+      place-items: center;
+
+      border-radius: 16px;
+
+      background: #dbeafe;
+      color: #2563eb;
+
+      font-size: 25px;
+      font-weight: 800;
+    }
+
+    .empty-state h1 {
+      margin: 0;
+
+      font-size: 25px;
+      letter-spacing: -.03em;
+    }
+
+    .empty-state p {
+      margin: 12px 0 0;
+
+      color: #64748b;
 
       line-height: 1.8;
       font-size: 14px;
@@ -369,10 +247,12 @@
     }
 
     .message {
-      max-width: min(760px, 82%);
+      max-width: min(78%, 760px);
 
       display: flex;
       flex-direction: column;
+
+      gap: 7px;
     }
 
     .message-row.user .message {
@@ -383,110 +263,118 @@
       align-items: flex-start;
     }
 
-    .message-role {
-      margin-bottom: 6px;
+    .message-name {
+      color: #64748b;
 
       font-size: 11px;
-      font-weight: 800;
-
-      color: #94a3b8;
+      font-weight: 700;
     }
 
-    .message-bubble {
-      padding: 13px 16px;
+    .bubble {
+      padding: 14px 17px;
 
-      border-radius: 17px;
+      border-radius: 18px;
 
       font-size: 15px;
       line-height: 1.85;
 
       overflow-wrap: anywhere;
       word-break: break-word;
-
-      white-space: pre-wrap;
     }
 
-    .message-row.user .message-bubble {
-      background: var(--user-bg);
-      color: var(--user-text);
+    .message-row.user .bubble {
+      background: #2563eb;
+      color: #fff;
 
       border-bottom-right-radius: 5px;
     }
 
-    .message-row.assistant .message-bubble {
-      background: var(--assistant-bg);
-      color: var(--text);
+    .message-row.assistant .bubble {
+      background: #fff;
+      color: #172033;
 
-      border: 1px solid var(--border);
+      border: 1px solid #e2e8f0;
 
       border-bottom-left-radius: 5px;
 
       box-shadow:
-        0 2px 8px rgba(15,23,42,.035);
+        0 3px 14px rgba(15, 23, 42, .045);
     }
 
-    /* =====================================================
-       AI回答の文章
-       ===================================================== */
+    /* AI回答内 */
 
-    .assistant-content {
-      white-space: normal;
-    }
-
-    .assistant-content p {
+    .bubble p {
       margin: 0 0 12px;
     }
 
-    .assistant-content p:last-child {
+    .bubble p:last-child {
       margin-bottom: 0;
     }
 
-    .assistant-content ul,
-    .assistant-content ol {
-      margin: 8px 0 12px;
-      padding-left: 24px;
+    .bubble ul,
+    .bubble ol {
+      margin:
+        8px 0
+        8px 22px;
+
+      padding: 0;
     }
 
-    .assistant-content li {
+    .bubble li {
       margin: 4px 0;
     }
 
-    .assistant-content strong {
-      font-weight: 800;
+    .bubble strong {
+      font-weight: 750;
     }
 
-    .assistant-content code {
+    .bubble code {
       padding: 2px 5px;
 
       border-radius: 5px;
 
       background: #f1f5f9;
 
-      font-size: .92em;
+      font-size: .9em;
     }
 
-    .assistant-content pre {
+    .bubble pre {
       margin: 12px 0;
 
       padding: 13px;
 
       overflow-x: auto;
 
-      border-radius: 9px;
+      border-radius: 10px;
 
       background: #0f172a;
       color: #e2e8f0;
 
       font-size: 13px;
-      line-height: 1.7;
+      line-height: 1.6;
+    }
+
+    .bubble pre code {
+      padding: 0;
+
+      background: transparent;
+
+      color: inherit;
+    }
+
+    .message-time {
+      color: #94a3b8;
+
+      font-size: 10px;
     }
 
     /* =====================================================
-       タイピング
+       AI入力中
        ===================================================== */
 
     .typing-bubble {
       min-width: 72px;
+      min-height: 48px;
 
       display: flex;
       align-items: center;
@@ -494,7 +382,17 @@
 
       gap: 5px;
 
-      padding: 15px 17px;
+      padding: 12px 16px;
+
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+
+      border-bottom-left-radius: 5px;
+
+      background: #fff;
+
+      box-shadow:
+        0 3px 14px rgba(15, 23, 42, .045);
     }
 
     .typing-dot {
@@ -506,7 +404,7 @@
       background: #94a3b8;
 
       animation:
-        typing 1.25s infinite ease-in-out;
+        typingPulse 1.25s ease-in-out infinite;
     }
 
     .typing-dot:nth-child(2) {
@@ -517,16 +415,16 @@
       animation-delay: .32s;
     }
 
-    @keyframes typing {
+    @keyframes typingPulse {
       0%,
       60%,
       100% {
         transform: translateY(0);
-        opacity: .4;
+        opacity: .38;
       }
 
       30% {
-        transform: translateY(-5px);
+        transform: translateY(-6px);
         opacity: 1;
       }
     }
@@ -536,27 +434,52 @@
        ===================================================== */
 
     .chat-error {
-      width: 100%;
+      width: min(78%, 760px);
 
       padding: 14px 16px;
 
-      border: 1px solid var(--danger-border);
+      border: 1px solid #fecaca;
       border-radius: 12px;
 
-      background: var(--danger-bg);
-      color: var(--danger-text);
+      background: #fff1f2;
+      color: #991b1b;
 
       font-size: 13px;
       line-height: 1.7;
-
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
     }
 
     .chat-error-title {
       margin-bottom: 5px;
 
-      font-weight: 800;
+      font-weight: 750;
+    }
+
+    .chat-error-detail {
+      color: #7f1d1d;
+
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .retry-ai {
+      margin-top: 10px;
+
+      padding: 8px 12px;
+
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+
+      background: #fff;
+      color: #991b1b;
+
+      cursor: pointer;
+
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .retry-ai:hover {
+      background: #fef2f2;
     }
 
     /* =====================================================
@@ -566,74 +489,73 @@
     .composer-wrap {
       position: fixed;
 
-      left: var(--sidebar-width);
+      left: 0;
       right: 0;
       bottom: 0;
 
-      z-index: 200;
+      z-index: 40;
 
       padding:
-        14px
-        24px
-        calc(14px + env(safe-area-inset-bottom));
-
-      pointer-events: none;
+        12px
+        16px
+        calc(12px + env(safe-area-inset-bottom));
 
       background:
         linear-gradient(
-          to bottom,
-          transparent,
-          rgba(247,248,250,.96) 22%
+          to top,
+          rgba(244,247,251,1) 65%,
+          rgba(244,247,251,.92) 100%
         );
     }
 
     .composer {
       width: 100%;
-      max-width: 900px;
+      max-width: 860px;
 
       margin: 0 auto;
 
       display: flex;
       align-items: flex-end;
-      gap: 10px;
+      gap: 9px;
 
-      padding: 8px 8px 8px 14px;
+      padding: 8px;
 
-      background: #ffffff;
+      background: #fff;
 
       border: 1px solid #cbd5e1;
       border-radius: 17px;
 
       box-shadow:
-        0 8px 30px rgba(15,23,42,.10);
-
-      pointer-events: auto;
+        0 8px 30px rgba(15, 23, 42, .10);
     }
 
-    .composer textarea {
+    .question-input {
       flex: 1;
 
       min-width: 0;
 
+      min-height: 44px;
       max-height: 180px;
-      min-height: 42px;
 
       resize: none;
-
-      padding: 10px 2px;
 
       border: 0;
       outline: 0;
 
+      padding:
+        10px
+        10px;
+
       background: transparent;
 
-      color: var(--text);
+      color: #172033;
+
+      line-height: 1.65;
 
       font-size: 15px;
-      line-height: 1.6;
     }
 
-    .composer textarea::placeholder {
+    .question-input::placeholder {
       color: #94a3b8;
     }
 
@@ -643,22 +565,32 @@
       width: 44px;
       height: 44px;
 
+      display: grid;
+      place-items: center;
+
       border: 0;
       border-radius: 12px;
 
-      background: var(--primary);
-      color: #ffffff;
+      background: #2563eb;
+      color: #fff;
 
-      font-weight: 900;
-      font-size: 17px;
+      cursor: pointer;
+
+      font-size: 19px;
+      font-weight: 800;
 
       transition:
         background .15s,
+        transform .1s,
         opacity .15s;
     }
 
     .send-button:hover {
-      background: var(--primary-hover);
+      background: #1d4ed8;
+    }
+
+    .send-button:active {
+      transform: scale(.96);
     }
 
     .send-button:disabled {
@@ -668,50 +600,98 @@
 
     .composer-hint {
       width: 100%;
-      max-width: 900px;
+      max-width: 860px;
 
       margin: 6px auto 0;
 
-      text-align: center;
+      padding: 0 4px;
 
       color: #94a3b8;
 
       font-size: 10px;
+      line-height: 1.5;
     }
 
     /* =====================================================
-       ローディング画面
+       通知
+       ===================================================== */
+
+    .toast {
+      position: fixed;
+
+      left: 50%;
+      bottom: 92px;
+
+      z-index: 100;
+
+      transform:
+        translate(-50%, 20px);
+
+      min-width: min(90vw, 320px);
+
+      padding: 12px 15px;
+
+      border-radius: 10px;
+
+      background: #172033;
+      color: #fff;
+
+      box-shadow:
+        0 8px 30px rgba(15, 23, 42, .18);
+
+      font-size: 13px;
+      line-height: 1.6;
+
+      opacity: 0;
+
+      pointer-events: none;
+
+      transition:
+        opacity .2s,
+        transform .2s;
+    }
+
+    .toast.show {
+      opacity: 1;
+
+      transform:
+        translate(-50%, 0);
+    }
+
+    /* =====================================================
+       ローディング
        ===================================================== */
 
     .page-loading {
-      min-height: 100vh;
+      position: fixed;
 
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      inset: 0;
 
-      padding: 30px;
+      z-index: 200;
 
-      background: var(--bg);
+      display: grid;
+      place-items: center;
+
+      background: #f4f7fb;
     }
 
-    .page-loading-box {
+    .page-loading-inner {
       text-align: center;
-      color: var(--muted);
     }
 
-    .page-spinner {
-      width: 28px;
-      height: 28px;
+    .loader {
+      width: 30px;
+      height: 30px;
 
-      margin: 0 auto 14px;
+      margin: 0 auto 13px;
 
       border: 3px solid #dbeafe;
       border-top-color: #2563eb;
 
       border-radius: 50%;
 
-      animation: spin .8s linear infinite;
+      animation:
+        spin .8s linear infinite;
     }
 
     @keyframes spin {
@@ -720,61 +700,78 @@
       }
     }
 
+    .page-loading-text {
+      color: #64748b;
+
+      font-size: 13px;
+    }
+
     /* =====================================================
-       スマートフォン
+       レスポンシブ
        ===================================================== */
 
-    @media (max-width: 760px) {
-      :root {
-        --sidebar-width: 0px;
-      }
-
-      .sidebar {
-        display: none;
-      }
-
-      .main {
-        margin-left: 0;
-      }
-
+    @media (max-width: 700px) {
       .topbar {
-        padding: 0 14px;
+        height: 58px;
+
+        padding:
+          0
+          14px;
       }
 
-      .chat-content {
+      .chat-main {
         padding:
-          22px
-          14px
-          150px;
+          18px
+          12px
+          120px;
       }
 
       .message {
         max-width: 90%;
       }
 
-      .composer-wrap {
-        left: 0;
-        padding-left: 10px;
-        padding-right: 10px;
+      .chat-error {
+        width: 90%;
       }
 
-      .empty-title {
-        font-size: 25px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .message-bubble {
+      .bubble {
         font-size: 14px;
         line-height: 1.8;
       }
 
-      .back-button {
-        padding: 0 10px;
+      .brand-title {
+        font-size: 15px;
       }
 
-      .topbar-title {
-        font-size: 15px;
+      .brand-subtitle {
+        display: none;
+      }
+
+      .composer-wrap {
+        padding:
+          8px
+          9px
+          calc(8px + env(safe-area-inset-bottom));
+      }
+
+      .composer-hint {
+        display: none;
+      }
+
+      .empty-state h1 {
+        font-size: 22px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .message {
+        max-width: 94%;
+      }
+
+      .bubble {
+        padding:
+          12px
+          14px;
       }
     }
   </style>
@@ -783,185 +780,138 @@
 <body>
 
   <!-- =====================================================
-       認証前ローディング
+       初期ローディング
        ===================================================== -->
 
   <div id="pageLoading" class="page-loading">
-    <div class="page-loading-box">
-      <div class="page-spinner"></div>
-      <div>学習AIチャットを準備しています。</div>
+    <div class="page-loading-inner">
+      <div class="loader"></div>
+      <div id="pageLoadingText" class="page-loading-text">
+        学習AIを準備しています。
+      </div>
     </div>
   </div>
 
-
   <!-- =====================================================
-       アプリ本体
+       アプリ
        ===================================================== -->
 
   <div id="app" class="app" hidden>
 
-    <!-- ===================================================
-         サイドバー
-         ここにはFirestore / Supabase / AI通信を置かない
-         =================================================== -->
+    <!-- ヘッダー -->
 
-    <aside class="sidebar">
+    <header class="topbar">
 
-      <div class="sidebar-header">
-        <a
-          class="sidebar-brand"
-          href="./index.html"
+      <div class="topbar-left">
+
+        <button
+          id="backButton"
+          class="back-button"
+          type="button"
+          aria-label="学習ホームへ戻る"
+          title="学習ホームへ戻る"
         >
-          学習AIチャット
-        </a>
-      </div>
+          ←
+        </button>
 
-      <nav class="sidebar-nav">
-
-        <div class="sidebar-section-title">
-          学習
-        </div>
-
-        <a
-          class="sidebar-link"
-          href="./index.html"
-        >
-          <span class="sidebar-link-icon">⌂</span>
-          <span>学習ホーム</span>
-        </a>
-
-        <a
-          class="sidebar-link active"
-          href="./question.html"
-        >
-          <span class="sidebar-link-icon">＋</span>
-          <span>AI学習チャット</span>
-        </a>
-
-        <div
-          class="sidebar-section-title"
-          style="margin-top:22px"
-        >
-          アカウント
-        </div>
-
-        <a
-          class="sidebar-link"
-          href="../login.html"
-          id="sidebarLogoutLink"
-        >
-          <span class="sidebar-link-icon">↪</span>
-          <span>ログアウト</span>
-        </a>
-
-      </nav>
-
-      <div class="sidebar-footer">
-        中学生向け学習専用システム<br>
-        © 2026 定期テスト対策プリント運営事務局
-      </div>
-
-    </aside>
-
-
-    <!-- ===================================================
-         メイン
-         =================================================== -->
-
-    <main class="main">
-
-      <header class="topbar">
-
-        <div class="topbar-inner">
-
-          <h1 class="topbar-title">
-            AI学習チャット
+        <div class="brand">
+          <h1 class="brand-title">
+            学習AIチャット
           </h1>
 
-          <button
-            id="backButton"
-            class="back-button"
-            type="button"
-          >
-            学習ホームへ
-          </button>
-
+          <p class="brand-subtitle">
+            中学生向け学習サポート
+          </p>
         </div>
 
-      </header>
+      </div>
 
+    </header>
 
-      <section class="chat-shell">
+    <!-- チャット -->
 
-        <div class="chat-content">
+    <main class="chat-main">
 
-          <div
-            id="emptyState"
-            class="empty-state"
-          >
-            <h2 class="empty-title">
+      <section
+        id="messages"
+        class="messages"
+        aria-live="polite"
+        aria-label="AIとの会話"
+      >
+
+        <div
+          id="emptyState"
+          class="empty-state"
+        >
+          <div class="empty-inner">
+
+            <div class="empty-icon">
+              AI
+            </div>
+
+            <h1>
               何を勉強しますか？
-            </h2>
+            </h1>
 
-            <p class="empty-description">
+            <p>
               数学・英語・国語・理科・社会など、
               学校の勉強について質問してください。
-              <br>
-              「答え」だけでなく「なぜそうなるのか」も説明します。
             </p>
+
           </div>
-
-
-          <div
-            id="conversation"
-            class="conversation"
-          ></div>
-
         </div>
 
       </section>
 
+    </main>
 
-      <!-- =================================================
-           入力
-           ================================================= -->
+    <!-- 入力 -->
 
-      <div class="composer-wrap">
+    <div class="composer-wrap">
 
-        <form
-          id="composer"
-          class="composer"
+      <form
+        id="composer"
+        class="composer"
+      >
+
+        <textarea
+          id="questionInput"
+          class="question-input"
+          rows="1"
+          maxlength="4000"
+          placeholder="学習について質問してください"
+          autocomplete="off"
+          spellcheck="false"
+        ></textarea>
+
+        <button
+          id="sendButton"
+          class="send-button"
+          type="submit"
+          aria-label="送信"
+          title="送信"
         >
+          ↑
+        </button>
 
-          <textarea
-            id="questionInput"
-            rows="1"
-            maxlength="4000"
-            placeholder="学習について質問してください"
-            autocomplete="off"
-          ></textarea>
+      </form>
 
-          <button
-            id="sendButton"
-            class="send-button"
-            type="submit"
-            aria-label="送信"
-          >
-            ↑
-          </button>
-
-        </form>
-
-        <div class="composer-hint">
-          Enterで送信・Shift + Enterで改行
-        </div>
-
+      <div class="composer-hint">
+        Enterで送信・Shift + Enterで改行
       </div>
 
-    </main>
+    </div>
 
   </div>
 
+  <!-- トースト -->
+
+  <div
+    id="toast"
+    class="toast"
+    role="status"
+    aria-live="polite"
+  ></div>
 
   <!-- =====================================================
        Firebase / アプリ
@@ -973,492 +923,178 @@
       auth,
       persistenceReady,
       onAuthStateChanged,
-      signOut
-    } from "../assets/js/firebase.js";
-
-    import {
-      protectPage,
       sendStudyQuestion,
       getConversation
-    } from "../assets/js/auth.js";
-
+    } from "../assets/js/firebase.js";
 
     /* =====================================================
-       DOM
+       要素
        ===================================================== */
 
-    const $ = (selector) =>
-      document.querySelector(selector);
+    const $ = (id) =>
+      document.getElementById(id);
 
     const pageLoading =
-      $("#pageLoading");
+      $("pageLoading");
+
+    const pageLoadingText =
+      $("pageLoadingText");
 
     const app =
-      $("#app");
+      $("app");
+
+    const messages =
+      $("messages");
 
     const emptyState =
-      $("#emptyState");
-
-    const conversation =
-      $("#conversation");
+      $("emptyState");
 
     const composer =
-      $("#composer");
+      $("composer");
 
-    const questionInput =
-      $("#questionInput");
+    const input =
+      $("questionInput");
 
     const sendButton =
-      $("#sendButton");
+      $("sendButton");
 
-    const backButton =
-      $("#backButton");
-
-    const logoutLink =
-      $("#sidebarLogoutLink");
-
+    const toast =
+      $("toast");
 
     /* =====================================================
        状態
        ===================================================== */
 
-    let currentConversationId = null;
+    let currentUser = null;
+
+    let conversationId = null;
 
     let sending = false;
 
-    let currentUser = null;
+    let pendingQuestion = null;
 
+    let toastTimer = null;
 
     /* =====================================================
-       エラー表示
+       URL
        ===================================================== */
 
-    function getErrorText(error) {
+    const params =
+      new URLSearchParams(
+        location.search
+      );
 
-      if (!error) {
-        return "不明なエラーが発生しました。";
-      }
+    const requestedConversationId =
+      (
+        params.get(
+          "conversationId"
+        ) || ""
+      ).trim();
 
-      const code =
-        error.code
-        ? String(error.code)
-        : "";
+    if (
+      requestedConversationId
+    ) {
+      conversationId =
+        requestedConversationId;
+    }
 
-      const message =
-        error.message
-        ? String(error.message)
-        : String(error);
+    /* =====================================================
+       トースト
+       ===================================================== */
 
+    function showToast(
+      message
+    ) {
+      clearTimeout(
+        toastTimer
+      );
+
+      toast.textContent =
+        message;
+
+      toast.classList.add(
+        "show"
+      );
+
+      toastTimer =
+        setTimeout(() => {
+          toast.classList.remove(
+            "show"
+          );
+        }, 2800);
+    }
+
+    /* =====================================================
+       ページ表示
+       ===================================================== */
+
+    function showApp() {
+      pageLoading.hidden =
+        true;
+
+      app.hidden =
+        false;
+
+      setTimeout(() => {
+        input.focus();
+      }, 100);
+    }
+
+    /* =====================================================
+       日時
+       ===================================================== */
+
+    function formatTime(
+      value = new Date()
+    ) {
+      const date =
+        value instanceof Date
+          ? value
+          : new Date(value);
 
       if (
-        message.includes(
-          "14 UNAVAILABLE"
+        Number.isNaN(
+          date.getTime()
         )
       ) {
-        return [
-          "AIサーバーとの接続に失敗しました。",
-          "",
-          "サーバー側で一時的に接続できない状態になっています。",
-          "少し待ってから、もう一度送信してください。",
-          "",
-          code
-            ? `エラーコード: ${code}`
-            : ""
-        ]
-          .filter(Boolean)
-          .join("\n");
+        return "";
       }
 
-
-      if (
-        code ===
-        "auth/network-request-failed"
-      ) {
-        return [
-          "通信に失敗しました。",
-          "インターネット接続を確認して、もう一度お試しください。"
-        ].join("\n");
-      }
-
-
-      if (
-        code ===
-        "auth/user-not-found"
-      ) {
-        return "ログイン情報を確認してください。";
-      }
-
-
-      if (
-        code ===
-        "permission-denied"
-      ) {
-        return [
-          "データへのアクセスが拒否されました。",
-          "管理者側のFirestore Rulesを確認してください。"
-        ].join("\n");
-      }
-
-
-      if (
-        code ===
-        "failed-precondition"
-      ) {
-        return [
-          "Firestoreの設定を確認できませんでした。",
-          "必要なインデックスが設定されていない可能性があります。"
-        ].join("\n");
-      }
-
-
-      return [
-        message,
-        code
-          ? `エラーコード: ${code}`
-          : ""
-      ]
-        .filter(Boolean)
-        .join("\n");
+      return new Intl.DateTimeFormat(
+        "ja-JP",
+        {
+          hour: "2-digit",
+          minute: "2-digit"
+        }
+      ).format(date);
     }
 
-
     /* =====================================================
-       メッセージ追加
-       ===================================================== */
-
-    function addUserMessage(text) {
-
-      emptyState.hidden = true;
-
-      const row =
-        document.createElement("div");
-
-      row.className =
-        "message-row user";
-
-
-      const message =
-        document.createElement("div");
-
-      message.className =
-        "message";
-
-
-      const role =
-        document.createElement("div");
-
-      role.className =
-        "message-role";
-
-      role.textContent =
-        "あなた";
-
-
-      const bubble =
-        document.createElement("div");
-
-      bubble.className =
-        "message-bubble";
-
-      bubble.textContent =
-        text;
-
-
-      message.append(
-        role,
-        bubble
-      );
-
-      row.append(
-        message
-      );
-
-      conversation.append(
-        row
-      );
-
-      scrollToBottom();
-
-      return row;
-    }
-
-
-    /* =====================================================
-       AIメッセージ
-       ===================================================== */
-
-    function addAssistantMessage(
-      answer
-    ) {
-
-      emptyState.hidden = true;
-
-      const row =
-        document.createElement("div");
-
-      row.className =
-        "message-row assistant";
-
-
-      const message =
-        document.createElement("div");
-
-      message.className =
-        "message";
-
-
-      const role =
-        document.createElement("div");
-
-      role.className =
-        "message-role";
-
-      role.textContent =
-        "学習AI";
-
-
-      const bubble =
-        document.createElement("div");
-
-      bubble.className =
-        "message-bubble assistant-content";
-
-
-      bubble.innerHTML =
-        formatAssistantAnswer(
-          answer
-        );
-
-
-      message.append(
-        role,
-        bubble
-      );
-
-      row.append(
-        message
-      );
-
-      conversation.append(
-        row
-      );
-
-      scrollToBottom();
-
-      return row;
-    }
-
-
-    /* =====================================================
-       タイピング表示
-       ===================================================== */
-
-    function addTypingMessage() {
-
-      emptyState.hidden = true;
-
-      const row =
-        document.createElement("div");
-
-      row.className =
-        "message-row assistant";
-
-      row.dataset.typing =
-        "true";
-
-
-      const message =
-        document.createElement("div");
-
-      message.className =
-        "message";
-
-
-      const role =
-        document.createElement("div");
-
-      role.className =
-        "message-role";
-
-      role.textContent =
-        "学習AI";
-
-
-      const bubble =
-        document.createElement("div");
-
-      bubble.className =
-        "message-bubble typing-bubble";
-
-
-      for (
-        let i = 0;
-        i < 3;
-        i++
-      ) {
-
-        const dot =
-          document.createElement("span");
-
-        dot.className =
-          "typing-dot";
-
-        bubble.append(
-          dot
-        );
-      }
-
-
-      message.append(
-        role,
-        bubble
-      );
-
-      row.append(
-        message
-      );
-
-      conversation.append(
-        row
-      );
-
-      scrollToBottom();
-
-      return row;
-    }
-
-
-    /* =====================================================
-       エラーをチャット内に表示
-       ===================================================== */
-
-    function addErrorMessage(
-      error
-    ) {
-
-      emptyState.hidden = true;
-
-      const row =
-        document.createElement("div");
-
-      row.className =
-        "message-row assistant";
-
-
-      const message =
-        document.createElement("div");
-
-      message.className =
-        "message";
-
-
-      const role =
-        document.createElement("div");
-
-      role.className =
-        "message-role";
-
-      role.textContent =
-        "システム";
-
-
-      const box =
-        document.createElement("div");
-
-      box.className =
-        "chat-error";
-
-
-      const title =
-        document.createElement("div");
-
-      title.className =
-        "chat-error-title";
-
-      title.textContent =
-        "回答を取得できませんでした";
-
-
-      const detail =
-        document.createElement("div");
-
-      detail.textContent =
-        getErrorText(error);
-
-
-      box.append(
-        title,
-        detail
-      );
-
-      message.append(
-        role,
-        box
-      );
-
-      row.append(
-        message
-      );
-
-      conversation.append(
-        row
-      );
-
-      scrollToBottom();
-
-      return row;
-    }
-
-
-    /* =====================================================
-       AI回答の簡易整形
+       HTMLエスケープ
        ===================================================== */
 
     function escapeHtml(
       value
     ) {
-
-      return String(
-        value ?? ""
-      )
-        .replaceAll(
-          "&",
-          "&amp;"
-        )
-        .replaceAll(
-          "<",
-          "&lt;"
-        )
-        .replaceAll(
-          ">",
-          "&gt;"
-        )
-        .replaceAll(
-          '"',
-          "&quot;"
-        )
-        .replaceAll(
-          "'",
-          "&#039;"
-        );
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
 
+    /* =====================================================
+       AI回答を簡易Markdown風に整形
+       ===================================================== */
 
-    function formatAssistantAnswer(
-      value
+    function formatAnswer(
+      text
     ) {
-
-      let text =
-        String(
-          value ?? ""
-        );
-
-
-      text =
+      let value =
         escapeHtml(
           text
         );
-
 
       /*
         コードブロック
@@ -1466,8 +1102,8 @@
 
       const codeBlocks = [];
 
-      text =
-        text.replace(
+      value =
+        value.replace(
           /```([\s\S]*?)```/g,
           (_, code) => {
 
@@ -1475,168 +1111,628 @@
               codeBlocks.length;
 
             codeBlocks.push(
-              `<pre>${code.trim()}</pre>`
+              `<pre><code>${code
+                .replace(/^\n/, "")
+                .replace(/\n$/, "")
+              }</code></pre>`
             );
 
-            return `@@CODE${index}@@`;
+            return `@@CODE_${index}@@`;
           }
         );
-
 
       /*
         太字
       */
 
-      text =
-        text.replace(
+      value =
+        value.replace(
           /\*\*(.+?)\*\*/g,
           "<strong>$1</strong>"
         );
 
+      /*
+        インラインコード
+      */
+
+      value =
+        value.replace(
+          /`([^`]+)`/g,
+          "<code>$1</code>"
+        );
 
       /*
-        箇条書き
+        改行
       */
 
       const lines =
-        text.split("\n");
+        value.split("\n");
 
+      let html = "";
 
-      const result = [];
-
-      let list = null;
-
-
-      function closeList() {
-
-        if (!list) {
-          return;
-        }
-
-        const tag =
-          list.type === "ordered"
-            ? "ol"
-            : "ul";
-
-        result.push(
-          `<${tag}>${list.items.join("")}</${tag}>`
-        );
-
-        list = null;
-      }
-
+      let listMode =
+        null;
 
       for (
         const line of lines
       ) {
 
-        const trimmed =
-          line.trim();
+        const unordered =
+          /^\s*[-*]\s+(.+)$/.exec(
+            line
+          );
 
+        const ordered =
+          /^\s*\d+\.\s+(.+)$/.exec(
+            line
+          );
 
         if (
-          /^[-*]\s+/.test(
-            trimmed
-          )
+          unordered
         ) {
 
           if (
-            !list ||
-            list.type !== "unordered"
+            listMode !== "ul"
           ) {
 
-            closeList();
+            if (
+              listMode
+            ) {
+              html +=
+                listMode === "ul"
+                  ? "</ul>"
+                  : "</ol>";
+            }
 
-            list = {
-              type: "unordered",
-              items: []
-            };
+            html += "<ul>";
+
+            listMode =
+              "ul";
           }
 
-          list.items.push(
-            `<li>${trimmed.replace(/^[-*]\s+/, "")}</li>`
-          );
+          html +=
+            `<li>${unordered[1]}</li>`;
 
           continue;
         }
 
-
         if (
-          /^\d+\.\s+/.test(
-            trimmed
-          )
+          ordered
         ) {
 
           if (
-            !list ||
-            list.type !== "ordered"
+            listMode !== "ol"
           ) {
 
-            closeList();
+            if (
+              listMode
+            ) {
+              html +=
+                listMode === "ul"
+                  ? "</ul>"
+                  : "</ol>";
+            }
 
-            list = {
-              type: "ordered",
-              items: []
-            };
+            html += "<ol>";
+
+            listMode =
+              "ol";
           }
 
-          list.items.push(
-            `<li>${trimmed.replace(/^\d+\.\s+/, "")}</li>`
-          );
+          html +=
+            `<li>${ordered[1]}</li>`;
 
           continue;
         }
 
+        if (
+          listMode
+        ) {
 
-        closeList();
+          html +=
+            listMode === "ul"
+              ? "</ul>"
+              : "</ol>";
 
+          listMode =
+            null;
+        }
 
-        if (!trimmed) {
-
-          result.push(
-            "<p></p>"
-          );
-
+        if (
+          line.trim() === ""
+        ) {
+          html += "<br>";
         } else {
-
-          result.push(
-            `<p>${trimmed}</p>`
-          );
+          html +=
+            `<p>${line}</p>`;
         }
       }
 
+      if (
+        listMode
+      ) {
 
-      closeList();
-
-
-      text =
-        result.join("");
-
+        html +=
+          listMode === "ul"
+            ? "</ul>"
+            : "</ol>";
+      }
 
       /*
         コードブロックを戻す
       */
 
-      for (
-        let i = 0;
-        i < codeBlocks.length;
-        i++
-      ) {
+      html =
+        html.replace(
+          /@@CODE_(\d+)@@/g,
+          (_, index) =>
+            codeBlocks[
+              Number(index)
+            ]
+        );
 
-        text =
-          text.replace(
-            `@@CODE${i}@@`,
-            codeBlocks[i]
-          );
-      }
-
-
-      return text;
+      return html;
     }
 
+    /* =====================================================
+       空状態
+       ===================================================== */
+
+    function removeEmptyState() {
+      if (
+        emptyState &&
+        emptyState.isConnected
+      ) {
+        emptyState.remove();
+      }
+    }
 
     /* =====================================================
-       下までスクロール
+       ユーザーメッセージ
+       ===================================================== */
+
+    function addUserMessage(
+      text
+    ) {
+
+      removeEmptyState();
+
+      const row =
+        document.createElement(
+          "div"
+        );
+
+      row.className =
+        "message-row user";
+
+      const message =
+        document.createElement(
+          "article"
+        );
+
+      message.className =
+        "message";
+
+      const name =
+        document.createElement(
+          "div"
+        );
+
+      name.className =
+        "message-name";
+
+      name.textContent =
+        "あなた";
+
+      const bubble =
+        document.createElement(
+          "div"
+        );
+
+      bubble.className =
+        "bubble";
+
+      bubble.textContent =
+        text;
+
+      const time =
+        document.createElement(
+          "div"
+        );
+
+      time.className =
+        "message-time";
+
+      time.textContent =
+        formatTime();
+
+      message.append(
+        name,
+        bubble,
+        time
+      );
+
+      row.append(
+        message
+      );
+
+      messages.append(
+        row
+      );
+
+      scrollToBottom();
+    }
+
+    /* =====================================================
+       AIメッセージ
+       ===================================================== */
+
+    function addAssistantMessage(
+      text
+    ) {
+
+      removeEmptyState();
+
+      const row =
+        document.createElement(
+          "div"
+        );
+
+      row.className =
+        "message-row assistant";
+
+      const message =
+        document.createElement(
+          "article"
+        );
+
+      message.className =
+        "message";
+
+      const name =
+        document.createElement(
+          "div"
+        );
+
+      name.className =
+        "message-name";
+
+      name.textContent =
+        "学習AI";
+
+      const bubble =
+        document.createElement(
+          "div"
+        );
+
+      bubble.className =
+        "bubble";
+
+      bubble.innerHTML =
+        formatAnswer(
+          text
+        );
+
+      const time =
+        document.createElement(
+          "div"
+        );
+
+      time.className =
+        "message-time";
+
+      time.textContent =
+        formatTime();
+
+      message.append(
+        name,
+        bubble,
+        time
+      );
+
+      row.append(
+        message
+      );
+
+      messages.append(
+        row
+      );
+
+      scrollToBottom();
+    }
+
+    /* =====================================================
+       AI入力中
+       ===================================================== */
+
+    function addTypingMessage() {
+
+      removeEmptyState();
+
+      const row =
+        document.createElement(
+          "div"
+        );
+
+      row.className =
+        "message-row assistant";
+
+      row.dataset.typing =
+        "true";
+
+      const message =
+        document.createElement(
+          "article"
+        );
+
+      message.className =
+        "message";
+
+      const name =
+        document.createElement(
+          "div"
+        );
+
+      name.className =
+        "message-name";
+
+      name.textContent =
+        "学習AI";
+
+      const bubble =
+        document.createElement(
+          "div"
+        );
+
+      bubble.className =
+        "typing-bubble";
+
+      bubble.innerHTML = `
+        <span class="typing-dot"></span>
+        <span class="typing-dot"></span>
+        <span class="typing-dot"></span>
+      `;
+
+      message.append(
+        name,
+        bubble
+      );
+
+      row.append(
+        message
+      );
+
+      messages.append(
+        row
+      );
+
+      scrollToBottom();
+
+      return row;
+    }
+
+    function removeTypingMessage() {
+
+      const typing =
+        messages.querySelector(
+          '[data-typing="true"]'
+        );
+
+      if (
+        typing
+      ) {
+        typing.remove();
+      }
+    }
+
+    /* =====================================================
+       エラー
+       ===================================================== */
+
+    function normalizeError(
+      error
+    ) {
+
+      const code =
+        error?.code ||
+        "";
+
+      const message =
+        error?.message ||
+        String(error);
+
+      if (
+        message.includes(
+          "14 UNAVAILABLE"
+        ) ||
+        message.includes(
+          "No connection established"
+        ) ||
+        message.includes(
+          "TLS connection"
+        )
+      ) {
+
+        return {
+          title:
+            "AIサーバーとの通信に失敗しました",
+          detail:
+            "AIサーバーへの接続が一時的に確立できませんでした。\n少し待ってからもう一度送信してください。",
+          retry: true
+        };
+      }
+
+      if (
+        code ===
+        "auth/api-key-not-valid"
+      ) {
+
+        return {
+          title:
+            "Firebaseの設定エラー",
+          detail:
+            "FirebaseのAPIキーが正しくありません。assets/js/firebase.js の設定を確認してください。",
+          retry: false
+        };
+      }
+
+      if (
+        code ===
+        "permission-denied"
+      ) {
+
+        return {
+          title:
+            "アクセス権限エラー",
+          detail:
+            "Firestoreへのアクセスが拒否されました。",
+          retry: false
+        };
+      }
+
+      if (
+        message.includes(
+          "401"
+        )
+      ) {
+
+        return {
+          title:
+            "AIサーバーの認証エラー",
+          detail:
+            "AIサーバーが認証情報を受け取れませんでした。Supabase Edge Function側の認証設定を確認してください。",
+          retry: true
+        };
+      }
+
+      return {
+        title:
+          "AIサーバーエラー",
+        detail:
+          message,
+        retry: true
+      };
+    }
+
+    function addErrorMessage(
+      error
+    ) {
+
+      removeTypingMessage();
+
+      const info =
+        normalizeError(
+          error
+        );
+
+      const row =
+        document.createElement(
+          "div"
+        );
+
+      row.className =
+        "message-row assistant";
+
+      const message =
+        document.createElement(
+          "article"
+        );
+
+      message.className =
+        "message";
+
+      const box =
+        document.createElement(
+          "div"
+        );
+
+      box.className =
+        "chat-error";
+
+      const title =
+        document.createElement(
+          "div"
+        );
+
+      title.className =
+        "chat-error-title";
+
+      title.textContent =
+        info.title;
+
+      const detail =
+        document.createElement(
+          "div"
+        );
+
+      detail.className =
+        "chat-error-detail";
+
+      detail.textContent =
+        info.detail;
+
+      box.append(
+        title,
+        detail
+      );
+
+      if (
+        info.retry &&
+        pendingQuestion
+      ) {
+
+        const retry =
+          document.createElement(
+            "button"
+          );
+
+        retry.type =
+          "button";
+
+        retry.className =
+          "retry-ai";
+
+        retry.textContent =
+          "もう一度送信";
+
+        retry.addEventListener(
+          "click",
+          () => {
+
+            if (
+              sending
+            ) {
+              return;
+            }
+
+            sendQuestion(
+              pendingQuestion
+            );
+          }
+        );
+
+        box.append(
+          retry
+        );
+      }
+
+      message.append(
+        box
+      );
+
+      row.append(
+        message
+      );
+
+      messages.append(
+        row
+      );
+
+      scrollToBottom();
+    }
+
+    /* =====================================================
+       スクロール
        ===================================================== */
 
     function scrollToBottom() {
@@ -1644,53 +1740,229 @@
       requestAnimationFrame(
         () => {
 
-          window.scrollTo({
-            top:
-              document.documentElement
-                .scrollHeight,
-
-            behavior:
-              "smooth"
-          });
+          window.scrollTo(
+            {
+              top:
+                document.body.scrollHeight,
+              behavior:
+                "smooth"
+            }
+          );
 
         }
       );
     }
 
-
     /* =====================================================
-       入力欄自動拡張
+       入力欄自動リサイズ
        ===================================================== */
 
-    function resizeTextarea() {
+    function resizeInput() {
 
-      questionInput.style.height =
+      input.style.height =
         "auto";
 
-      questionInput.style.height =
-        Math.min(
-          questionInput.scrollHeight,
+      input.style.height =
+        `${Math.min(
+          input.scrollHeight,
           180
-        ) + "px";
+        )}px`;
     }
 
-
-    questionInput.addEventListener(
+    input.addEventListener(
       "input",
-      resizeTextarea
+      resizeInput
     );
 
+    /* =====================================================
+       AI送信
+       ===================================================== */
+
+    async function sendQuestion(
+      question
+    ) {
+
+      const cleanQuestion =
+        String(
+          question || ""
+        ).trim();
+
+      if (
+        !cleanQuestion
+      ) {
+        return;
+      }
+
+      if (
+        sending
+      ) {
+        return;
+      }
+
+      if (
+        !currentUser
+      ) {
+
+        showToast(
+          "ログイン状態を確認できません。"
+        );
+
+        return;
+      }
+
+      sending =
+        true;
+
+      pendingQuestion =
+        cleanQuestion;
+
+      sendButton.disabled =
+        true;
+
+      input.disabled =
+        true;
+
+      addUserMessage(
+        cleanQuestion
+      );
+
+      const typing =
+        addTypingMessage();
+
+      /*
+        ここが重要。
+
+        Firestoreの履歴取得を先に行わない。
+        まずAIサーバーへ送信する。
+      */
+
+      try {
+
+        const result =
+          await sendStudyQuestion(
+            cleanQuestion,
+            conversationId
+          );
+
+        /*
+          AI回答が返った瞬間に表示。
+          Firestoreの再取得を待たない。
+        */
+
+        if (
+          result?.conversationId
+        ) {
+
+          conversationId =
+            result.conversationId;
+
+          const newUrl =
+            new URL(
+              location.href
+            );
+
+          newUrl.searchParams.set(
+            "conversationId",
+            conversationId
+          );
+
+          history.replaceState(
+            null,
+            "",
+            newUrl
+          );
+        }
+
+        removeTypingMessage();
+
+        if (
+          result?.answer
+        ) {
+
+          addAssistantMessage(
+            result.answer
+          );
+
+        } else {
+
+          addErrorMessage(
+            new Error(
+              "AIから回答が返ってきませんでした。"
+            )
+          );
+        }
+
+      } catch (error) {
+
+        console.error(
+          "AI送信エラー:",
+          error
+        );
+
+        removeTypingMessage();
+
+        addErrorMessage(
+          error
+        );
+
+      } finally {
+
+        sending =
+          false;
+
+        sendButton.disabled =
+          false;
+
+        input.disabled =
+          false;
+
+        input.focus();
+
+        resizeInput();
+      }
+    }
+
+    /* =====================================================
+       フォーム送信
+       ===================================================== */
+
+    composer.addEventListener(
+      "submit",
+      async event => {
+
+        event.preventDefault();
+
+        const question =
+          input.value.trim();
+
+        if (
+          !question
+        ) {
+          return;
+        }
+
+        input.value =
+          "";
+
+        resizeInput();
+
+        await sendQuestion(
+          question
+        );
+      }
+    );
 
     /* =====================================================
        Enter送信
        ===================================================== */
 
-    questionInput.addEventListener(
+    input.addEventListener(
       "keydown",
       event => {
 
         if (
-          event.key === "Enter" &&
+          event.key ===
+          "Enter" &&
           !event.shiftKey
         ) {
 
@@ -1701,344 +1973,36 @@
       }
     );
 
-
     /* =====================================================
-       送信
+       ホームへ戻る
        ===================================================== */
 
-    composer.addEventListener(
-      "submit",
-      async event => {
+    $("backButton")
+      .addEventListener(
+        "click",
+        () => {
 
-        event.preventDefault();
+          location.href =
+            "./index.html";
 
-        if (sending) {
-          return;
         }
-
-
-        const question =
-          questionInput.value.trim();
-
-
-        if (!question) {
-          questionInput.focus();
-          return;
-        }
-
-
-        if (
-          question.length >
-          4000
-        ) {
-
-          addErrorMessage(
-            new Error(
-              "質問は4000文字以内で入力してください。"
-            )
-          );
-
-          return;
-        }
-
-
-        if (!auth.currentUser) {
-
-          addErrorMessage(
-            new Error(
-              "ログイン状態を確認できません。"
-            )
-          );
-
-          return;
-        }
-
-
-        sending = true;
-
-        sendButton.disabled =
-          true;
-
-        questionInput.disabled =
-          true;
-
-
-        addUserMessage(
-          question
-        );
-
-
-        questionInput.value =
-          "";
-
-        resizeTextarea();
-
-
-        const typing =
-          addTypingMessage();
-
-
-        try {
-
-          const result =
-            await sendStudyQuestion(
-              question,
-              currentConversationId
-            );
-
-
-          /*
-            新規会話の場合、
-            ここでIDを確定
-          */
-
-          if (
-            result &&
-            result.conversationId
-          ) {
-
-            currentConversationId =
-              result.conversationId;
-
-            updateConversationUrl(
-              currentConversationId
-            );
-          }
-
-
-          /*
-            タイピング表示を削除
-          */
-
-          if (typing) {
-            typing.remove();
-          }
-
-
-          /*
-            AI回答表示
-          */
-
-          if (
-            result &&
-            typeof result.answer ===
-              "string" &&
-            result.answer.trim()
-          ) {
-
-            addAssistantMessage(
-              result.answer
-            );
-
-          } else {
-
-            addErrorMessage(
-              new Error(
-                "AIから回答本文を受信できませんでした。"
-              )
-            );
-          }
-
-        } catch (error) {
-
-          console.error(
-            "AI質問送信エラー:",
-            error
-          );
-
-
-          if (typing) {
-            typing.remove();
-          }
-
-
-          addErrorMessage(
-            error
-          );
-
-        } finally {
-
-          sending =
-            false;
-
-          sendButton.disabled =
-            false;
-
-          questionInput.disabled =
-            false;
-
-          questionInput.focus();
-        }
-      }
-    );
-
-
-    /* =====================================================
-       URL更新
-       ===================================================== */
-
-    function updateConversationUrl(
-      conversationId
-    ) {
-
-      if (!conversationId) {
-        return;
-      }
-
-
-      const url =
-        new URL(
-          location.href
-        );
-
-
-      url.searchParams.set(
-        "conversationId",
-        conversationId
       );
 
-
-      history.replaceState(
-        {},
-        "",
-        url
-      );
-    }
-
-
     /* =====================================================
-       過去会話を画面に展開
+       過去の会話を読み込む
        ===================================================== */
 
-    function renderConversation(
-      data
-    ) {
-
-      conversation.replaceChildren();
-
-      emptyState.hidden =
-        true;
-
-
-      const source =
-        data?.conversation ??
-        data;
-
-
-      if (!source) {
-
-        emptyState.hidden =
-          false;
-
-        return;
-      }
-
-
-      const messages =
-        Array.isArray(
-          source.messages
-        )
-          ? source.messages
-          : [];
-
+    async function loadConversation() {
 
       if (
-        messages.length === 0
+        !conversationId
       ) {
-
-        emptyState.hidden =
-          false;
-
         return;
       }
-
-
-      for (
-        const item of messages
-      ) {
-
-        if (!item) {
-          continue;
-        }
-
-
-        if (
-          item.role ===
-          "user"
-        ) {
-
-          addUserMessage(
-            item.content || ""
-          );
-
-        } else if (
-          item.role ===
-          "assistant"
-        ) {
-
-          addAssistantMessage(
-            item.content || ""
-          );
-        }
-      }
-
-
-      scrollToBottom();
-    }
-
-
-    /* =====================================================
-       会話ID取得
-       ===================================================== */
-
-    function getConversationIdFromUrl() {
-
-      const params =
-        new URLSearchParams(
-          location.search
-        );
-
-
-      const id =
-        params.get(
-          "conversationId"
-        );
-
-
-      return id
-        ? id.trim()
-        : null;
-    }
-
-
-    /* =====================================================
-       過去会話読み込み
-       ===================================================== */
-
-    async function loadConversationIfNeeded() {
-
-      const conversationId =
-        getConversationIdFromUrl();
-
-
-      if (!conversationId) {
-
-        emptyState.hidden =
-          false;
-
-        return;
-      }
-
-
-      currentConversationId =
-        conversationId;
-
 
       /*
-        会話取得はAI通信側の
-        getConversationを使用。
-
-        画面のサイドバーとは完全に別。
+        会話履歴の読み込みは、
+        AI送信とは独立して実行する。
       */
 
       try {
@@ -2048,166 +2012,184 @@
             conversationId
           );
 
+        const conversation =
+          result?.conversation;
 
-        renderConversation(
-          result
-        );
+        if (
+          !conversation
+        ) {
+          return;
+        }
+
+        const history =
+          Array.isArray(
+            conversation.messages
+          )
+            ? conversation.messages
+            : [];
+
+        if (
+          !history.length
+        ) {
+          return;
+        }
+
+        removeEmptyState();
+
+        /*
+          既存表示を消して履歴を再構築
+        */
+
+        messages.replaceChildren();
+
+        for (
+          const item of history
+        ) {
+
+          if (
+            !item ||
+            typeof item.content !==
+              "string"
+          ) {
+            continue;
+          }
+
+          if (
+            item.role ===
+            "user"
+          ) {
+
+            addUserMessage(
+              item.content
+            );
+
+          } else if (
+            item.role ===
+            "assistant"
+          ) {
+
+            addAssistantMessage(
+              item.content
+            );
+          }
+        }
 
       } catch (error) {
 
-        console.error(
-          "会話取得エラー:",
+        /*
+          履歴取得失敗はAIチャットそのものを
+          使用不能にしない。
+        */
+
+        console.warn(
+          "会話履歴の取得に失敗しました:",
           error
         );
 
-
-        /*
-          履歴取得に失敗しても
-          チャット画面そのものは
-          使用可能にする。
-        */
-
-        conversation.replaceChildren();
-
-        emptyState.hidden =
-          false;
-
-        const errorBox =
-          document.createElement(
-            "div"
-          );
-
-        errorBox.className =
-          "chat-error";
-
-        errorBox.textContent =
-          "過去の会話を読み込めませんでした。\n\n" +
-          getErrorText(error);
-
-        conversation.append(
-          errorBox
+        showToast(
+          "過去の会話を読み込めませんでした。新しい質問は送信できます。"
         );
       }
     }
 
-
     /* =====================================================
-       ホームへ
-       ===================================================== */
-
-    backButton.addEventListener(
-      "click",
-      () => {
-
-        location.href =
-          "./index.html";
-      }
-    );
-
-
-    /* =====================================================
-       ログアウト
-       ===================================================== */
-
-    logoutLink.addEventListener(
-      "click",
-      async event => {
-
-        event.preventDefault();
-
-
-        try {
-
-          await signOut(
-            auth
-          );
-
-          location.replace(
-            "../login.html"
-          );
-
-        } catch (error) {
-
-          console.error(
-            "ログアウトエラー:",
-            error
-          );
-
-          alert(
-            "ログアウトに失敗しました。\n\n" +
-            getErrorText(error)
-          );
-        }
-      }
-    );
-
-
-    /* =====================================================
-       アプリ開始
+       認証
        ===================================================== */
 
     async function start() {
 
       try {
 
-        /*
-          Firebaseの初期化・永続化完了を待つ
-        */
+        pageLoadingText.textContent =
+          "ログイン状態を確認しています。";
 
         await persistenceReady;
 
-
         /*
-          認証状態を確認
+          認証状態が確定するまで待つ。
         */
 
-        const result =
-          await protectPage(
-            "student"
+        const user =
+          await new Promise(
+            (
+              resolve,
+              reject
+            ) => {
+
+              let unsubscribe =
+                null;
+
+              unsubscribe =
+                onAuthStateChanged(
+                  auth,
+                  value => {
+
+                    if (
+                      unsubscribe
+                    ) {
+                      unsubscribe();
+                    }
+
+                    resolve(
+                      value
+                    );
+                  },
+                  error => {
+
+                    if (
+                      unsubscribe
+                    ) {
+                      unsubscribe();
+                    }
+
+                    reject(
+                      error
+                    );
+                  }
+                );
+
+            }
           );
 
-
         if (
-          !result ||
-          !result.user
+          !user
         ) {
+
+          location.replace(
+            "../login.html"
+          );
 
           return;
         }
 
-
         currentUser =
-          result.user;
-
-
-        /*
-          ここまで来たら、
-          サイドバーを含む画面を即表示。
-
-          サイドバーには
-          Firestore / Supabase / AI通信
-          を一切依存させない。
-        */
-
-        pageLoading.hidden =
-          true;
-
-        app.hidden =
-          false;
-
+          user;
 
         /*
-          過去会話は画面表示後に読み込む。
-
-          つまり履歴取得で問題が起きても
-          画面自体は白紙にならない。
+          ここで初めてチャット画面を表示。
         */
 
-        await loadConversationIfNeeded();
+        showApp();
 
+        /*
+          履歴読み込みはバックグラウンド。
+          失敗してもAI送信には影響させない。
+        */
 
-        questionInput.focus();
+        if (
+          conversationId
+        ) {
 
+          loadConversation()
+            .catch(
+              error => {
+                console.warn(
+                  "履歴読み込み失敗:",
+                  error
+                );
+              }
+            );
+        }
 
       } catch (error) {
 
@@ -2216,87 +2198,19 @@
           error
         );
 
+        pageLoadingText.textContent =
+          "ログイン状態を確認できませんでした。";
 
-        pageLoading.hidden =
-          true;
-
-
-        /*
-          画面全体を消さず、
-          エラー画面を表示する。
-        */
-
-        app.hidden =
-          false;
-
-
-        conversation.replaceChildren();
-
-        emptyState.hidden =
-          false;
-
-
-        const errorBox =
-          document.createElement(
-            "div"
-          );
-
-        errorBox.className =
-          "chat-error";
-
-        errorBox.innerHTML =
-          "<div class=\"chat-error-title\">" +
-          "システムを開始できませんでした" +
-          "</div>";
-
-
-        const detail =
-          document.createElement(
-            "div"
-          );
-
-        detail.textContent =
-          getErrorText(error);
-
-
-        errorBox.append(
-          detail
-        );
-
-        conversation.append(
-          errorBox
+        showToast(
+          error?.message ||
+          String(error)
         );
       }
     }
 
-
-    /*
-      Firebase認証状態変更
-
-      ログイン済みの場合のみ開始。
-      未ログインならlogin.htmlへ。
-    */
-
-    onAuthStateChanged(
-      auth,
-      user => {
-
-        if (!user) {
-
-          location.replace(
-            "../login.html"
-          );
-
-          return;
-        }
-
-        /*
-          start() は下で一度だけ実行するため、
-          ここでは認証状態確認だけ行う。
-        */
-      }
-    );
-
+    /* =====================================================
+       開始
+       ===================================================== */
 
     start();
 
