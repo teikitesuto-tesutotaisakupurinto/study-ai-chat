@@ -1,103 +1,105 @@
+/* =========================================================
+   学習AIチャット
+   layout.js
+   サイドバー・ログアウト共通処理
+   ========================================================= */
+
 const NAV_ITEMS = [
   {
-    label: "ホーム",
     href: "index.html",
-    key: "home"
+    label: "ホーム"
   },
   {
-    label: "AIに質問",
     href: "question.html",
-    key: "question"
+    label: "AIに質問"
   },
   {
-    label: "学習履歴",
     href: "history.html",
-    key: "history"
+    label: "学習履歴"
   },
   {
-    label: "お知らせ",
     href: "announcements.html",
-    key: "announcements"
+    label: "お知らせ"
   },
   {
-    label: "設定",
     href: "settings.html",
-    key: "settings"
+    label: "設定"
   }
 ];
 
-function isStudentPage() {
-  return location.pathname.includes(
-    "/student/"
-  );
-}
+/* =========================================================
+   パス判定
+   ========================================================= */
 
-function studentPath(file) {
-  if (isStudentPage()) {
-    return `./${file}`;
+function getStudentRootPath() {
+  const pathname = location.pathname;
+
+  if (
+    pathname.includes("/student/")
+  ) {
+    return "";
   }
 
-  return `./student/${file}`;
+  return "student/";
 }
 
-function getCurrentKey() {
-  const file =
+/* =========================================================
+   現在ページ判定
+   ========================================================= */
+
+function getCurrentPage() {
+  const pathname =
     location.pathname
       .split("/")
-      .pop()
-      ?.toLowerCase() || "";
+      .pop();
 
-  if (file === "index.html") {
-    return "home";
-  }
-
-  if (
-    file === "question.html"
-  ) {
-    return "question";
-  }
-
-  if (
-    file === "history.html"
-  ) {
-    return "history";
-  }
-
-  if (
-    file === "announcements.html"
-  ) {
-    return "announcements";
-  }
-
-  if (
-    file === "settings.html"
-  ) {
-    return "settings";
-  }
-
-  return "";
+  return pathname || "index.html";
 }
 
-function createSidebar() {
-  const sidebar =
-    document.createElement("aside");
+/* =========================================================
+   サイドバーHTML生成
+   ========================================================= */
 
-  sidebar.id = "studySidebar";
-  sidebar.className =
-    "study-sidebar";
+function createSidebarHTML() {
+  const currentPage =
+    getCurrentPage();
 
-  sidebar.innerHTML = `
+  const root =
+    getStudentRootPath();
+
+  const navHTML =
+    NAV_ITEMS
+      .map(item => {
+        const href =
+          root + item.href;
+
+        const active =
+          currentPage === item.href;
+
+        return `
+          <a
+            class="sidebar-link${active ? " active" : ""}"
+            href="${href}"
+            ${active ? 'aria-current="page"' : ""}
+          >
+            <span class="sidebar-link-text">
+              ${item.label}
+            </span>
+          </a>
+        `;
+      })
+      .join("");
+
+  return `
     <div class="sidebar-inner">
 
       <div class="sidebar-brand">
-        <a href="${studentPath(
-          "index.html"
-        )}">
-          <span class="brand-title">
+        <a
+          class="sidebar-brand-link"
+          href="${root}index.html"
+        >
+          <span class="sidebar-brand-title">
             学習AIチャット
-          </span>
-          <span class="brand-subtitle">
-            学習専用AI
           </span>
         </a>
       </div>
@@ -106,45 +108,15 @@ function createSidebar() {
         class="sidebar-nav"
         aria-label="メインメニュー"
       >
-        ${NAV_ITEMS.map(item => `
-          <a
-            class="sidebar-link"
-            data-nav-key="${item.key}"
-            href="${studentPath(
-              item.href
-            )}"
-          >
-            <span class="sidebar-link-text">
-              ${item.label}
-            </span>
-          </a>
-        `).join("")}
+        ${navHTML}
       </nav>
 
       <div class="sidebar-bottom">
 
-        <div
-          class="sidebar-user"
-          id="sidebarUser"
-        >
-          <div
-            class="sidebar-user-label"
-          >
-            ログイン中
-          </div>
-
-          <div
-            class="sidebar-user-name"
-            id="sidebarUserName"
-          >
-            読み込み中
-          </div>
-        </div>
-
         <button
-          id="sidebarLogout"
-          class="sidebar-logout"
           type="button"
+          id="sidebarLogoutButton"
+          class="sidebar-logout"
         >
           ログアウト
         </button>
@@ -153,14 +125,18 @@ function createSidebar() {
 
     </div>
   `;
-
-  return sidebar;
 }
 
-function injectStyles() {
+/* =========================================================
+   サイドバーCSS
+   JSから直接注入
+   → common.css等の読み込み失敗でも白紙にならない
+   ========================================================= */
+
+function injectSidebarStyle() {
   if (
     document.getElementById(
-      "study-layout-style"
+      "study-ai-sidebar-style"
     )
   ) {
     return;
@@ -170,17 +146,29 @@ function injectStyles() {
     document.createElement("style");
 
   style.id =
-    "study-layout-style";
+    "study-ai-sidebar-style";
 
   style.textContent = `
-    .study-sidebar {
+    /* =====================================================
+       学習AIチャット サイドバー
+       ===================================================== */
+
+    .sidebar {
       position: fixed;
       inset: 0 auto 0 0;
-      width: 240px;
+      width: 250px;
+      height: 100vh;
+
+      display: flex;
+      flex-direction: column;
+
       background: #ffffff;
       border-right: 1px solid #e2e8f0;
+
       z-index: 1000;
+
       overflow-y: auto;
+      overflow-x: hidden;
     }
 
     .sidebar-inner {
@@ -191,45 +179,54 @@ function injectStyles() {
 
     .sidebar-brand {
       padding: 24px 20px 20px;
-      border-bottom: 1px solid #edf1f5;
+      border-bottom: 1px solid #e2e8f0;
     }
 
-    .sidebar-brand a {
+    .sidebar-brand-link {
       display: block;
-      color: #0f172a;
+
+      color: #172033;
       text-decoration: none;
+
+      border-radius: 8px;
     }
 
-    .brand-title {
+    .sidebar-brand-title {
       display: block;
-      font-size: 19px;
-      font-weight: 700;
-      letter-spacing: .01em;
-    }
 
-    .brand-subtitle {
-      display: block;
-      margin-top: 5px;
-      color: #64748b;
-      font-size: 12px;
+      font-size: 18px;
+      line-height: 1.4;
+      font-weight: 800;
+      letter-spacing: -.02em;
     }
 
     .sidebar-nav {
-      display: grid;
+      display: flex;
+      flex-direction: column;
+
+      padding: 14px 12px;
+
       gap: 4px;
-      padding: 16px 12px;
     }
 
     .sidebar-link {
       display: flex;
       align-items: center;
+
       min-height: 46px;
+
       padding: 0 14px;
-      border-radius: 8px;
-      color: #334155;
+
+      border-radius: 9px;
+
+      color: #475569;
+      background: transparent;
+
       text-decoration: none;
+
       font-size: 14px;
       font-weight: 600;
+
       transition:
         background-color .15s ease,
         color .15s ease;
@@ -237,114 +234,127 @@ function injectStyles() {
 
     .sidebar-link:hover {
       background: #f1f5f9;
-      color: #0f172a;
+      color: #172033;
     }
 
     .sidebar-link.active {
-      background: #e8f0fe;
+      background: #eff6ff;
       color: #1d4ed8;
+    }
+
+    .sidebar-link-text {
+      display: block;
+      width: 100%;
     }
 
     .sidebar-bottom {
       margin-top: auto;
-      padding: 16px;
-      border-top: 1px solid #edf1f5;
-    }
 
-    .sidebar-user {
-      padding: 12px;
-      border-radius: 8px;
-      background: #f8fafc;
-    }
+      padding: 16px 12px 20px;
 
-    .sidebar-user-label {
-      color: #64748b;
-      font-size: 11px;
-    }
-
-    .sidebar-user-name {
-      margin-top: 4px;
-      color: #0f172a;
-      font-size: 13px;
-      font-weight: 600;
-      overflow-wrap: anywhere;
+      border-top: 1px solid #e2e8f0;
     }
 
     .sidebar-logout {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
       width: 100%;
-      margin-top: 10px;
-      min-height: 42px;
+      min-height: 44px;
+
+      padding: 0 14px;
+
       border: 1px solid #cbd5e1;
       border-radius: 8px;
-      background: #fff;
+
+      background: #ffffff;
       color: #334155;
-      font-size: 13px;
+
       cursor: pointer;
+
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+
+      transition:
+        background-color .15s ease,
+        border-color .15s ease,
+        color .15s ease;
     }
 
     .sidebar-logout:hover {
       background: #f8fafc;
+      border-color: #94a3b8;
     }
 
-    .app-layout {
-      min-height: 100vh;
+    .sidebar-logout:disabled {
+      cursor: wait;
+      opacity: .6;
     }
+
+    /* =====================================================
+       メインコンテンツ
+       ===================================================== */
 
     .app-main {
       min-height: 100vh;
-      margin-left: 240px;
-      padding: 0;
+      margin-left: 250px;
     }
 
-    .page-header {
-      padding: 34px 42px 24px;
-      background: #ffffff;
-      border-bottom: 1px solid #e2e8f0;
-    }
-
-    .page-title {
-      margin: 0;
-      color: #0f172a;
-      font-size: 26px;
-      line-height: 1.35;
-    }
-
-    .page-header p {
-      margin: 8px 0 0;
-      color: #64748b;
-      font-size: 14px;
-    }
-
-    .page-footer {
-      margin-top: 50px;
-      padding: 24px;
-      color: #94a3b8;
-      text-align: center;
-      font-size: 11px;
-    }
+    /* =====================================================
+       モバイル
+       ===================================================== */
 
     @media (max-width: 760px) {
-      .study-sidebar {
-        position: fixed;
-        width: 220px;
-        transform: translateX(-100%);
-        transition: transform .2s ease;
+
+      .sidebar {
+        position: relative;
+
+        width: 100%;
+        height: auto;
+
+        min-height: auto;
+
+        border-right: 0;
+        border-bottom: 1px solid #e2e8f0;
       }
 
-      .study-sidebar.mobile-open {
-        transform: translateX(0);
+      .sidebar-inner {
+        min-height: auto;
+      }
+
+      .sidebar-brand {
+        padding: 18px 16px;
+      }
+
+      .sidebar-nav {
+        display: grid;
+        grid-template-columns:
+          repeat(2, minmax(0, 1fr));
+
+        padding: 10px 12px;
+      }
+
+      .sidebar-link {
+        min-height: 44px;
+      }
+
+      .sidebar-bottom {
+        margin-top: 0;
+
+        padding: 10px 12px 14px;
       }
 
       .app-main {
         margin-left: 0;
       }
+    }
 
-      .page-header {
-        padding: 28px 20px 20px;
-      }
+    @media (max-width: 420px) {
 
-      .page-title {
-        font-size: 22px;
+      .sidebar-nav {
+        grid-template-columns: 1fr;
       }
     }
   `;
@@ -352,104 +362,86 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
-export function setupSidebar(
-  profile = null,
-  options = {}
-) {
-  injectStyles();
+/* =========================================================
+   サイドバー設置
+   ========================================================= */
 
-  let sidebar =
-    document.getElementById(
-      "appSidebar"
-    );
+export function setupSidebar() {
+  try {
+    injectSidebarStyle();
 
-  if (!sidebar) {
-    sidebar =
-      document.createElement("aside");
-
-    sidebar.id = "appSidebar";
-
-    const main =
-      document.querySelector(
-        "main"
+    const sidebar =
+      document.getElementById(
+        "appSidebar"
       );
 
-    if (
-      main &&
-      main.parentElement
-    ) {
-      main.parentElement.insertBefore(
-        sidebar,
-        main
+    if (!sidebar) {
+      console.error(
+        "setupSidebar: #appSidebar が見つかりません。"
       );
-    } else {
-      document.body.prepend(
-        sidebar
-      );
+
+      return false;
     }
-  }
 
-  sidebar.replaceWith(
-    createSidebar()
-  );
+    /*
+      すでに生成済みでも一度完全に作り直す。
+      空白状態を残さない。
+    */
 
-  const newSidebar =
-    document.getElementById(
-      "studySidebar"
+    sidebar.innerHTML =
+      createSidebarHTML();
+
+    sidebar.hidden = false;
+
+    sidebar.removeAttribute(
+      "aria-hidden"
     );
 
-  const currentKey =
-    getCurrentKey();
+    /*
+      念のためdisplay:none系を解除
+    */
 
-  newSidebar
-    .querySelectorAll(
-      ".sidebar-link"
-    )
-    .forEach(link => {
-      if (
-        link.dataset.navKey ===
-        currentKey
-      ) {
-        link.classList.add(
-          "active"
-        );
-        link.setAttribute(
-          "aria-current",
-          "page"
-        );
-      }
-    });
+    sidebar.style.display = "block";
 
-  if (profile) {
-    setSidebarUser(profile);
-  }
+    /*
+      ログアウトボタンを必ず取得
+    */
 
-  if (
-    options.mobileButton !== false
-  ) {
-    setupMobileMenu();
-  }
+    const logoutButton =
+      document.getElementById(
+        "sidebarLogoutButton"
+      );
 
-  return newSidebar;
-}
+    if (!logoutButton) {
+      console.error(
+        "setupSidebar: ログアウトボタンの生成に失敗しました。"
+      );
 
-export function setSidebarUser(
-  profile
-) {
-  const name =
-    profile?.displayName ||
-    profile?.name ||
-    "学習者";
+      return false;
+    }
 
-  const element =
-    document.getElementById(
-      "sidebarUserName"
+    /*
+      二重イベント登録防止
+    */
+
+    logoutButton.onclick = null;
+
+    return true;
+
+  } catch (error) {
+
+    console.error(
+      "サイドバー初期化エラー:",
+      error
     );
 
-  if (element) {
-    element.textContent = name;
+    return false;
   }
 }
+
+/* =========================================================
+   ログアウト処理
+   ========================================================= */
 
 export function setupLogout(
   auth,
@@ -457,20 +449,22 @@ export function setupLogout(
 ) {
   const button =
     document.getElementById(
-      "sidebarLogout"
+      "sidebarLogoutButton"
     );
 
   if (!button) {
-    return;
+    console.warn(
+      "setupLogout: ログアウトボタンがありません。"
+    );
+
+    return false;
   }
 
-  button.addEventListener(
-    "click",
+  button.onclick =
     async () => {
+
       if (
-        !confirm(
-          "ログアウトしますか？"
-        )
+        button.disabled
       ) {
         return;
       }
@@ -480,111 +474,92 @@ export function setupLogout(
         "ログアウト中...";
 
       try {
+
         await signOutFunction(
           auth
         );
 
-        location.replace(
-          isStudentPage()
-            ? "../login.html"
-            : "./login.html"
-        );
+        /*
+          ログイン画面へ戻す
+        */
+
+        const pathname =
+          location.pathname;
+
+        if (
+          pathname.includes(
+            "/student/"
+          )
+        ) {
+          location.replace(
+            "../login.html"
+          );
+        } else if (
+          pathname.includes(
+            "/admin/"
+          )
+        ) {
+          location.replace(
+            "../login.html"
+          );
+        } else {
+          location.replace(
+            "./login.html"
+          );
+        }
 
       } catch (error) {
+
         console.error(
           "ログアウトエラー:",
           error
         );
 
-        button.disabled =
-          false;
-
+        button.disabled = false;
         button.textContent =
           "ログアウト";
 
         alert(
-          "ログアウトに失敗しました。もう一度お試しください。"
+          "ログアウトできませんでした。\n" +
+          (
+            error?.message ||
+            String(error)
+          )
         );
       }
-    }
-  );
-}
-
-function setupMobileMenu() {
-  if (
-    document.getElementById(
-      "mobileMenuButton"
-    )
-  ) {
-    return;
-  }
-
-  const button =
-    document.createElement(
-      "button"
-    );
-
-  button.id =
-    "mobileMenuButton";
-
-  button.type =
-    "button";
-
-  button.textContent =
-    "メニュー";
-
-  button.setAttribute(
-    "aria-label",
-    "メニューを開く"
-  );
-
-  button.style.cssText = `
-    position: fixed;
-    top: 14px;
-    left: 14px;
-    z-index: 1100;
-    display: none;
-    min-width: 82px;
-    height: 40px;
-    padding: 0 12px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    background: #ffffff;
-    color: #334155;
-    font-size: 13px;
-    font-weight: 600;
-  `;
-
-  document.body.appendChild(
-    button
-  );
-
-  const update =
-    () => {
-      button.style.display =
-        window.innerWidth <= 760
-          ? "block"
-          : "none";
     };
 
-  update();
+  return true;
+}
 
-  window.addEventListener(
-    "resize",
-    update
+/* =========================================================
+   ログイン後の画面を確実に準備
+   ========================================================= */
+
+export function initializeLayout(
+  auth,
+  signOutFunction
+) {
+  /*
+    先にサイドバーを作る。
+    Firestoreを待たない。
+    AIサーバーを待たない。
+    Supabaseを待たない。
+  */
+
+  const sidebarReady =
+    setupSidebar();
+
+  if (!sidebarReady) {
+    console.error(
+      "サイドバーを生成できませんでした。"
+    );
+  }
+
+  setupLogout(
+    auth,
+    signOutFunction
   );
 
-  button.addEventListener(
-    "click",
-    () => {
-      const sidebar =
-        document.getElementById(
-          "studySidebar"
-        );
-
-      sidebar?.classList.toggle(
-        "mobile-open"
-      );
-    }
-  );
+  return sidebarReady;
 }
