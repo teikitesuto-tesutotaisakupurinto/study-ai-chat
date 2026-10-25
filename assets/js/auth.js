@@ -6,10 +6,17 @@ import {
   signOut,
   doc,
   getDoc
-} from "./firebase-module.js";
+} from "./firebase.js";
 
 /* =========================================================
-   共通
+   Supabase Edge Function
+   ========================================================= */
+
+const SUPABASE_FUNCTION_URL =
+  "https://fjqobjcvejhkevyfsoxt.supabase.co/functions/v1/study-chat";
+
+/* =========================================================
+   パス
    ========================================================= */
 
 function rootPath(file) {
@@ -19,52 +26,88 @@ function rootPath(file) {
     path.includes("/student/") ||
     path.includes("/admin/");
 
-  return nested ? `../${file}` : `./${file}`;
-}
-
-function errorDetails(error) {
-  return `${error?.code || "error"}: ${
-    error?.message || String(error)
-  }`;
+  return nested
+    ? `../${file}`
+    : `./${file}`;
 }
 
 /* =========================================================
    エラー画面
    ========================================================= */
 
-function showAccessError(title, message, detail = "") {
-  document.documentElement.classList.remove("auth-pending");
+function showAccessError(
+  title,
+  message,
+  detail = ""
+) {
+  document.documentElement.classList.remove(
+    "auth-pending"
+  );
 
   document.body.replaceChildren();
 
-  const main = document.createElement("main");
-  main.className = "auth-error";
+  const main =
+    document.createElement("main");
 
-  const heading = document.createElement("h1");
-  heading.textContent = title;
+  main.className =
+    "auth-error";
 
-  const description = document.createElement("p");
-  description.textContent = message;
+  const heading =
+    document.createElement("h1");
 
-  main.append(heading, description);
+  heading.textContent =
+    title;
+
+  const description =
+    document.createElement("p");
+
+  description.textContent =
+    message;
+
+  main.append(
+    heading,
+    description
+  );
 
   if (detail) {
-    const pre = document.createElement("pre");
-    pre.textContent = detail;
+    const pre =
+      document.createElement("pre");
+
+    pre.textContent =
+      detail;
+
     main.append(pre);
   }
 
-  const retry = document.createElement("button");
-  retry.type = "button";
-  retry.textContent = "再読み込み";
-  retry.addEventListener("click", () => location.reload());
+  const retry =
+    document.createElement("button");
+
+  retry.type =
+    "button";
+
+  retry.textContent =
+    "再読み込み";
+
+  retry.addEventListener(
+    "click",
+    () => {
+      location.reload();
+    }
+  );
 
   main.append(retry);
 
-  const loginLink = document.createElement("a");
-  loginLink.href = rootPath("login.html");
-  loginLink.className = "button";
-  loginLink.textContent = "ログイン画面へ";
+  const loginLink =
+    document.createElement("a");
+
+  loginLink.href =
+    rootPath("login.html");
+
+  loginLink.className =
+    "button";
+
+  loginLink.textContent =
+    "ログイン画面へ";
 
   main.append(loginLink);
 
@@ -72,17 +115,36 @@ function showAccessError(title, message, detail = "") {
 }
 
 /* =========================================================
-   Firebase設定
+   エラー詳細
+   ========================================================= */
+
+function errorDetails(error) {
+  return `${
+    error?.code || "error"
+  }: ${
+    error?.message ||
+    String(error)
+  }`;
+}
+
+/* =========================================================
+   システム設定
+   ※ ログイン後のみ呼び出す
    ========================================================= */
 
 export async function getSystemSettings() {
-  const snapshot = await getDoc(
-    doc(db, "settings", "system")
-  );
+  const snapshot =
+    await getDoc(
+      doc(
+        db,
+        "settings",
+        "system"
+      )
+    );
 
   if (!snapshot.exists()) {
     throw new Error(
-      "Firestore に settings/system がありません。"
+      "Firestoreに settings/system がありません。"
     );
   }
 
@@ -90,23 +152,30 @@ export async function getSystemSettings() {
 }
 
 /* =========================================================
-   ユーザープロフィール
+   現在のユーザープロフィール
    ========================================================= */
 
-export async function getCurrentProfile(user) {
+export async function getCurrentProfile(
+  user
+) {
   if (!user?.uid) {
     throw new Error(
       "ログイン中の利用者を確認できません。"
     );
   }
 
-  const snapshot = await getDoc(
-    doc(db, "users", user.uid)
-  );
+  const snapshot =
+    await getDoc(
+      doc(
+        db,
+        "users",
+        user.uid
+      )
+    );
 
   if (!snapshot.exists()) {
     throw new Error(
-      `ユーザープロフィールがありません。users/${user.uid} を確認してください。`
+      `ユーザープロフィールがありません。\nusers/${user.uid}`
     );
   }
 
@@ -114,53 +183,56 @@ export async function getCurrentProfile(user) {
 }
 
 /* =========================================================
-   認証状態を待つ
+   Firebase Auth待機
    ========================================================= */
 
 export function waitForAuth() {
-  return new Promise((resolve, reject) => {
-    let unsubscribe = null;
-    let finished = false;
+  return new Promise(
+    (resolve, reject) => {
+      let unsubscribe = null;
+      let finished = false;
 
-    const finish = callback => {
-      if (finished) return;
-
-      finished = true;
-
-      if (unsubscribe) {
-        unsubscribe();
-        unsubscribe = null;
+      function cleanup() {
+        if (unsubscribe) {
+          unsubscribe();
+          unsubscribe = null;
+        }
       }
 
-      callback();
-    };
+      unsubscribe =
+        onAuthStateChanged(
+          auth,
 
-    unsubscribe = onAuthStateChanged(
-      auth,
-      user => {
-        finish(() => resolve(user));
-      },
-      error => {
-        finish(() => reject(error));
-      }
-    );
-  });
+          user => {
+            if (finished) {
+              return;
+            }
+
+            finished = true;
+
+            cleanup();
+
+            resolve(user);
+          },
+
+          error => {
+            if (finished) {
+              return;
+            }
+
+            finished = true;
+
+            cleanup();
+
+            reject(error);
+          }
+        );
+    }
+  );
 }
 
 /* =========================================================
-   ログイン状態を確認
-   ========================================================= */
-
-export async function getAuthenticatedUser() {
-  await persistenceReady;
-
-  const user = await waitForAuth();
-
-  return user;
-}
-
-/* =========================================================
-   権限確認
+   権限チェック
    ========================================================= */
 
 export async function requireRole(
@@ -172,35 +244,42 @@ export async function requireRole(
   );
 
   if (
-    !["student", "admin"].includes(requiredRole)
+    ![
+      "student",
+      "admin"
+    ].includes(requiredRole)
   ) {
     showAccessError(
       "ページ設定エラー",
       "必要な権限の設定が正しくありません。",
-      `requiredRole: ${String(requiredRole)}`
+      `requiredRole: ${String(
+        requiredRole
+      )}`
     );
 
     return null;
   }
 
   try {
-    /*
-      Firebase Authenticationの永続化が
-      完了するまで待つ。
-    */
+    /* -----------------------------------------
+       Firebase Persistence
+       ----------------------------------------- */
+
     await persistenceReady;
 
+    /* -----------------------------------------
+       ① まずログイン状態だけ確認
+       ----------------------------------------- */
+
+    const user =
+      await waitForAuth();
+
     /*
-      ここで一度だけ認証状態を取得。
-      未ログインの場合だけlogin.htmlへ戻す。
+      未ログインなら、
+      settings/systemを読む前にログインへ戻す。
     */
-    const user = await waitForAuth();
 
     if (!user) {
-      document.documentElement.classList.remove(
-        "auth-pending"
-      );
-
       location.replace(
         rootPath("login.html")
       );
@@ -208,39 +287,41 @@ export async function requireRole(
       return null;
     }
 
-    /*
-      プロフィール取得
-    */
+    /* -----------------------------------------
+       ② ログイン後にユーザー情報取得
+       ----------------------------------------- */
+
     let profile;
 
     try {
-      profile = await getCurrentProfile(user);
+      profile =
+        await getCurrentProfile(
+          user
+        );
     } catch (error) {
-      console.error(
-        "プロフィール取得エラー:",
-        error
-      );
-
       showAccessError(
-        error?.code === "permission-denied"
+        error?.code ===
+          "permission-denied"
           ? "403 Forbidden"
           : "ユーザー情報エラー",
+
         "ユーザープロフィールを確認できませんでした。",
+
         errorDetails(error)
       );
 
       return null;
     }
 
-    /*
-      アカウント状態
-    */
-    if (profile.status !== "active") {
-      await signOut(auth);
+    /* -----------------------------------------
+       ③ アカウント状態
+       ----------------------------------------- */
 
-      document.documentElement.classList.remove(
-        "auth-pending"
-      );
+    if (
+      profile.status !==
+      "active"
+    ) {
+      await signOut(auth);
 
       location.replace(
         rootPath("login.html")
@@ -249,89 +330,101 @@ export async function requireRole(
       return null;
     }
 
-    /*
-      role確認
-    */
+    /* -----------------------------------------
+       ④ role
+       ----------------------------------------- */
+
     if (
-      !["student", "admin"].includes(
+      ![
+        "student",
+        "admin"
+      ].includes(
         profile.role
       )
     ) {
       showAccessError(
         "403 Forbidden",
+
         "アカウントの権限が設定されていないか、不正です。",
-        `role: ${String(profile.role)}`
+
+        `role: ${String(
+          profile.role
+        )}`
       );
 
       return null;
     }
 
-    /*
-      必要roleとの一致
-    */
-    if (profile.role !== requiredRole) {
+    if (
+      profile.role !==
+      requiredRole
+    ) {
       showAccessError(
         "403 Forbidden",
+
         "このページを開く権限がありません。",
+
         `必要な権限: ${requiredRole}\n現在の権限: ${profile.role}`
       );
 
       return null;
     }
 
-    /*
-      システム設定
-    */
+    /* -----------------------------------------
+       ⑤ ここで初めてシステム設定を取得
+       ----------------------------------------- */
+
     let settings;
 
     try {
       settings =
         await getSystemSettings();
-    } catch (error) {
-      console.error(
-        "システム設定取得エラー:",
-        error
-      );
 
+    } catch (error) {
       showAccessError(
         "システム設定エラー",
-        "システム設定を取得できません。",
+
+        "Firebaseからシステム設定を取得できませんでした。",
+
         errorDetails(error)
       );
 
       return null;
     }
 
-    /*
-      メンテナンス
-    */
+    /* -----------------------------------------
+       ⑥ メンテナンス判定
+       ----------------------------------------- */
+
     if (
       settings.maintenance === true &&
       requiredRole === "student" &&
       options.allowMaintenance !== true
     ) {
-      document.documentElement.classList.remove(
-        "auth-pending"
-      );
-
       location.replace(
-        rootPath("maintenance.html")
+        rootPath(
+          "maintenance.html"
+        )
       );
 
       return null;
     }
 
-    /*
-      ここまで来たら認証・権限確認完了
-    */
+    /* -----------------------------------------
+       認証処理完了
+       ----------------------------------------- */
+
     document.documentElement.classList.remove(
       "auth-pending"
     );
 
     return {
       user,
+
       profile,
+
       data: profile,
+
       settings
     };
 
@@ -341,15 +434,14 @@ export async function requireRole(
       error
     );
 
-    document.documentElement.classList.remove(
-      "auth-pending"
-    );
-
     showAccessError(
-      error?.code === "permission-denied"
+      error?.code ===
+        "permission-denied"
         ? "403 Forbidden"
         : "認証・権限の確認に失敗しました",
+
       "安全にページを開けませんでした。",
+
       errorDetails(error)
     );
 
@@ -365,10 +457,11 @@ export async function protectPage(
   requiredRole,
   options = {}
 ) {
-  const result = await requireRole(
-    requiredRole,
-    options
-  );
+  const result =
+    await requireRole(
+      requiredRole,
+      options
+    );
 
   if (!result) {
     throw new Error(
@@ -380,50 +473,15 @@ export async function protectPage(
 }
 
 /* =========================================================
-   ログイン後のプロフィール取得
-   ========================================================= */
-
-export async function getProfileForLogin(user) {
-  if (!user) {
-    throw new Error(
-      "ログイン情報を取得できませんでした。"
-    );
-  }
-
-  const profile =
-    await getCurrentProfile(user);
-
-  if (profile.status !== "active") {
-    throw new Error(
-      "このアカウントは現在利用できません。"
-    );
-  }
-
-  if (
-    !["student", "admin"].includes(
-      profile.role
-    )
-  ) {
-    throw new Error(
-      "アカウントの権限が正しく設定されていません。"
-    );
-  }
-
-  return profile;
-}
-
-/* =========================================================
    Study AI Chat
    ========================================================= */
-
-const SUPABASE_FUNCTION_URL =
-  "https://fjqobjcvejhkevyfsoxt.supabase.co/functions/v1/study-chat";
 
 export async function sendStudyQuestion(
   question,
   conversationId = null
 ) {
-  const user = auth.currentUser;
+  const user =
+    auth.currentUser;
 
   if (!user) {
     throw new Error(
@@ -432,7 +490,9 @@ export async function sendStudyQuestion(
   }
 
   const cleanQuestion =
-    String(question || "").trim();
+    String(
+      question || ""
+    ).trim();
 
   if (!cleanQuestion) {
     throw new Error(
@@ -441,7 +501,9 @@ export async function sendStudyQuestion(
   }
 
   const token =
-    await user.getIdToken();
+    await user.getIdToken(
+      true
+    );
 
   const response =
     await fetch(
@@ -450,7 +512,7 @@ export async function sendStudyQuestion(
         method: "POST",
 
         headers: {
-          Authorization:
+          "Authorization":
             `Bearer ${token}`,
 
           "Content-Type":
@@ -470,11 +532,12 @@ export async function sendStudyQuestion(
       }
     );
 
-  let result = null;
+  let result;
 
   try {
     result =
       await response.json();
+
   } catch {
     throw new Error(
       "AIサーバーから正しい応答を受信できませんでした。"
@@ -516,7 +579,8 @@ export async function sendStudyQuestion(
 export async function getConversation(
   conversationId
 ) {
-  const user = auth.currentUser;
+  const user =
+    auth.currentUser;
 
   if (!user) {
     throw new Error(
@@ -536,7 +600,9 @@ export async function getConversation(
   }
 
   const token =
-    await user.getIdToken();
+    await user.getIdToken(
+      true
+    );
 
   const response =
     await fetch(
@@ -545,7 +611,7 @@ export async function getConversation(
         method: "POST",
 
         headers: {
-          Authorization:
+          "Authorization":
             `Bearer ${token}`,
 
           "Content-Type":
@@ -562,8 +628,16 @@ export async function getConversation(
       }
     );
 
-  const result =
-    await response.json();
+  let result;
+
+  try {
+    result =
+      await response.json();
+  } catch {
+    throw new Error(
+      "会話取得サーバーから正しい応答を受信できませんでした。"
+    );
+  }
 
   if (
     !response.ok ||
@@ -585,7 +659,8 @@ export async function getConversation(
 export async function getConversationByAnswerId(
   answerId
 ) {
-  const user = auth.currentUser;
+  const user =
+    auth.currentUser;
 
   if (!user) {
     throw new Error(
@@ -605,7 +680,9 @@ export async function getConversationByAnswerId(
   }
 
   const token =
-    await user.getIdToken();
+    await user.getIdToken(
+      true
+    );
 
   const response =
     await fetch(
@@ -614,7 +691,7 @@ export async function getConversationByAnswerId(
         method: "POST",
 
         headers: {
-          Authorization:
+          "Authorization":
             `Bearer ${token}`,
 
           "Content-Type":
@@ -631,8 +708,16 @@ export async function getConversationByAnswerId(
       }
     );
 
-  const result =
-    await response.json();
+  let result;
+
+  try {
+    result =
+      await response.json();
+  } catch {
+    throw new Error(
+      "会話取得サーバーから正しい応答を受信できませんでした。"
+    );
+  }
 
   if (
     !response.ok ||
@@ -648,7 +733,7 @@ export async function getConversationByAnswerId(
 }
 
 /* =========================================================
-   エクスポート
+   Firebase
    ========================================================= */
 
 export {
