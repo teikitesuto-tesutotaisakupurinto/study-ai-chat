@@ -1,384 +1,909 @@
-import { auth } from "./firebase-module.js";
 
-const AI_ENDPOINT =
+
+/* =========================================================
+   設定
+========================================================= */
+
+const STUDY_CHAT_ENDPOINT =
   "https://fjqobjcvejhkevyfsoxt.supabase.co/functions/v1/study-chat";
 
-const REQUEST_TIMEOUT = 60000;
 
+/* =========================================================
+   Firebase
+========================================================= */
 
-/* =========================================
-   エラー
-========================================= */
+async function getFirebaseAuth() {
 
-export class AIRequestError extends Error {
-  constructor(message, code = "", status = 0) {
-    super(message);
-
-    this.name = "AIRequestError";
-    this.code = code;
-    this.status = status;
-  }
-}
-
-
-/* =========================================
-   ログインユーザー
-========================================= */
-
-function getCurrentUser() {
-  if (!auth) {
-    throw new AIRequestError(
-      "Firebase Authenticationを初期化できません。",
-      "FIREBASE_AUTH_ERROR"
-    );
-  }
-
-  const user = auth.currentUser;
-
-  if (!user) {
-    throw new AIRequestError(
-      "ログインしてください。",
-      "AUTH_REQUIRED"
-    );
-  }
-
-  return user;
-}
-
-
-/* =========================================
-   Firebase ID Token
-========================================= */
-
-async function getIdToken(user) {
   try {
-    const token = await user.getIdToken(false);
 
-    if (!token) {
-      throw new Error("ID Tokenが取得できませんでした。");
+    const module =
+      await import("./firebase-module.js");
+
+    if (!module.auth) {
+      throw new Error(
+        "Firebase Authenticationを初期化できませんでした。"
+      );
     }
 
-    return token;
+    return module.auth;
 
   } catch (error) {
 
     console.error(
-      "Firebase ID Token error:",
+      "Firebase読み込みエラー:",
       error
     );
 
-    throw new AIRequestError(
-      "Firebaseの認証情報を取得できませんでした。",
-      "TOKEN_ERROR"
+    throw new Error(
+      "Firebase Authenticationを初期化できませんでした。"
     );
+
   }
+
 }
 
 
-/* =========================================
-   タイムアウト
-========================================= */
+/* =========================================================
+   Firebaseユーザー取得
+========================================================= */
 
-function createTimeout() {
-  const controller = new AbortController();
+async function getCurrentUser() {
 
-  const timer = setTimeout(() => {
-    controller.abort();
-  }, REQUEST_TIMEOUT);
+  const auth =
+    await getFirebaseAuth();
 
-  return {
-    controller,
-    clear() {
-      clearTimeout(timer);
+
+  if (auth.currentUser) {
+    return auth.currentUser;
+  }
+
+
+  /*
+   * currentUserがまだ復元されていない場合に備える
+   */
+
+  return await new Promise(
+    (resolve, reject) => {
+
+      let finished = false;
+
+
+      const timeout =
+        setTimeout(() => {
+
+          if (finished) return;
+
+          finished = true;
+
+          reject(
+            new Error(
+              "ログイン状態を確認できませんでした。"
+            )
+          );
+
+        }, 10000);
+
+
+      let unsubscribe = null;
+
+
+      try {
+
+        unsubscribe =
+          auth.onAuthStateChanged(
+            (user) => {
+
+              if (finished) return;
+
+              finished = true;
+
+              clearTimeout(
+                timeout
+              );
+
+              if (unsubscribe) {
+                unsubscribe();
+              }
+
+              if (!user) {
+
+                reject(
+                  new Error(
+                    "ログインしてください。"
+                  )
+                );
+
+                return;
+              }
+
+              resolve(user);
+
+            }
+          );
+
+      } catch (error) {
+
+        if (finished) return;
+
+        finished = true;
+
+        clearTimeout(
+          timeout
+        );
+
+        if (unsubscribe) {
+          unsubscribe();
+        }
+
+        reject(error);
+
+      }
+
     }
-  };
+  );
+
 }
 
 
-/* =========================================
-   回答取得
-========================================= */
+/* =========================================================
+   JSONからAI本文を抽出
+========================================================= */
 
-function extractAnswer(data, rawText) {
+/**
+ * AIから返ってきた値を、
+ * 最終的に画面表示する普通の文章へ変換する。
+ *
+ * 対応例:
+ *
+ * "こんにちは"
+ *
+ * {
+ *   "answer": "こんにちは"
+ * }
+ *
+ * {
+ *   "content": "こんにちは"
+ * }
+ *
+ * ```json
+ * {
+ *   "answer": "こんにちは"
+ * }
+ * ```
+ */
 
-  if (
-    data &&
-    typeof data.answer === "string"
-  ) {
-    return data.answer.trim();
-  }
-
-  if (
-    data &&
-    typeof data.response === "string"
-  ) {
-    return data.response.trim();
-  }
-
-  if (
-    data &&
-    typeof data.text === "string"
-  ) {
-    return data.text.trim();
-  }
-
-  if (
-    data &&
-    typeof data.message === "string"
-  ) {
-    return data.message.trim();
-  }
+function extractPlainAnswer(value) {
 
   if (
-    data &&
-    typeof data.result === "string"
+    value === null ||
+    value === undefined
   ) {
-    return data.result.trim();
+
+    return "";
+
   }
+
 
   if (
-    data &&
-    Array.isArray(data.choices)
+    typeof value !==
+    "string"
   ) {
 
-    const choice = data.choices[0];
+    return extractAnswerFromObject(
+      value
+    );
 
-    if (
-      choice?.message &&
-      typeof choice.message.content === "string"
-    ) {
-      return choice.message.content.trim();
-    }
-
-    if (
-      typeof choice?.text === "string"
-    ) {
-      return choice.text.trim();
-    }
   }
 
-  if (
-    typeof rawText === "string" &&
-    rawText.trim()
-  ) {
-    return rawText.trim();
+
+  let text =
+    value.trim();
+
+
+  if (!text) {
+    return "";
   }
 
-  return "";
-}
 
-
-/* =========================================
-   エラー処理
-========================================= */
-
-async function createResponseError(response) {
-
-  const rawText = await response.text();
-
-  let data = null;
+  /*
+   * まず普通のJSONとして解析
+   */
 
   try {
-    data = JSON.parse(rawText);
+
+    const parsed =
+      JSON.parse(text);
+
+
+    const result =
+      extractAnswerFromObject(
+        parsed
+      );
+
+
+    if (result) {
+      return result;
+    }
+
   } catch {
-    data = null;
+    // JSONではない通常の文章
   }
 
-  const serverMessage =
-    data?.error ||
-    data?.message ||
-    data?.details ||
+
+  /*
+   * ```json ... ```
+   * のコードブロック
+   */
+
+  const jsonBlock =
+    text.match(
+      /^```(?:json)?\s*([\s\S]*?)\s*```$/i
+    );
+
+
+  if (jsonBlock) {
+
+    try {
+
+      const parsed =
+        JSON.parse(
+          jsonBlock[1]
+        );
+
+
+      const result =
+        extractAnswerFromObject(
+          parsed
+        );
+
+
+      if (result) {
+        return result;
+      }
+
+    } catch {
+      // 通常文章として扱う
+    }
+
+  }
+
+
+  /*
+   * JSONの前後に余計な文字が付いている場合
+   *
+   * 例:
+   *
+   * 回答はこちらです。
+   * {"answer":"二次関数です。"}
+   */
+
+  const firstBrace =
+    text.indexOf("{");
+
+
+  const lastBrace =
+    text.lastIndexOf("}");
+
+
+  if (
+    firstBrace >= 0 &&
+    lastBrace > firstBrace
+  ) {
+
+    const possibleJson =
+      text.slice(
+        firstBrace,
+        lastBrace + 1
+      );
+
+
+    try {
+
+      const parsed =
+        JSON.parse(
+          possibleJson
+        );
+
+
+      const result =
+        extractAnswerFromObject(
+          parsed
+        );
+
+
+      if (result) {
+
+        /*
+         * JSONの外側にある文章ではなく、
+         * JSON内のanswerを優先する
+         */
+
+        return result;
+
+      }
+
+    } catch {
+      // JSONではない
+    }
+
+  }
+
+
+  /*
+   * JSONでなければそのまま文章として返す
+   */
+
+  return text;
+
+}
+
+
+/* =========================================================
+   オブジェクトから回答本文を取得
+========================================================= */
+
+function extractAnswerFromObject(
+  data
+) {
+
+  if (
+    data === null ||
+    data === undefined
+  ) {
+
+    return "";
+
+  }
+
+
+  if (
+    typeof data ===
+    "string"
+  ) {
+
+    return data.trim();
+
+  }
+
+
+  if (
+    typeof data ===
+    "number" ||
+    typeof data ===
+    "boolean"
+  ) {
+
+    return String(data);
+
+  }
+
+
+  if (
+    Array.isArray(data)
+  ) {
+
+    const parts = [];
+
+
+    for (
+      const item of data
+    ) {
+
+      const result =
+        extractAnswerFromObject(
+          item
+        );
+
+
+      if (result) {
+        parts.push(result);
+      }
+
+    }
+
+
+    return parts
+      .join("\n\n")
+      .trim();
+
+  }
+
+
+  if (
+    typeof data !==
+    "object"
+  ) {
+
+    return String(data);
+
+  }
+
+
+  /*
+   * AI回答として使用する可能性が高いキー
+   */
+
+  const answerKeys = [
+
+    "answer",
+
+    "content",
+
+    "response",
+
+    "message",
+
+    "text",
+
+    "output",
+
+    "result"
+
+  ];
+
+
+  for (
+    const key of answerKeys
+  ) {
+
+    if (
+      Object.prototype.hasOwnProperty.call(
+        data,
+        key
+      )
+    ) {
+
+      const result =
+        extractAnswerFromObject(
+          data[key]
+        );
+
+
+      if (result) {
+        return result;
+      }
+
+    }
+
+  }
+
+
+  /*
+   * OpenAI / Groq形式
+   *
+   * {
+   *   choices: [
+   *     {
+   *       message: {
+   *         content: "..."
+   *       }
+   *     }
+   *   ]
+   * }
+   */
+
+  if (
+    Array.isArray(
+      data.choices
+    )
+  ) {
+
+    for (
+      const choice of data.choices
+    ) {
+
+      const result =
+        extractAnswerFromObject(
+          choice
+        );
+
+
+      if (result) {
+        return result;
+      }
+
+    }
+
+  }
+
+
+  /*
+   * choicesが見つからない場合、
+   * オブジェクトの値を調べる
+   */
+
+  const parts = [];
+
+
+  for (
+    const value of Object.values(
+      data
+    )
+  ) {
+
+    if (
+      typeof value !==
+      "object" &&
+      typeof value !==
+      "string"
+    ) {
+
+      continue;
+
+    }
+
+
+    const result =
+      extractAnswerFromObject(
+        value
+      );
+
+
+    if (result) {
+
+      parts.push(
+        result
+      );
+
+    }
+
+  }
+
+
+  return parts
+    .join("\n\n")
+    .trim();
+
+}
+
+
+/* =========================================================
+   サーバーエラーを文章化
+========================================================= */
+
+function getServerErrorMessage(
+  response,
+  data
+) {
+
+  const status =
+    response?.status;
+
+
+  const message =
+    data?.error ??
+    data?.message ??
+    data?.details ??
     "";
 
 
-  if (response.status === 401) {
+  if (
+    typeof message ===
+    "string" &&
+    message.trim()
+  ) {
 
-    return new AIRequestError(
-      "AIサービスの認証に失敗しました。ログイン状態を確認してください。",
-      "AI_UNAUTHORIZED",
-      401
-    );
+    return message.trim();
+
   }
 
 
-  if (response.status === 403) {
+  if (
+    status === 400
+  ) {
 
-    return new AIRequestError(
-      "AIサービスを利用する権限がありません。",
-      "AI_FORBIDDEN",
-      403
-    );
+    return "送信された質問を処理できませんでした。";
+
   }
 
 
-  if (response.status === 404) {
+  if (
+    status === 401
+  ) {
 
-    return new AIRequestError(
-      "AIサービスが見つかりません。Supabaseのstudy-chatを確認してください。",
-      "AI_NOT_FOUND",
-      404
-    );
+    return "ログイン認証に失敗しました。もう一度ログインしてください。";
+
   }
 
 
-  if (response.status >= 500) {
+  if (
+    status === 403
+  ) {
 
-    return new AIRequestError(
-      serverMessage ||
-      "AIサーバーでエラーが発生しました。",
-      "AI_SERVER_ERROR",
-      response.status
-    );
+    return "AIへのアクセスが拒否されました。";
+
   }
 
 
-  return new AIRequestError(
-    serverMessage ||
-    `AIサービスへの接続に失敗しました。（${response.status}）`,
-    "AI_HTTP_ERROR",
-    response.status
+  if (
+    status === 404
+  ) {
+
+    return "AIサーバーが見つかりません。Edge Functionの公開URLを確認してください。";
+
+  }
+
+
+  if (
+    status === 429
+  ) {
+
+    return "AIの利用制限に達しました。少し待ってから再試行してください。";
+
+  }
+
+
+  if (
+    status >= 500
+  ) {
+
+    return "AIサーバーでエラーが発生しました。時間をおいて再試行してください。";
+
+  }
+
+
+  return (
+    `AIへの質問に失敗しました${
+      status
+        ? `（HTTP ${status}）`
+        : ""
+    }。`
   );
+
 }
 
 
-/* =========================================
-   AI質問
-========================================= */
+/* =========================================================
+   質問送信
+========================================================= */
 
-export async function askAI(options = {}) {
+export async function askAI({
 
-  const message =
+  message,
+
+  grade = "中学2年生",
+
+  subject = "",
+
+  history = [],
+
+  conversationId = null
+
+} = {}) {
+
+  /*
+   * 質問チェック
+   */
+
+  const question =
     String(
-      options.message ??
-      options.question ??
-      ""
+      message ?? ""
     ).trim();
 
 
-  if (!message) {
+  if (!question) {
 
-    throw new AIRequestError(
-      "質問を入力してください。",
-      "EMPTY_MESSAGE"
+    throw new Error(
+      "質問を入力してください。"
     );
+
   }
 
 
-  const grade =
-    String(
-      options.grade ??
-      "中学2年生"
-    ).trim();
+  if (
+    question.length >
+    10000
+  ) {
+
+    throw new Error(
+      "質問が長すぎます。10,000文字以内で入力してください。"
+    );
+
+  }
 
 
-  const subject =
-    String(
-      options.subject ??
-      "数学"
-    ).trim();
-
-
-  const history =
-    Array.isArray(options.history)
-      ? options.history
-      : [];
-
-
-  const cleanHistory =
-    history
-      .filter(item => item)
-      .map(item => {
-
-        if (
-          typeof item.question === "string" &&
-          typeof item.answer === "string"
-        ) {
-
-          return {
-            question: item.question.trim(),
-            answer: item.answer.trim()
-          };
-        }
-
-        return item;
-
-      })
-      .slice(-12);
-
+  /*
+   * Firebaseユーザー
+   */
 
   const user =
-    getCurrentUser();
+    await getCurrentUser();
 
 
-  const token =
-    await getIdToken(user);
+  if (!user) {
+
+    throw new Error(
+      "ログインしてください。"
+    );
+
+  }
 
 
-  const requestBody = {
+  /*
+   * Firebase ID Token
+   */
 
-    message,
-
-    question: message,
-
-    grade,
-
-    subject,
-
-    history: cleanHistory
-
-  };
-
-
-  const timeout =
-    createTimeout();
+  let idToken;
 
 
   try {
 
-    const response =
+    /*
+     * trueを指定して期限切れトークンを更新
+     */
+
+    idToken =
+      await user.getIdToken(
+        true
+      );
+
+  } catch (error) {
+
+    console.error(
+      "Firebase ID Token取得エラー:",
+      error
+    );
+
+
+    throw new Error(
+      "ログイン認証情報を取得できませんでした。もう一度ログインしてください。"
+    );
+
+  }
+
+
+  if (!idToken) {
+
+    throw new Error(
+      "ログイン認証情報を取得できませんでした。"
+    );
+
+  }
+
+
+  /*
+   * 会話履歴を安全に整理
+   */
+
+  const safeHistory =
+    Array.isArray(history)
+
+      ? history
+          .filter(
+            item =>
+              item &&
+              (
+                item.role ===
+                  "user" ||
+                item.role ===
+                  "assistant"
+              ) &&
+              typeof item.content ===
+                "string"
+          )
+          .slice(-12)
+          .map(
+            item => ({
+
+              role:
+                item.role,
+
+              content:
+                String(
+                  item.content
+                )
+                .trim()
+                .slice(
+                  0,
+                  6000
+                )
+
+            })
+          )
+
+      : [];
+
+
+  /*
+   * 送信データ
+   */
+
+  const requestBody = {
+
+    message:
+      question,
+
+    grade:
+      String(
+        grade || ""
+      ).trim(),
+
+    subject:
+      String(
+        subject || ""
+      ).trim(),
+
+    history:
+      safeHistory,
+
+    conversationId:
+      conversationId || null
+
+  };
+
+
+  console.log(
+    "Study AIへ質問を送信"
+  );
+
+
+  /*
+   * Supabase Edge Function
+   */
+
+  let response;
+
+
+  try {
+
+    response =
       await fetch(
-        AI_ENDPOINT,
+        STUDY_CHAT_ENDPOINT,
         {
-          method: "POST",
+
+          method:
+            "POST",
 
           headers: {
 
             "Content-Type":
               "application/json",
 
-            "Accept":
-              "application/json",
-
             "Authorization":
-              `Bearer ${token}`
+              `Bearer ${idToken}`,
+
+            "Accept":
+              "application/json"
 
           },
 
           body:
             JSON.stringify(
               requestBody
-            ),
+            )
 
-          signal:
-            timeout.controller.signal
         }
       );
 
+  } catch (error) {
 
-    if (!response.ok) {
-
-      throw await createResponseError(
-        response
-      );
-    }
-
-
-    const rawText =
-      await response.text();
+    console.error(
+      "Study AI通信エラー:",
+      error
+    );
 
 
-    let data = null;
+    throw new Error(
+      "AIサーバーに接続できませんでした。ネットワーク接続を確認してください。"
+    );
 
+  }
+
+
+  /*
+   * サーバーからJSONを取得
+   */
+
+  let data = null;
+
+
+  const rawText =
+    await response.text();
+
+
+  if (
+    rawText.trim()
+  ) {
 
     try {
 
@@ -389,94 +914,225 @@ export async function askAI(options = {}) {
 
     } catch {
 
-      data = null;
+      /*
+       * JSONではなく普通の文章が
+       * 直接返された場合にも対応
+       */
+
+      data = {
+
+        answer:
+          rawText
+
+      };
 
     }
-
-
-    const answer =
-      extractAnswer(
-        data,
-        rawText
-      );
-
-
-    if (!answer) {
-
-      throw new AIRequestError(
-        "AIから回答が返されませんでした。",
-        "EMPTY_AI_RESPONSE"
-      );
-    }
-
-
-    return {
-
-      success: true,
-
-      answer,
-
-      conversationId:
-        data?.conversationId ??
-        null,
-
-      questionId:
-        data?.questionId ??
-        null,
-
-      answerId:
-        data?.answerId ??
-        null
-
-    };
-
-
-  } catch (error) {
-
-    if (
-      error instanceof
-      AIRequestError
-    ) {
-
-      throw error;
-    }
-
-
-    if (
-      error?.name ===
-      "AbortError"
-    ) {
-
-      throw new AIRequestError(
-        "AIの回答が時間内に返りませんでした。もう一度お試しください。",
-        "AI_TIMEOUT"
-      );
-    }
-
-
-    console.error(
-      "AI request error:",
-      error
-    );
-
-
-    throw new AIRequestError(
-      "AIサービスに接続できませんでした。ネットワーク接続とSupabaseのstudy-chatを確認してください。",
-      "AI_NETWORK_ERROR"
-    );
-
-  } finally {
-
-    timeout.clear();
 
   }
+
+
+  /*
+   * HTTPエラー
+   */
+
+  if (
+    !response.ok
+  ) {
+
+    console.error(
+      "Study AIサーバーエラー:",
+      {
+        status:
+          response.status,
+
+        data
+
+      }
+    );
+
+
+    throw new Error(
+      getServerErrorMessage(
+        response,
+        data
+      )
+    );
+
+  }
+
+
+  /*
+   * success:false
+   */
+
+  if (
+    data &&
+    data.success === false
+  ) {
+
+    const errorMessage =
+      data.error ||
+      data.message ||
+      "AIから回答を取得できませんでした。";
+
+
+    throw new Error(
+      String(
+        errorMessage
+      )
+    );
+
+  }
+
+
+  /*
+   * AI回答を抽出
+   *
+   * ここが今回の重要部分
+   */
+
+  const rawAnswer =
+
+    data?.answer ??
+
+    data?.content ??
+
+    data?.response ??
+
+    data?.message ??
+
+    data?.output ??
+
+    data?.result ??
+
+    data;
+
+
+  const answer =
+    extractPlainAnswer(
+      rawAnswer
+    );
+
+
+  /*
+   * 回答が空ならエラー
+   */
+
+  if (
+    !answer ||
+    !answer.trim()
+  ) {
+
+    console.error(
+      "AI回答が空です:",
+      data
+    );
+
+
+    throw new Error(
+      "AIから回答が返されませんでした。もう一度質問してください。"
+    );
+
+  }
+
+
+  /*
+   * 会話ID
+   */
+
+  const returnedConversationId =
+
+    data?.conversationId ??
+
+    data?.conversation_id ??
+
+    conversationId ??
+
+    null;
+
+
+  /*
+   * questionId
+   */
+
+  const questionId =
+
+    data?.questionId ??
+
+    data?.question_id ??
+
+    null;
+
+
+  /*
+   * answerId
+   */
+
+  const answerId =
+
+    data?.answerId ??
+
+    data?.answer_id ??
+
+    null;
+
+
+  /*
+   * question.jsへ返す
+   */
+
+  return {
+
+    success:
+      true,
+
+    answer:
+      answer.trim(),
+
+    conversationId:
+      returnedConversationId,
+
+    questionId:
+      questionId,
+
+    answerId:
+      answerId
+
+  };
+
 }
 
 
-/* =========================================
-   グローバル
-========================================= */
+/* =========================================================
+   外部からJSON変換機能を利用する場合
+========================================================= */
 
-window.StudyAI = {
-  askAI
+export {
+
+  extractPlainAnswer,
+
+  extractAnswerFromObject
+
 };
+
+
+/* =========================================================
+   デバッグ用
+========================================================= */
+
+if (
+  typeof window !==
+  "undefined"
+) {
+
+  window.StudyAI = {
+
+    askAI,
+
+    extractPlainAnswer,
+
+    extractAnswerFromObject
+
+  };
+
+}
