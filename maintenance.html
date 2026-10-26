@@ -3,98 +3,293 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f5f7fb">
-  <title>メンテナンス中 | 学習AIチャット</title>
+  <meta name="theme-color" content="#101827">
+  <title>システムメンテナンス中 | 学習AIチャット</title>
+
   <style>
-    *{box-sizing:border-box}
-    [hidden]{display:none!important}
-    body{margin:0;min-height:100vh;font-family:Arial,"Noto Sans JP",sans-serif;color:#202124;background:#f5f7fb}
-    main{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-    .card{width:100%;max-width:680px;padding:36px;background:#fff;border:1px solid #e2e6ee;border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,.06);text-align:center}
-    h1{font-size:30px;margin:0 0 20px}
-    p{line-height:1.9;white-space:pre-wrap;overflow-wrap:anywhere}
-    .status{font-size:13px;color:#6b7280;margin-top:24px}
-    button{margin-top:16px;padding:11px 20px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;color:#202124;cursor:pointer}
-    button:disabled{opacity:.6;cursor:not-allowed}
-    footer{margin-top:28px;color:#777;font-size:11px;line-height:1.7}
-    @media(max-width:480px){.card{padding:26px 20px}h1{font-size:24px}}
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      background: #101827;
+      color: #f8fafc;
+      font-family: Arial, "Noto Sans JP", sans-serif;
+    }
+
+    [hidden] { display: none !important; }
+
+    .maintenance-screen {
+      width: 100%;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px;
+      text-align: center;
+      background:
+        radial-gradient(ellipse at 50% 35%, #24334b 0%, #101827 65%);
+    }
+
+    .maintenance-content {
+      width: 100%;
+      max-width: 680px;
+      margin: auto;
+    }
+
+    .repair-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 124px;
+      height: 124px;
+      margin: 0 auto 32px;
+      color: #93c5fd;
+      background: rgba(147, 197, 253, 0.10);
+      border: 1px solid rgba(147, 197, 253, 0.25);
+      border-radius: 30px;
+    }
+
+    .repair-icon svg {
+      width: 76px;
+      height: 76px;
+      stroke: currentColor;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+
+    .eyebrow {
+      margin: 0 0 16px;
+      color: #93c5fd;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .2em;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 5vw, 42px);
+      line-height: 1.45;
+      letter-spacing: .02em;
+    }
+
+    .description {
+      max-width: 540px;
+      margin: 24px auto 0;
+      color: #cbd5e1;
+      font-size: 15px;
+      line-height: 2;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .status-line {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 36px;
+      padding: 12px 18px;
+      border: 1px solid rgba(148, 163, 184, .25);
+      border-radius: 999px;
+      background: rgba(15, 23, 42, .5);
+      color: #e2e8f0;
+      font-size: 13px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: #60a5fa;
+      box-shadow: 0 0 12px rgba(96, 165, 250, .6);
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .35; }
+    }
+
+    .footer {
+      width: 100%;
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(148, 163, 184, .15);
+      color: #94a3b8;
+      font-size: 11px;
+      line-height: 1.8;
+    }
+
+    .loading {
+      color: #cbd5e1;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .error {
+      max-width: 560px;
+      margin: 20px auto 0;
+      color: #fecaca;
+      font-size: 13px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 480px) {
+      .maintenance-screen { padding: 24px 18px; }
+      .repair-icon {
+        width: 100px;
+        height: 100px;
+        margin-bottom: 26px;
+        border-radius: 24px;
+      }
+      .repair-icon svg { width: 62px; height: 62px; }
+      .description { font-size: 14px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .status-dot { animation: none; }
+    }
   </style>
 </head>
-<body>
-  <main>
-    <section class="card">
-      <h1 id="title">システムメンテナンス中</h1>
-      <p id="message">ログイン状態を確認しています。</p>
-      <p id="status" class="status">確認中...</p>
-      <button id="reloadButton" type="button">再確認</button>
-      <button id="logoutButton" type="button" hidden>ログアウト</button>
-      <footer>© 2026 定期テスト対策プリント運営事務局. All Rights Reserved.</footer>
-    </section>
-  </main>
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="./assets/js/firebase.js"></script>
+<body>
+  <main id="maintenanceScreen" class="maintenance-screen">
+    <section class="maintenance-content">
+      <div class="repair-icon" aria-hidden="true">
+        <svg viewBox="0 0 64 64">
+          <path d="M38 12a17 17 0 0 0-22 22L8 42a6 6 0 0 0 8 8l8-8a17 17 0 0 0 22-22L35 31l-8-8z"/>
+          <path d="M39 41l10 10"/>
+          <path d="M44 36l12 12a5 5 0 0 1-7 7L37 43"/>
+        </svg>
+      </div>
+
+      <p class="eyebrow">SYSTEM MAINTENANCE</p>
+
+      <h1 id="maintenanceTitle">システムメンテナンス中</h1>
+
+      <p id="maintenanceMessage" class="description">
+現在、システムのメンテナンスを行っています。
+しばらくお待ちください。
+      </p>
+
+      <div class="status-line">
+        <span class="status-dot"></span>
+        <span>システムを復旧しています</span>
+      </div>
+
+      <p id="errorMessage" class="error" hidden></p>
+      <p id="loadingMessage" class="loading">システムの状態を確認しています。</p>
+    </section>
+
+    <footer class="footer">
+      © 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.
+    </footer>
+  </main>
 
   <script type="module">
     import {
-      auth, db, persistenceReady, onAuthStateChanged,
-      signOut, doc, getDoc, onSnapshot
+      auth,
+      db,
+      persistenceReady,
+      onAuthStateChanged,
+      signOut,
+      doc,
+      getDoc,
+      onSnapshot
     } from "./assets/js/firebase-module.js";
 
-    const title = document.getElementById("title");
-    const message = document.getElementById("message");
-    const status = document.getElementById("status");
-    const logoutButton = document.getElementById("logoutButton");
+    const title = document.getElementById("maintenanceTitle");
+    const message = document.getElementById("maintenanceMessage");
+    const loading = document.getElementById("loadingMessage");
+    const errorBox = document.getElementById("errorMessage");
 
     const settingsRef = doc(db, "settings", "system");
 
+    let settingsListener = null;
     let currentUser = null;
-    let authReady = false;
+    let checking = false;
     let redirecting = false;
-    let settingsUnsubscribe = null;
-    let authUnsubscribe = null;
 
-    function setStatus(text) {
-      status.textContent = text;
+    function showError(text) {
+      errorBox.textContent = text;
+      errorBox.hidden = false;
     }
 
-    function showSettings(settings) {
+    function hideError() {
+      errorBox.textContent = "";
+      errorBox.hidden = true;
+    }
+
+    function showMaintenance(settings) {
       title.textContent =
         settings.maintenanceTitle || "システムメンテナンス中";
 
       message.textContent =
         settings.maintenanceMessage ||
-        settings.message ||
-        "現在、メンテナンスを実施しています。しばらくお待ちください。";
+        "現在、システムのメンテナンスを行っています。\nしばらくお待ちください。";
 
-      setStatus("メンテナンス終了後、自動的に学習画面へ戻ります。");
+      loading.hidden = true;
     }
 
-    function go(url) {
+    function getUserOnce() {
+      return new Promise((resolve, reject) => {
+        const unsubscribe = onAuthStateChanged(
+          auth,
+          user => {
+            unsubscribe();
+            resolve(user);
+          },
+          error => {
+            unsubscribe();
+            reject(error);
+          }
+        );
+      });
+    }
+
+    async function routeUserAway(path) {
       if (redirecting) return;
       redirecting = true;
-      location.replace(url);
-    }
 
-    async function checkUser(user) {
-      if (!user) {
-        go("./login.html");
-        return;
+      if (settingsListener) {
+        settingsListener();
+        settingsListener = null;
       }
 
-      currentUser = user;
-      logoutButton.hidden = false;
+      location.replace(path);
+    }
 
+    async function initialize() {
       try {
+        await persistenceReady;
+
+        currentUser = await getUserOnce();
+
+        // ログインしていない場合は、通常のログイン画面へ。
+        if (!currentUser) {
+          location.replace("./login.html");
+          return;
+        }
+
         const profileSnapshot = await getDoc(
-          doc(db, "users", user.uid)
+          doc(db, "users", currentUser.uid)
         );
 
         if (!profileSnapshot.exists()) {
           await signOut(auth);
-          go("./login.html");
+          location.replace("./login.html");
           return;
         }
 
@@ -102,121 +297,77 @@
 
         if (profile.status !== "active") {
           await signOut(auth);
-          go("./login.html");
+          location.replace("./login.html");
           return;
         }
 
+        // 管理者はメンテナンス画面ではなく管理画面へ。
         if (profile.role === "admin") {
-          go("./admin/index.html");
+          location.replace("./admin/index.html");
           return;
         }
 
         if (profile.role !== "student") {
-          setStatus("アカウントの権限が正しくありません。管理者にお問い合わせください。");
+          await signOut(auth);
+          location.replace("./login.html");
           return;
         }
 
         const settingsSnapshot = await getDoc(settingsRef);
 
         if (!settingsSnapshot.exists()) {
-          throw new Error("Firestoreの settings/system がありません。");
+          throw new Error("settings/system が見つかりません。");
         }
 
         const settings = settingsSnapshot.data();
 
+        // メンテナンスが終了していたら通常の学習画面へ。
         if (settings.maintenance !== true) {
-          go("./student/index.html");
+          location.replace("./student/index.html");
           return;
         }
 
-        showSettings(settings);
-      } catch (error) {
-        console.error("メンテナンス画面の確認エラー:", error);
-        setStatus(
-          "設定を確認できませんでした。\n" +
-          (error.code || "error") + ": " +
-          (error.message || String(error))
-        );
-      }
-    }
+        showMaintenance(settings);
 
-    async function initialize() {
-      try {
-        await persistenceReady;
-
-        authUnsubscribe = onAuthStateChanged(
-          auth,
-          user => {
-            authReady = true;
-            checkUser(user);
-          },
-          error => {
-            console.error("認証状態の確認エラー:", error);
-            setStatus("ログイン状態を確認できません。再確認してください。");
-          }
-        );
-
-        settingsUnsubscribe = onSnapshot(
+        // 管理者が設定を変更したら、画面を自動更新する。
+        settingsListener = onSnapshot(
           settingsRef,
           snapshot => {
             if (!snapshot.exists()) {
-              setStatus("Firestoreの settings/system が見つかりません。");
+              showError("システム設定を確認できません。");
               return;
             }
 
-            const settings = snapshot.data() || {};
+            const liveSettings = snapshot.data();
 
-            if (!authReady || redirecting) return;
-
-            if (settings.maintenance !== true) {
-              if (currentUser) {
-                go("./student/index.html");
-              } else {
-                go("./login.html");
-              }
+            if (liveSettings.maintenance !== true) {
+              location.replace("./student/index.html");
               return;
             }
 
-            showSettings(settings);
+            showMaintenance(liveSettings);
           },
           error => {
-            console.error("メンテナンス設定監視エラー:", error);
-            setStatus("設定を取得できません。通信状態を確認してください。");
+            console.error("メンテナンス状態の監視エラー:", error);
+            showError(
+              "最新のメンテナンス状態を取得できません。通信状態を確認してください。"
+            );
           }
         );
       } catch (error) {
-        console.error("初期化エラー:", error);
-        setStatus(
-          "画面を初期化できませんでした。\n" +
-          (error.code || "error") + ": " +
-          (error.message || String(error))
+        console.error("メンテナンス画面の初期化エラー:", error);
+        loading.hidden = true;
+        showError(
+          "システムの状態を確認できませんでした。Firebaseの設定とFirestoreのアクセスルールを確認してください。"
         );
       }
     }
 
-    document.getElementById("reloadButton").addEventListener(
-      "click",
-      () => location.reload()
-    );
-
-    logoutButton.addEventListener("click", async () => {
-      logoutButton.disabled = true;
-
-      try {
-        await signOut(auth);
-        go("./login.html");
-      } catch (error) {
-        logoutButton.disabled = false;
-        setStatus("ログアウトに失敗しました: " + (error.message || String(error)));
-      }
-    });
-
     window.addEventListener("pagehide", () => {
-      settingsUnsubscribe?.();
-      authUnsubscribe?.();
+      if (settingsListener) settingsListener();
     });
 
-    initialize();
+    void initialize();
   </script>
 </body>
 </html>
