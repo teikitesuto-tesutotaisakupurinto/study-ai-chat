@@ -1,478 +1,434 @@
+/* assets/css/admin.css */
 
-/* assets/css/admin.css
-   管理者画面レイアウト修正版
-   既存のHTML・JavaScript・管理機能は変更しない
-*/
-
-:root {
-  --admin-sidebar-width: 260px;
-  --admin-primary: #2563eb;
-  --admin-primary-light: #eff6ff;
-  --admin-bg: #f7f8fa;
-  --admin-surface: #ffffff;
-  --admin-border: #e2e8f0;
-  --admin-text: #172033;
-  --admin-muted: #64748b;
+/* 管理者画面の基本設定 */
+.admin-shell {
+  min-height: 100vh;
+  background: #f4f7fb;
+  color: #172033;
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+.admin-shell .sidebar {
+  background: #172033;
+  color: #fff;
 }
 
-html {
-  min-width: 320px;
-  min-height: 100%;
+.admin-shell .brand-mark {
+  background: #e0e7ff;
+  color: #3730a3;
 }
 
-body[data-role="admin"] {
-  min-width: 320px;
+.admin-shell .topbar {
+  border-bottom: 2px solid #dbe3ef;
+}
+
+.admin-shell .page-content > .content-card h1 {
+  letter-spacing: -.02em;
+}
+
+.admin-shell .data-table th {
+  color: #344256;
+}
+
+/* 共通レイアウト */
+body.admin-shell {
   min-height: 100vh;
   margin: 0;
-  background: var(--admin-bg);
-  color: var(--admin-text);
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    "Noto Sans JP",
-    "Hiragino Kaku Gothic ProN",
-    Meiryo,
-    sans-serif;
-  font-size: 14px;
-  line-height: 1.65;
+  background: #f4f7fb;
 }
 
-body[data-role="admin"] button,
-body[data-role="admin"] input,
-body[data-role="admin"] select,
-body[data-role="admin"] textarea {
-  font: inherit;
-}
-
-body[data-role="admin"] [hidden] {
-  display: none !important;
-}
-
-/* ---------- 管理画面全体 ---------- */
-
-body[data-role="admin"] #app {
-  min-height: 100vh;
-  width: 100%;
-}
-
-.legacy-shell {
+/* 左サイドバー＋右コンテンツ */
+body.admin-shell #app.app-layout {
   display: grid;
-  grid-template-columns:
-    var(--admin-sidebar-width)
-    minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-columns: 258px minmax(0, 1fr);
   min-height: 100vh;
   width: 100%;
-  margin: 0;
-  padding: 0;
-  background: var(--admin-bg);
 }
 
-/* ---------- 左側メニュー ---------- */
-
-.legacy-nav {
-  grid-column: 1;
-  grid-row: 1 / 4;
+/* サイドバー */
+body.admin-shell #appSidebar {
+  position: sticky;
+  top: 0;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 5px;
-  min-width: 0;
+  box-sizing: border-box;
+  width: 258px;
+  height: 100vh;
   min-height: 100vh;
-  padding: 22px 14px;
-  overflow-wrap: anywhere;
-  background: #ffffff;
-  border-right: 1px solid var(--admin-border);
+  overflow-y: auto;
+  padding: 22px 15px;
+  background: #172033;
+  color: #fff;
+  border-right: 1px solid #263449;
+  z-index: 20;
 }
 
-.legacy-nav a,
-.legacy-nav button {
+.admin-shell .sidebar-header {
   display: flex;
-  align-items: center;
-  width: 100%;
-  min-width: 0;
-  min-height: 42px;
-  padding: 10px 13px;
-  border: 1px solid transparent;
-  border-radius: 9px;
-  background: transparent;
-  color: #475569;
+  flex-direction: column;
+  gap: 5px;
+  padding: 5px 10px 24px;
+}
+
+.admin-shell .sidebar-header strong {
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.admin-shell .sidebar-header span {
+  color: #bdcbe0;
+  font-size: 11px;
+}
+
+/* サイドバーナビゲーション */
+.admin-shell .sidebar-nav {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-shell .sidebar-link {
+  display: block;
+  padding: 12px 13px;
+  border-radius: 8px;
+  color: #e1e9f5;
+  text-decoration: none;
   font-size: 13px;
   line-height: 1.5;
-  text-align: left;
-  text-decoration: none;
+  transition: background .15s ease, color .15s ease;
+}
+
+.admin-shell .sidebar-link:hover,
+.admin-shell .sidebar-link.active {
+  background: #263e5f;
+  color: #fff;
+}
+
+/* ログインユーザー表示 */
+.admin-shell .sidebar-user {
+  margin-top: auto;
+  padding: 18px 10px 10px;
+  color: #bdcbe0;
+  font-size: 12px;
   overflow-wrap: anywhere;
+}
+
+/* ログアウトボタン */
+.admin-shell .logout-button {
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 1px solid #435774;
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
   cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease,
-    border-color 0.15s ease;
 }
 
-.legacy-nav a:hover,
-.legacy-nav button:hover {
-  background: #f1f5f9;
-  color: var(--admin-text);
+.admin-shell .logout-button:hover {
+  background: #263e5f;
 }
 
-.legacy-nav a.active,
-.legacy-nav a[aria-current="page"] {
-  background: var(--admin-primary-light);
-  color: var(--admin-primary);
-  font-weight: 700;
-}
-
-.legacy-nav button {
-  margin-top: 10px;
-  border-color: var(--admin-border);
-  background: #ffffff;
-}
-
-.legacy-nav button:disabled {
-  opacity: 0.6;
+.admin-shell .logout-button:disabled {
+  opacity: .55;
   cursor: not-allowed;
 }
 
-/* ---------- 上部ヘッダー ---------- */
-
-.legacy-shell > .page-header {
-  grid-column: 2;
-  grid-row: 1;
+/* 右側の本文 */
+body.admin-shell #app > .app-main {
+  box-sizing: border-box;
   min-width: 0;
-  margin: 0;
-  padding: 24px 32px 20px;
-  background: #ffffff;
-  border-bottom: 1px solid var(--admin-border);
+  width: 100%;
+  padding: 28px;
 }
 
-.legacy-shell > .page-header .page-title {
-  margin: 0;
-  color: var(--admin-text);
-  font-size: 24px;
-  font-weight: 750;
-  line-height: 1.45;
+.admin-shell .admin-page-content {
+  width: 100%;
+  min-width: 0;
+  max-width: 1280px;
+  margin: 0 auto;
   overflow-wrap: anywhere;
 }
 
-.legacy-shell > .page-header p {
-  margin: 7px 0 0;
-  color: var(--admin-muted);
+/* 既存のレガシー画面 */
+.admin-shell .legacy-shell {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.admin-shell .page-header {
+  margin-bottom: 24px;
+  padding: 22px 24px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.admin-shell .page-title {
+  margin: 0 0 8px;
+  color: #172033;
+  font-size: 25px;
+  line-height: 1.4;
+}
+
+.admin-shell .page-header p {
+  margin: 0;
+  color: #64748b;
   font-size: 13px;
   overflow-wrap: anywhere;
 }
 
-/* ---------- メインコンテンツ ---------- */
-
-.legacy-shell > .page-content {
-  grid-column: 2;
-  grid-row: 2;
+/* 本文コンテンツ */
+.admin-shell .page-content {
   width: 100%;
-  min-width: 0;
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 30px 32px;
-  overflow-wrap: anywhere;
+  max-width: none;
+  margin: 0;
+  padding: 0;
 }
 
-.legacy-shell > .page-content h2 {
+.admin-shell .page-content h2 {
   margin: 0 0 18px;
-  color: var(--admin-text);
   font-size: 22px;
-  font-weight: 750;
-  line-height: 1.5;
+  color: #172033;
 }
 
-.legacy-shell > .page-content h3 {
-  margin: 0 0 10px;
-  font-size: 16px;
-  line-height: 1.5;
+.admin-shell .page-content h3 {
+  color: #172033;
 }
 
-.legacy-shell > .page-content p {
+.admin-shell .page-content p {
   line-height: 1.8;
 }
 
-.legacy-shell > .page-content a {
-  overflow-wrap: anywhere;
-}
-
-.legacy-shell > .page-content .primary-button,
-.legacy-shell > .page-content .secondary-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 42px;
-  max-width: 100%;
-  padding: 10px 17px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: var(--admin-primary);
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 650;
-  text-align: center;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.legacy-shell > .page-content .secondary-button {
-  border-color: var(--admin-border);
-  background: #ffffff;
-  color: #334155;
-}
-
-/* ---------- カード・フォーム ---------- */
-
-.legacy-shell .page-card,
-.legacy-shell .content-card {
-  min-width: 0;
-  margin: 0 0 20px;
-  padding: 24px;
-  border: 1px solid var(--admin-border);
-  border-radius: 13px;
-  background: var(--admin-surface);
+/* カード */
+.admin-shell .page-card {
+  margin: 0 0 18px;
+  padding: 22px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
   box-shadow: 0 4px 18px rgb(15 23 42 / 3%);
 }
 
-.legacy-shell .page-content form {
-  display: grid;
-  gap: 15px;
-}
-
-.legacy-shell .page-content label {
-  display: grid;
-  gap: 7px;
+/* フォーム */
+.admin-shell .page-content label {
+  display: block;
+  margin: 14px 0;
   color: #334155;
   font-size: 13px;
-  font-weight: 650;
+  font-weight: 600;
 }
 
-.legacy-shell .page-content input:not([type="checkbox"]):not([type="radio"]),
-.legacy-shell .page-content select,
-.legacy-shell .page-content textarea {
+.admin-shell .page-content input:not([type="checkbox"]),
+.admin-shell .page-content textarea,
+.admin-shell .page-content select {
   display: block;
+  box-sizing: border-box;
   width: 100%;
-  min-width: 0;
-  min-height: 42px;
-  padding: 10px 12px;
+  margin-top: 7px;
+  padding: 11px 12px;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
-  background: #ffffff;
-  color: var(--admin-text);
+  background: #fff;
+  color: #172033;
+  font: inherit;
 }
 
-.legacy-shell .page-content textarea {
-  min-height: 140px;
+.admin-shell .page-content input[type="checkbox"] {
+  margin-left: 8px;
+  accent-color: #2563eb;
+}
+
+.admin-shell .page-content textarea {
+  min-height: 120px;
   resize: vertical;
 }
 
-.legacy-shell .page-content input[type="checkbox"],
-.legacy-shell .page-content input[type="radio"] {
-  width: auto;
-  max-width: 100%;
+.admin-shell .page-content input:focus,
+.admin-shell .page-content textarea:focus,
+.admin-shell .page-content select:focus {
+  outline: 2px solid #93c5fd;
+  outline-offset: 1px;
+  border-color: #2563eb;
 }
 
-.legacy-shell .page-content button {
-  max-width: 100%;
-  overflow-wrap: anywhere;
+.admin-shell .page-content button,
+.admin-shell .page-content .primary-button,
+.admin-shell .page-content .secondary-button {
+  margin: 6px 8px 6px 0;
 }
 
-.legacy-shell .page-content button:disabled {
-  opacity: 0.6;
+/* ボタン */
+.admin-shell .primary-button,
+.admin-shell .secondary-button {
+  min-height: 40px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.admin-shell .primary-button {
+  border: 1px solid #1d4ed8;
+  background: #2563eb;
+  color: #fff;
+}
+
+.admin-shell .primary-button:hover {
+  background: #1d4ed8;
+}
+
+.admin-shell .secondary-button {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #172033;
+}
+
+.admin-shell .secondary-button:hover {
+  background: #f1f5f9;
+}
+
+.admin-shell button:disabled {
+  opacity: .55;
   cursor: not-allowed;
 }
 
-/* ---------- テーブル ---------- */
-
-.legacy-shell .table-wrapper,
-.legacy-shell .table-wrap {
-  display: block;
+/* テーブル */
+.admin-shell .table-wrapper {
   width: 100%;
-  max-width: 100%;
-  margin: 16px 0;
   overflow-x: auto;
-  border: 1px solid var(--admin-border);
+  border: 1px solid #e2e8f0;
   border-radius: 10px;
-  background: #ffffff;
-  -webkit-overflow-scrolling: touch;
+  background: #fff;
 }
 
-.legacy-shell .page-content table,
-.legacy-shell .data-table {
+.admin-shell table {
   width: 100%;
-  min-width: 560px;
   border-collapse: collapse;
-  background: #ffffff;
+}
+
+.admin-shell th,
+.admin-shell td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  vertical-align: top;
   font-size: 13px;
 }
 
-.legacy-shell .page-content th,
-.legacy-shell .page-content td,
-.legacy-shell .data-table th,
-.legacy-shell .data-table td {
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--admin-border);
-  text-align: left;
-  vertical-align: top;
-  overflow-wrap: anywhere;
-}
-
-.legacy-shell .page-content th,
-.legacy-shell .data-table th {
+.admin-shell th {
   background: #f8fafc;
   color: #344256;
   font-weight: 700;
-  white-space: nowrap;
 }
 
-.legacy-shell .page-content tr:last-child td,
-.legacy-shell .data-table tr:last-child td {
+.admin-shell tr:last-child td {
   border-bottom: 0;
 }
 
-/* ---------- エラー・状態表示 ---------- */
-
-.legacy-shell .error,
-.legacy-shell .notice.error {
-  padding: 13px 15px;
-  border: 1px solid #fecaca;
-  border-radius: 9px;
-  background: #fef2f2;
-  color: #b91c1c;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-.legacy-shell pre {
+/* システム情報 */
+.admin-shell pre {
   max-width: 100%;
   padding: 16px;
   overflow: auto;
-  border: 1px solid var(--admin-border);
-  border-radius: 9px;
-  background: #f8fafc;
-  font-size: 12px;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #e2e8f0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
-/* ---------- フッター ---------- */
-
-.legacy-shell > .page-footer {
-  grid-column: 2;
-  grid-row: 3;
-  min-width: 0;
-  margin: 0;
-  padding: 20px 24px;
-  border-top: 1px solid var(--admin-border);
-  background: #ffffff;
-  color: var(--admin-muted);
-  font-size: 11px;
-  line-height: 1.8;
+/* フッター */
+.admin-shell .page-footer {
+  margin-top: 28px;
+  padding: 18px 10px;
+  color: #718096;
   text-align: center;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+/* 認証エラー */
+.admin-shell .auth-error {
+  margin: 30px auto;
+  max-width: 700px;
+  padding: 24px;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  background: #fff;
+  color: #991b1b;
   overflow-wrap: anywhere;
 }
 
-/* ---------- タブレット ---------- */
-
-@media (max-width: 900px) {
-  .legacy-shell {
-    grid-template-columns: 220px minmax(0, 1fr);
-  }
-
-  .legacy-nav {
-    padding: 18px 10px;
-  }
-
-  .legacy-shell > .page-header {
-    padding: 22px 20px 18px;
-  }
-
-  .legacy-shell > .page-content {
-    padding: 22px 20px;
-  }
-
-  .legacy-shell .page-card,
-  .legacy-shell .content-card {
-    padding: 20px;
-  }
+/* 認証待ちでもページ全体を非表示にしない */
+html.auth-pending body.admin-shell {
+  visibility: visible !important;
 }
 
-/* ---------- スマートフォン ---------- */
+html.auth-pending body.admin-shell #app,
+html.auth-pending body.admin-shell #appSidebar {
+  visibility: visible !important;
+}
 
-@media (max-width: 640px) {
-  .legacy-shell {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
+/* 「画面を読み込んでいます」などの旧プレースホルダーを非表示 */
+body.admin-shell #app > .page-content {
+  display: none;
+}
+
+/* タブレット・スマートフォン */
+@media (max-width: 760px) {
+  body.admin-shell #app.app-layout {
+    grid-template-columns: 1fr;
   }
 
-  .legacy-shell > .page-header {
-    order: 1;
-    padding: 20px 16px;
-  }
-
-  .legacy-shell > .legacy-nav {
-    order: 2;
-    display: flex;
-    flex-direction: row;
-    align-items: stretch;
-    gap: 6px;
+  body.admin-shell #appSidebar {
+    position: relative;
     width: 100%;
+    height: auto;
     min-height: 0;
+    max-height: none;
+    padding: 12px;
+  }
+
+  .admin-shell .sidebar-header {
+    padding: 5px 8px 12px;
+  }
+
+  .admin-shell .sidebar-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-shell .sidebar-link {
     padding: 10px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    border-right: 0;
-    border-bottom: 1px solid var(--admin-border);
   }
 
-  .legacy-nav a,
-  .legacy-nav button {
-    flex: 0 0 auto;
-    width: auto;
-    min-height: 40px;
-    margin-top: 0;
-    padding: 9px 12px;
-    white-space: nowrap;
+  .admin-shell .sidebar-user {
+    margin-top: 12px;
+    padding: 8px;
   }
 
-  .legacy-shell > .page-content {
-    order: 3;
-    width: 100%;
-    padding: 20px 14px;
-  }
-
-  .legacy-shell > .page-content h2 {
-    font-size: 20px;
-  }
-
-  .legacy-shell .page-card,
-  .legacy-shell .content-card {
+  body.admin-shell #app > .app-main {
     padding: 16px;
-    border-radius: 10px;
   }
 
-  .legacy-shell > .page-footer {
-    order: 4;
-    padding: 18px 12px;
+  .admin-shell .page-header {
+    padding: 18px;
+  }
+
+  .admin-shell .page-title {
+    font-size: 21px;
+  }
+
+  .admin-shell .page-card {
+    padding: 16px;
   }
 }
 
-/* ---------- 動きの軽減 ---------- */
+@media (max-width: 420px) {
+  .admin-shell .sidebar-nav {
+    grid-template-columns: 1fr;
+  }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
+  body.admin-shell #app > .app-main {
+    padding: 12px;
   }
 }
