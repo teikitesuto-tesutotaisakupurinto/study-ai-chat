@@ -1,131 +1,48 @@
-
-/*
- * assets/js/ai.js
- *
- * Study AI Chat
- *
- * ブラウザ
- *   ↓
- * Firebase Authentication
- *   ↓ Firebase ID Token
- * Supabase Edge Function
- *   ↓
- * Groq / AI
- *
- * 重要:
- * - Groq APIキーはここに書かない
- * - Supabase Secretもここに書かない
- * - Firebase APIキーもここには書かない
- *
- * question.js から:
- *
- * await askAI({
- *   message,
- *   grade,
- *   subject,
- *   history
- * });
- */
-
-
-/* =========================================
-   Firebase
-========================================= */
-
-import {
-  auth
-} from "./firebase-module.js";
-
-
-/* =========================================
-   設定
-========================================= */
+import { auth } from "./firebase-module.js";
 
 const AI_ENDPOINT =
   "https://fjqobjcvejhkevyfsoxt.supabase.co/functions/v1/study-chat";
 
-
-const REQUEST_TIMEOUT =
-  60000;
+const REQUEST_TIMEOUT = 60000;
 
 
 /* =========================================
-   共通エラー
+   エラー
 ========================================= */
 
-class AIRequestError extends Error {
+export class AIRequestError extends Error {
+  constructor(message, code = "", status = 0) {
+    super(message);
 
-  constructor(
-    message,
-    options = {}
-  ) {
-
-    super(
-      message
-    );
-
-
-    this.name =
-      "AIRequestError";
-
-
-    this.status =
-      options.status ||
-      0;
-
-
-    this.code =
-      options.code ||
-      "";
-
-
-    this.details =
-      options.details ||
-      null;
-
+    this.name = "AIRequestError";
+    this.code = code;
+    this.status = status;
   }
-
 }
 
 
 /* =========================================
-   Firebaseユーザー取得
+   ログインユーザー
 ========================================= */
 
 function getCurrentUser() {
-
-  if (
-    !auth
-  ) {
-
+  if (!auth) {
     throw new AIRequestError(
-      "Firebase Authenticationを初期化できません。"
+      "Firebase Authenticationを初期化できません。",
+      "FIREBASE_AUTH_ERROR"
     );
-
   }
 
+  const user = auth.currentUser;
 
-  const user =
-    auth.currentUser;
-
-
-  if (
-    !user
-  ) {
-
+  if (!user) {
     throw new AIRequestError(
-      "ログイン状態を確認できません。ログインしてからもう一度お試しください。",
-      {
-        code:
-          "AUTH_REQUIRED"
-      }
+      "ログインしてください。",
+      "AUTH_REQUIRED"
     );
-
   }
-
 
   return user;
-
 }
 
 
@@ -133,308 +50,139 @@ function getCurrentUser() {
    Firebase ID Token
 ========================================= */
 
-async function getFirebaseIdToken(
-  user
-) {
-
-  if (
-    !user
-  ) {
-
-    throw new AIRequestError(
-      "Firebaseユーザーが確認できません。",
-      {
-        code:
-          "AUTH_REQUIRED"
-      }
-    );
-
-  }
-
-
+async function getIdToken(user) {
   try {
+    const token = await user.getIdToken(false);
 
-    /*
-     * false:
-     * 毎回強制更新せず、
-     * Firebaseが必要に応じて更新する。
-     */
-
-    const token =
-      await user.getIdToken(
-        false
-      );
-
-
-    if (
-      !token
-    ) {
-
-      throw new AIRequestError(
-        "Firebase IDトークンを取得できませんでした。",
-        {
-          code:
-            "TOKEN_EMPTY"
-        }
-      );
-
+    if (!token) {
+      throw new Error("ID Tokenが取得できませんでした。");
     }
-
 
     return token;
 
-  } catch (
-    error
-  ) {
+  } catch (error) {
 
-    if (
-      error instanceof
-      AIRequestError
-    ) {
-
-      throw error;
-
-    }
-
-
-    throw new AIRequestError(
-      "Firebase認証情報を取得できませんでした。",
-      {
-        code:
-          "TOKEN_ERROR",
-
-        details:
-          error
-      }
+    console.error(
+      "Firebase ID Token error:",
+      error
     );
 
+    throw new AIRequestError(
+      "Firebaseの認証情報を取得できませんでした。",
+      "TOKEN_ERROR"
+    );
   }
-
 }
 
 
 /* =========================================
-   JSON安全解析
+   タイムアウト
 ========================================= */
 
-async function readResponseBody(
-  response
-) {
+function createTimeout() {
+  const controller = new AbortController();
 
-  const text =
-    await response.text();
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, REQUEST_TIMEOUT);
 
-
-  if (
-    !text
-  ) {
-
-    return {
-      raw: "",
-      data: null
-    };
-
-  }
-
-
-  try {
-
-    return {
-
-      raw:
-        text,
-
-      data:
-        JSON.parse(
-          text
-        )
-
-    };
-
-  } catch {
-
-    return {
-
-      raw:
-        text,
-
-      data:
-        null
-
-    };
-
-  }
-
+  return {
+    controller,
+    clear() {
+      clearTimeout(timer);
+    }
+  };
 }
 
 
 /* =========================================
-   AI回答抽出
+   回答取得
 ========================================= */
 
-function extractAnswer(
-  data,
-  raw
-) {
-
-  /*
-   * 代表的なレスポンス形式を
-   * 幅広く受け取る。
-   */
-
-  if (
-    typeof data ===
-    "string"
-  ) {
-
-    return data.trim();
-
-  }
-
+function extractAnswer(data, rawText) {
 
   if (
     data &&
-    typeof data.answer ===
-    "string"
+    typeof data.answer === "string"
   ) {
-
     return data.answer.trim();
-
   }
-
 
   if (
     data &&
-    typeof data.response ===
-    "string"
+    typeof data.response === "string"
   ) {
-
     return data.response.trim();
-
   }
-
 
   if (
     data &&
-    typeof data.message ===
-    "string"
+    typeof data.text === "string"
   ) {
-
-    return data.message.trim();
-
-  }
-
-
-  if (
-    data &&
-    typeof data.text ===
-    "string"
-  ) {
-
     return data.text.trim();
-
   }
-
-
-  /*
-   * OpenAI / Groq系の形式にも対応。
-   */
 
   if (
     data &&
-    Array.isArray(
-      data.choices
-    )
+    typeof data.message === "string"
   ) {
-
-    const choice =
-      data.choices[0];
-
-
-    if (
-      choice &&
-      typeof choice.text ===
-      "string"
-    ) {
-
-      return choice.text.trim();
-
-    }
-
-
-    const content =
-      choice?.message?.content;
-
-
-    if (
-      typeof content ===
-      "string"
-    ) {
-
-      return content.trim();
-
-    }
-
+    return data.message.trim();
   }
-
-
-  /*
-   * data.result
-   */
 
   if (
     data &&
-    typeof data.result ===
-    "string"
+    typeof data.result === "string"
   ) {
-
     return data.result.trim();
-
   }
-
-
-  /*
-   * 最後にJSONでなく
-   * プレーンテキストだった場合。
-   */
 
   if (
-    typeof raw ===
-    "string" &&
-    raw.trim()
+    data &&
+    Array.isArray(data.choices)
   ) {
 
-    return raw.trim();
+    const choice = data.choices[0];
 
+    if (
+      choice?.message &&
+      typeof choice.message.content === "string"
+    ) {
+      return choice.message.content.trim();
+    }
+
+    if (
+      typeof choice?.text === "string"
+    ) {
+      return choice.text.trim();
+    }
   }
 
+  if (
+    typeof rawText === "string" &&
+    rawText.trim()
+  ) {
+    return rawText.trim();
+  }
 
   return "";
-
 }
 
 
 /* =========================================
-   HTTPエラー
+   エラー処理
 ========================================= */
 
-function createHTTPError(
-  response,
-  body
-) {
+async function createResponseError(response) {
 
-  const status =
-    response.status;
+  const rawText = await response.text();
 
+  let data = null;
 
-  const data =
-    body?.data;
-
-
-  const raw =
-    body?.raw ||
-    "";
-
+  try {
+    data = JSON.parse(rawText);
+  } catch {
+    data = null;
+  }
 
   const serverMessage =
     data?.error ||
@@ -443,320 +191,146 @@ function createHTTPError(
     "";
 
 
-  if (
-    status === 401
-  ) {
+  if (response.status === 401) {
 
     return new AIRequestError(
-      "AIサービスの認証に失敗しました。ログイン状態またはEdge Functionの認証設定を確認してください。",
-      {
-        status,
-
-        code:
-          "AI_UNAUTHORIZED",
-
-        details:
-          serverMessage ||
-          raw
-      }
+      "AIサービスの認証に失敗しました。ログイン状態を確認してください。",
+      "AI_UNAUTHORIZED",
+      401
     );
-
   }
 
 
-  if (
-    status === 403
-  ) {
+  if (response.status === 403) {
 
     return new AIRequestError(
-      "AIサービスへのアクセス権限がありません。",
-      {
-        status,
-
-        code:
-          "AI_FORBIDDEN",
-
-        details:
-          serverMessage ||
-          raw
-      }
+      "AIサービスを利用する権限がありません。",
+      "AI_FORBIDDEN",
+      403
     );
-
   }
 
 
-  if (
-    status === 404
-  ) {
+  if (response.status === 404) {
 
     return new AIRequestError(
-      "AIサービスが見つかりません。study-chat Edge FunctionのURLまたは公開状態を確認してください。",
-      {
-        status,
-
-        code:
-          "AI_NOT_FOUND",
-
-        details:
-          serverMessage ||
-          raw
-      }
+      "AIサービスが見つかりません。Supabaseのstudy-chatを確認してください。",
+      "AI_NOT_FOUND",
+      404
     );
-
   }
 
 
-  if (
-    status === 408 ||
-    status === 504
-  ) {
+  if (response.status >= 500) {
 
     return new AIRequestError(
-      "AIサービスからの応答が時間内に返りませんでした。もう一度お試しください。",
-      {
-        status,
-
-        code:
-          "AI_TIMEOUT",
-
-        details:
-          serverMessage ||
-          raw
-      }
+      serverMessage ||
+      "AIサーバーでエラーが発生しました。",
+      "AI_SERVER_ERROR",
+      response.status
     );
-
-  }
-
-
-  if (
-    status >= 500
-  ) {
-
-    return new AIRequestError(
-      "AIサービス側でエラーが発生しました。しばらくしてからもう一度お試しください。",
-      {
-        status,
-
-        code:
-          "AI_SERVER_ERROR",
-
-        details:
-          serverMessage ||
-          raw
-      }
-    );
-
   }
 
 
   return new AIRequestError(
     serverMessage ||
-    `AIサービスへの接続に失敗しました。（HTTP ${status}）`,
-    {
-      status,
-
-      code:
-        "AI_HTTP_ERROR",
-
-      details:
-        raw
-    }
+    `AIサービスへの接続に失敗しました。（${response.status}）`,
+    "AI_HTTP_ERROR",
+    response.status
   );
-
 }
 
 
 /* =========================================
-   リクエストボディ
+   AI質問
 ========================================= */
 
-function createRequestBody(
-  options
-) {
+export async function askAI(options = {}) {
 
   const message =
     String(
-      options?.message ||
+      options.message ??
+      options.question ??
       ""
     ).trim();
 
 
+  if (!message) {
+
+    throw new AIRequestError(
+      "質問を入力してください。",
+      "EMPTY_MESSAGE"
+    );
+  }
+
+
   const grade =
     String(
-      options?.grade ||
-      "中学生"
+      options.grade ??
+      "中学2年生"
     ).trim();
 
 
   const subject =
     String(
-      options?.subject ||
+      options.subject ??
       "数学"
     ).trim();
 
 
   const history =
-    Array.isArray(
-      options?.history
-    )
+    Array.isArray(options.history)
       ? options.history
       : [];
 
 
-  /*
-   * 会話履歴は壊れたデータを
-   * Edge Functionへ送らない。
-   */
-
   const cleanHistory =
     history
-      .filter(
-        item =>
-          item &&
-          typeof item ===
-            "object"
-      )
-      .map(
-        item => ({
+      .filter(item => item)
+      .map(item => {
 
-          question:
-            String(
-              item.question ||
-              ""
-            ).trim(),
+        if (
+          typeof item.question === "string" &&
+          typeof item.answer === "string"
+        ) {
 
-          answer:
-            String(
-              item.answer ||
-              ""
-            ).trim()
+          return {
+            question: item.question.trim(),
+            answer: item.answer.trim()
+          };
+        }
 
-        })
-      )
-      .filter(
-        item =>
-          item.question &&
-          item.answer
-      )
-      .slice(
-        -12
-      );
+        return item;
 
+      })
+      .slice(-12);
 
-  return {
-
-    message,
-
-    question:
-      message,
-
-    grade,
-
-    subject,
-
-    history:
-      cleanHistory
-
-  };
-
-}
-
-
-/* =========================================
-   AbortController
-========================================= */
-
-function createTimeoutController(
-  milliseconds
-) {
-
-  const controller =
-    new AbortController();
-
-
-  const timer =
-    setTimeout(
-      () => {
-
-        controller.abort();
-
-      },
-      milliseconds
-    );
-
-
-  return {
-
-    controller,
-
-    clear() {
-
-      clearTimeout(
-        timer
-      );
-
-    }
-
-  };
-
-}
-
-
-/* =========================================
-   AI問い合わせ
-========================================= */
-
-export async function askAI(
-  options = {}
-) {
-
-  const requestBody =
-    createRequestBody(
-      options
-    );
-
-
-  if (
-    !requestBody.message
-  ) {
-
-    throw new AIRequestError(
-      "質問内容が入力されていません。",
-      {
-        code:
-          "EMPTY_MESSAGE"
-      }
-    );
-
-  }
-
-
-  /*
-   * Firebase Authentication
-   */
 
   const user =
     getCurrentUser();
 
 
-  /*
-   * Firebase ID Token
-   */
-
   const token =
-    await getFirebaseIdToken(
-      user
-    );
+    await getIdToken(user);
 
 
-  /*
-   * タイムアウト
-   */
+  const requestBody = {
+
+    message,
+
+    question: message,
+
+    grade,
+
+    subject,
+
+    history: cleanHistory
+
+  };
+
 
   const timeout =
-    createTimeoutController(
-      REQUEST_TIMEOUT
-    );
+    createTimeout();
 
 
   try {
@@ -765,12 +339,7 @@ export async function askAI(
       await fetch(
         AI_ENDPOINT,
         {
-
-          method:
-            "POST",
-
-          mode:
-            "cors",
+          method: "POST",
 
           headers: {
 
@@ -779,11 +348,6 @@ export async function askAI(
 
             "Accept":
               "application/json",
-
-            /*
-             * Supabase Edge Function
-             * の認証用。
-             */
 
             "Authorization":
               `Bearer ${token}`
@@ -797,75 +361,77 @@ export async function askAI(
 
           signal:
             timeout.controller.signal
-
         }
       );
 
 
-    const body =
-      await readResponseBody(
+    if (!response.ok) {
+
+      throw await createResponseError(
         response
       );
-
-
-    /*
-     * HTTPエラー
-     */
-
-    if (
-      !response.ok
-    ) {
-
-      throw createHTTPError(
-        response,
-        body
-      );
-
     }
 
 
-    /*
-     * 回答抽出
-     */
+    const rawText =
+      await response.text();
+
+
+    let data = null;
+
+
+    try {
+
+      data =
+        JSON.parse(
+          rawText
+        );
+
+    } catch {
+
+      data = null;
+
+    }
+
 
     const answer =
       extractAnswer(
-        body.data,
-        body.raw
+        data,
+        rawText
       );
 
 
-    if (
-      !answer
-    ) {
+    if (!answer) {
 
       throw new AIRequestError(
-        "AIサービスから回答が返されませんでした。",
-        {
-          status:
-            response.status,
-
-          code:
-            "EMPTY_AI_RESPONSE",
-
-          details:
-            body.data ||
-            body.raw
-        }
+        "AIから回答が返されませんでした。",
+        "EMPTY_AI_RESPONSE"
       );
-
     }
 
 
-    return answer;
+    return {
 
-  } catch (
-    error
-  ) {
+      success: true,
 
-    /*
-     * 自前のエラーはそのまま。
-     */
+      answer,
+
+      conversationId:
+        data?.conversationId ??
+        null,
+
+      questionId:
+        data?.questionId ??
+        null,
+
+      answerId:
+        data?.answerId ??
+        null
+
+    };
+
+
+  } catch (error) {
 
     if (
       error instanceof
@@ -873,13 +439,8 @@ export async function askAI(
     ) {
 
       throw error;
-
     }
 
-
-    /*
-     * AbortController
-     */
 
     if (
       error?.name ===
@@ -887,63 +448,21 @@ export async function askAI(
     ) {
 
       throw new AIRequestError(
-        "AIサービスへの接続がタイムアウトしました。もう一度お試しください。",
-        {
-          code:
-            "AI_TIMEOUT"
-        }
+        "AIの回答が時間内に返りませんでした。もう一度お試しください。",
+        "AI_TIMEOUT"
       );
-
     }
 
 
-    /*
-     * fetchのネットワークエラー
-     */
-
-    const message =
-      String(
-        error?.message ||
-        ""
-      );
-
-
-    if (
-      /Failed to fetch/i.test(
-        message
-      ) ||
-      /NetworkError/i.test(
-        message
-      ) ||
-      /network/i.test(
-        message
-      )
-    ) {
-
-      throw new AIRequestError(
-        "AIサービスへ接続できませんでした。ネットワーク接続またはstudy-chat Edge Functionの公開状態を確認してください。",
-        {
-          code:
-            "AI_NETWORK_ERROR",
-
-          details:
-            error
-        }
-      );
-
-    }
+    console.error(
+      "AI request error:",
+      error
+    );
 
 
     throw new AIRequestError(
-      message ||
-      "AIサービスへの接続中にエラーが発生しました。",
-      {
-        code:
-          "AI_UNKNOWN_ERROR",
-
-        details:
-          error
-      }
+      "AIサービスに接続できませんでした。ネットワーク接続とSupabaseのstudy-chatを確認してください。",
+      "AI_NETWORK_ERROR"
     );
 
   } finally {
@@ -951,41 +470,13 @@ export async function askAI(
     timeout.clear();
 
   }
-
 }
 
 
 /* =========================================
-   テスト用
-========================================= */
-
-export async function testAIConnection() {
-
-  return askAI({
-
-    message:
-      "数学の一次方程式について簡単に説明してください。",
-
-    grade:
-      "中学2年生",
-
-    subject:
-      "数学",
-
-    history:
-      []
-
-  });
-
-}
-
-
-/* =========================================
-   グローバルAPI
+   グローバル
 ========================================= */
 
 window.StudyAI = {
-
   askAI
-
 };
