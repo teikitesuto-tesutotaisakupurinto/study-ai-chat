@@ -1,26 +1,11 @@
 /* assets/css/admin.css - 管理者画面も生徒画面と同じ白基調 */
-
 .admin-shell .sidebar,
 .legacy-layout .sidebar {
   background: #ffffff;
   color: #1f2937;
   border-right: 1px solid #e2e8f0;
 }
-
-.admin-shell .brand-mark {
-  background: #eff6ff;
-  color: #1d4ed8;
-}
-
-.admin-shell .topbar {
-  border-bottom: 1px solid #e2e8f0;
-  background: #ffffff;
-}
-
-.admin-shell .page-content > .content-card h1 {
-  letter-spacing: 0;
-}
-
-.admin-shell .data-table th {
-  color: #344256;
-}
+.admin-shell .brand-mark { background: #eff6ff; color: #1d4ed8; }
+.admin-shell .topbar { border-bottom: 1px solid #e2e8f0; background: #ffffff; }
+.admin-shell .page-content > .content-card h1 { letter-spacing: 0; }
+.admin-shell .data-table th { color: #344256; }
