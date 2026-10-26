@@ -339,6 +339,7 @@ body.sidebar-collapsed .app-main {
 }
 
 body.sidebar-collapsed .sidebar-header strong,
+body.sidebar-collapsed .sidebar-brand-subtitle,
 body.sidebar-collapsed .sidebar-user,
 body.sidebar-collapsed .sidebar-label,
 body.sidebar-collapsed .sidebar-history,
@@ -962,6 +963,7 @@ html.auth-pending body:has(.auth-error) {
   }
 
   body.sidebar-collapsed .sidebar-header strong,
+  body.sidebar-collapsed .sidebar-brand-subtitle,
   body.sidebar-collapsed .sidebar-user,
   body.sidebar-collapsed .sidebar-label,
   body.sidebar-collapsed .sidebar-history,
@@ -1110,4 +1112,34 @@ html.auth-pending body:has(.auth-error) {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
+}
+
+
+
+
+/* 画面全体のスクロールを抑え、会話だけを内部スクロールにする */
+html { scroll-behavior: auto; }
+body { height: 100dvh; min-height: 0; overflow: hidden; }
+.app-layout { height: 100dvh; min-height: 0; overflow: hidden; }
+.app-main { height: 100dvh; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+.sidebar { overflow: hidden; background: #fff; color: #1f2937; }
+.sidebar-nav { flex: 0 0 auto; overflow: hidden; }
+.sidebar-history { flex: 0 0 auto; overflow: hidden; }
+.sidebar-history-list { overflow: hidden; }
+.sidebar-bottom { margin-top: auto; flex: 0 0 auto; }
+.sidebar > .logout-button { margin: 0; }
+.chat-header { flex: 0 0 auto; }
+.chat-content { flex: 1 1 auto; min-height: 0; height: auto; overflow: hidden; }
+.subject-panel { flex: 0 0 auto; }
+.conversation { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; padding-bottom: 10px; scrollbar-width: none; }
+.conversation::-webkit-scrollbar { display: none; }
+.composer { position: static; flex: 0 0 auto; padding: 10px 0 0; }
+#questionInput { min-height: 66px; max-height: 110px; resize: none; }
+.app-footer { flex: 0 0 auto; padding: 8px 12px; }
+
+@media (max-width: 700px) {
+  .app-main { margin-left: 0; width: 100%; }
+  .chat-content { padding: 12px; }
+  .conversation { min-height: 0; }
+  #questionInput { min-height: 58px; max-height: 90px; }
 }
