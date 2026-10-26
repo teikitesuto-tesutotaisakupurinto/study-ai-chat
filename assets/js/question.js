@@ -2,446 +2,145 @@
 import { auth } from "./firebase-module.js";
 import { askAI } from "./ai.js";
 
-
 /* =========================================================
-   状態
+   質問ページ
 ========================================================= */
 
+let sending = false;
+let conversationHistory = [];
 let currentConversationId = null;
 
-let messageHistory = [];
+const $ = (selector) =>
+  document.querySelector(selector);
 
-let isSending = false;
-
-
-/* =========================================================
-   DOM取得
-========================================================= */
-
-function $(selector) {
-  return document.querySelector(selector);
-}
-
-
-function $all(selector) {
-  return Array.from(
-    document.querySelectorAll(selector)
-  );
-}
+const $$ = (selector) =>
+  Array.from(document.querySelectorAll(selector));
 
 
 /* =========================================================
-   要素
+   要素取得
 ========================================================= */
 
-function getQuestionInput() {
-
+function getInput() {
   return (
-    $("#question") ||
     $("#questionInput") ||
-    $("#message") ||
+    $("#question") ||
     $("#messageInput") ||
+    $("#message") ||
     $("textarea[name='question']") ||
     $("textarea[name='message']") ||
     $("textarea")
   );
-
 }
 
-
 function getSendButton() {
-
   return (
     $("#sendButton") ||
     $("#sendBtn") ||
     $("#askButton") ||
     $("#submitButton") ||
-    $("button[type='submit']")
+    $("[data-action='send-question']")
   );
-
 }
 
-
-function getAnswerArea() {
-
+function getChatArea() {
   return (
-    $("#answer") ||
-    $("#answerArea") ||
-    $("#aiAnswer") ||
-    $("#response") ||
-    $("#responseArea") ||
-    $(".answer-area") ||
-    $(".ai-answer")
-  );
-
-}
-
-
-function getHistoryArea() {
-
-  return (
-    $("#history") ||
+    $("#chatMessages") ||
     $("#chatHistory") ||
     $("#messages") ||
-    $(".chat-history") ||
-    $(".messages")
+    $("#conversation") ||
+    $("#chatContainer") ||
+    $(".chat-messages")
   );
-
 }
 
-
-/* =========================================================
-   現在の学年・教科
-========================================================= */
+function getAnswerArea() {
+  return (
+    $("#answerArea") ||
+    $("#aiAnswer") ||
+    $("#responseArea") ||
+    $("#answer")
+  );
+}
 
 function getGrade() {
-
   const element =
     $("#grade") ||
     $("#gradeSelect") ||
-    document.querySelector(
-      "[name='grade']"
-    );
+    $("[name='grade']");
 
-
-  if (
-    element &&
-    typeof element.value === "string" &&
-    element.value.trim()
-  ) {
-
-    return element.value.trim();
-
-  }
-
-
-  return "中学2年生";
-
+  return element?.value?.trim() || "中学2年生";
 }
 
-
 function getSubject() {
-
   const element =
     $("#subject") ||
     $("#subjectSelect") ||
-    document.querySelector(
-      "[name='subject']"
-    );
+    $("[name='subject']");
 
-
-  if (
-    element &&
-    typeof element.value === "string" &&
-    element.value.trim()
-  ) {
-
-    return element.value.trim();
-
-  }
-
-
-  return "数学";
-
+  return element?.value?.trim() || "数学";
 }
 
 
 /* =========================================================
-   エスケープ
+   安全なテキスト表示
 ========================================================= */
 
-function escapeHTML(value) {
+function createMessageElement(role, content) {
+  const wrapper = document.createElement("div");
 
-  return String(
-    value ?? ""
-  )
-    .replaceAll(
-      "&",
-      "&amp;"
-    )
-    .replaceAll(
-      "<",
-      "&lt;"
-    )
-    .replaceAll(
-      ">",
-      "&gt;"
-    )
-    .replaceAll(
-      '"',
-      "&quot;"
-    )
-    .replaceAll(
-      "'",
-      "&#039;"
-    );
+  wrapper.className =
+    role === "user"
+      ? "chat-message user-message"
+      : "chat-message ai-message";
 
+  wrapper.dataset.role = role;
+
+  const body = document.createElement("div");
+  body.className = "chat-message-content";
+
+  // HTMLとして解釈させず、テキストとして表示する
+  body.textContent = String(content ?? "");
+
+  wrapper.appendChild(body);
+
+  return wrapper;
 }
 
 
 /* =========================================================
-   Markdown風表示
-========================================================= */
-
-function formatAnswer(text) {
-
-  let value =
-    escapeHTML(
-      text
-    );
-
-
-  /*
-   * 改行
-   */
-
-  value =
-    value.replace(
-      /\n/g,
-      "<br>"
-    );
-
-
-  /*
-   * 太字
-   */
-
-  value =
-    value.replace(
-      /\*\*(.+?)\*\*/g,
-      "<strong>$1</strong>"
-    );
-
-
-  return value;
-
-}
-
-
-/* =========================================================
-   回答表示
-========================================================= */
-
-function showAnswer(
-  answer
-) {
-
-  const area =
-    getAnswerArea();
-
-
-  if (!area) {
-
-    console.warn(
-      "回答表示エリアが見つかりません。"
-    );
-
-    return;
-
-  }
-
-
-  area.innerHTML = `
-
-    <div class="ai-answer-content">
-
-      ${formatAnswer(answer)}
-
-    </div>
-
-  `;
-
-
-  area.style.display =
-    "";
-
-
-  /*
-   * 最後の回答までスクロール
-   * 必要な場合だけ使用。
-   */
-
-  try {
-
-    area.scrollIntoView({
-
-      behavior:
-        "smooth",
-
-      block:
-        "nearest"
-
-    });
-
-  } catch {}
-
-}
-
-
-/* =========================================================
-   履歴表示
+   会話表示
 ========================================================= */
 
 function renderHistory() {
-
-  const area =
-    getHistoryArea();
-
+  const area = getChatArea();
 
   if (!area) {
+    console.error(
+      "質問履歴の表示先が見つかりません。HTML側の要素IDを確認してください。"
+    );
     return;
   }
 
+  const fragment = document.createDocumentFragment();
 
-  /*
-   * 空なら何もしない
-   */
-
-  if (
-    !messageHistory.length
-  ) {
-
-    return;
-
+  for (const item of conversationHistory) {
+    fragment.appendChild(
+      createMessageElement(item.role, item.content)
+    );
   }
 
-
-  area.innerHTML =
-    messageHistory
-      .map(
-        item => {
-
-          const isUser =
-            item.role ===
-            "user";
-
-
-          return `
-
-            <div class="
-              chat-message
-              ${isUser
-                ? "user-message"
-                : "ai-message"}
-            ">
-
-              <div class="chat-message-content">
-
-                ${
-                  isUser
-                    ? escapeHTML(
-                        item.content
-                      )
-                    : formatAnswer(
-                        item.content
-                      )
-                }
-
-              </div>
-
-            </div>
-
-          `;
-
-        }
-      )
-      .join("");
-
-
-  area.scrollTop =
-    area.scrollHeight;
-
+  area.replaceChildren(fragment);
+  area.scrollTop = area.scrollHeight;
 }
 
-
-/* =========================================================
-   履歴追加
-========================================================= */
-
-function addUserMessage(
-  message
-) {
-
-  messageHistory.push({
-
-    role:
-      "user",
-
-    content:
-      message
-
+function addMessage(role, content) {
+  conversationHistory.push({
+    role,
+    content: String(content ?? "")
   });
 
-
-}
-
-
-function addAIMessage(
-  answer
-) {
-
-  messageHistory.push({
-
-    role:
-      "assistant",
-
-    content:
-      answer
-
-  });
-
-}
-
-
-/* =========================================================
-   送信ボタン状態
-========================================================= */
-
-function setSendingState(
-  sending
-) {
-
-  isSending =
-    sending;
-
-
-  const button =
-    getSendButton();
-
-
-  if (!button) {
-    return;
-  }
-
-
-  button.disabled =
-    sending;
-
-
-  if (
-    sending
-  ) {
-
-    /*
-     * 「学習AIを準備しています。」
-     * のような画面表示はしない。
-     */
-
-    button.dataset.originalText =
-      button.textContent;
-
-
-    button.textContent =
-      "送信中";
-
-  } else {
-
-    button.textContent =
-      button.dataset.originalText ||
-      "送信";
-
-  }
-
+  renderHistory();
 }
 
 
@@ -449,56 +148,57 @@ function setSendingState(
    エラー表示
 ========================================================= */
 
-function showError(
-  error
-) {
+function showError(message) {
+  const text =
+    String(message || "質問の送信に失敗しました。");
 
-  const area =
-    getAnswerArea();
+  const area = getChatArea();
 
-
-  if (!area) {
-
-    console.error(
-      error
+  if (area) {
+    area.appendChild(
+      createMessageElement("assistant", `エラー：${text}`)
     );
 
+    area.scrollTop = area.scrollHeight;
     return;
-
   }
 
+  const answerArea = getAnswerArea();
 
-  let message =
-    "AIへの質問に失敗しました。";
-
-
-  if (
-    error &&
-    typeof error.message ===
-      "string" &&
-    error.message.trim()
-  ) {
-
-    message =
-      error.message.trim();
-
+  if (answerArea) {
+    answerArea.textContent = `エラー：${text}`;
+    return;
   }
 
-
-  area.innerHTML = `
-
-    <div class="ai-error">
-
-      ${escapeHTML(message)}
-
-    </div>
-
-  `;
+  console.error(text);
+}
 
 
-  area.style.display =
-    "";
+/* =========================================================
+   送信状態
+========================================================= */
 
+function setSending(value) {
+  sending = value;
+
+  const button = getSendButton();
+
+  if (button) {
+    button.disabled = value;
+    button.setAttribute(
+      "aria-busy",
+      value ? "true" : "false"
+    );
+  }
+
+  const input = getInput();
+
+  if (input) {
+    input.setAttribute(
+      "aria-busy",
+      value ? "true" : "false"
+    );
+  }
 }
 
 
@@ -507,279 +207,122 @@ function showError(
 ========================================================= */
 
 async function sendQuestion() {
+  if (sending) return;
 
-  if (
-    isSending
-  ) {
-
-    return;
-
-  }
-
-
-  const input =
-    getQuestionInput();
-
+  const input = getInput();
 
   if (!input) {
-
     console.error(
-      "質問入力欄が見つかりません。"
+      "質問入力欄が見つかりません。question.htmlの入力欄IDを確認してください。"
     );
-
     return;
-
   }
 
-
-  const message =
-    String(
-      input.value ?? ""
-    ).trim();
-
+  const message = String(input.value || "").trim();
 
   if (!message) {
-
     input.focus();
-
     return;
-
   }
 
-
-  /*
-   * ログイン確認
-   */
-
-  const user =
-    auth?.currentUser;
-
-
-  if (!user) {
-
-    showError(
-      new Error(
-        "ログインしてください。"
-      )
-    );
-
+  if (!auth?.currentUser) {
+    showError("ログインしてください。");
     return;
-
   }
 
+  setSending(true);
 
-  setSendingState(
-    true
-  );
+  // 送信前の履歴をコピーする
+  const historyForRequest =
+    conversationHistory.slice(-12).map((item) => ({
+      role: item.role,
+      content: item.content
+    }));
 
+  // ユーザーの質問を先に表示する
+  addMessage("user", message);
+
+  // 送信後、入力欄を空にする
+  input.value = "";
+  input.style.height = "";
 
   try {
-
     /*
-     * 送信前の履歴を保存
+     * ai.js の askAI() と統一した引数。
+     * Firebase ID Tokenはai.js側で取得・付与する。
      */
+    const result = await askAI({
+      message,
+      grade: getGrade(),
+      subject: getSubject(),
+      history: historyForRequest,
+      conversationId: currentConversationId
+    });
 
-    const history =
-      messageHistory
-        .slice(-12);
-
-
-    /*
-     * AI API
-     */
-
-    const result =
-      await askAI({
-
-        message,
-
-        question:
-          message,
-
-        grade:
-          getGrade(),
-
-        subject:
-          getSubject(),
-
-        history,
-
-        conversationId:
-          currentConversationId
-
-      });
-
-
-    if (
-      !result ||
-      !result.success
-    ) {
-
+    if (!result || result.success === false) {
       throw new Error(
-        result?.error ||
-        "AIから回答を取得できませんでした。"
+        result?.error || "AIから回答を取得できませんでした。"
       );
-
     }
 
-
-    const answer =
-      String(
-        result.answer ??
-        ""
-      ).trim();
-
+    const answer = String(result.answer || "").trim();
 
     if (!answer) {
-
-      throw new Error(
-        "AIから回答が返されませんでした。"
-      );
-
+      throw new Error("AIから空の回答が返されました。");
     }
 
-
-    /*
-     * 会話ID
-     */
-
-    if (
-      result.conversationId
-    ) {
-
-      currentConversationId =
-        result.conversationId;
-
+    if (result.conversationId) {
+      currentConversationId = result.conversationId;
     }
 
-
-    /*
-     * 履歴へ追加
-     */
-
-    addUserMessage(
-      message
-    );
-
-
-    addAIMessage(
-      answer
-    );
-
-
-    /*
-     * 表示
-     */
-
-    renderHistory();
-
-    showAnswer(
-      answer
-    );
-
-
-    /*
-     * 入力欄を空にする
-     */
-
-    input.value =
-      "";
-
-
-    /*
-     * 高さを戻す
-     */
-
-    input.style.height =
-      "";
-
-
-    /*
-     * 再度入力可能
-     */
-
-    input.focus();
-
+    addMessage("assistant", answer);
 
   } catch (error) {
-
-    console.error(
-      "質問送信エラー:",
-      error
-    );
-
+    console.error("質問送信エラー:", error);
 
     showError(
-      error
+      error instanceof Error
+        ? error.message
+        : "通信中にエラーが発生しました。"
     );
-
 
   } finally {
+    setSending(false);
 
-    setSendingState(
-      false
-    );
+    // 送信後も再び質問できるようにする
+    const currentInput = getInput();
 
+    if (currentInput) {
+      currentInput.focus();
+    }
   }
-
 }
 
 
 /* =========================================================
-   Enter送信
+   入力欄
 ========================================================= */
 
-function setupInput(
-  input
-) {
+function setupInput() {
+  const input = getInput();
 
   if (!input) {
+    console.error(
+      "入力欄が見つかりません。question.htmlを確認してください。"
+    );
     return;
   }
 
-
-  input.addEventListener(
-    "keydown",
-    event => {
-
-      /*
-       * Enter
-       * Shift + Enter は改行
-       */
-
-      if (
-        event.key ===
-          "Enter" &&
-        !event.shiftKey
-      ) {
-
-        event.preventDefault();
-
-        sendQuestion();
-
-      }
-
+  input.addEventListener("keydown", (event) => {
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey &&
+      !event.isComposing
+    ) {
+      event.preventDefault();
+      sendQuestion();
     }
-  );
-
-
-  /*
-   * 自動高さ調整
-   */
-
-  input.addEventListener(
-    "input",
-    () => {
-
-      input.style.height =
-        "auto";
-
-      input.style.height =
-        `${input.scrollHeight}px`;
-
-    }
-  );
-
+  });
 }
 
 
@@ -788,77 +331,36 @@ function setupInput(
 ========================================================= */
 
 function setupSendButton() {
-
-  const button =
-    getSendButton();
-
+  const button = getSendButton();
 
   if (!button) {
-
-    console.warn(
-      "送信ボタンが見つかりません。"
+    console.error(
+      "送信ボタンが見つかりません。question.htmlを確認してください。"
     );
-
     return;
-
   }
 
-
-  /*
-   * 既存イベントとの重複を避ける。
-   */
-
-  button.addEventListener(
-    "click",
-    event => {
-
-      event.preventDefault();
-
-      sendQuestion();
-
-    }
-  );
-
+  button.addEventListener("click", (event) => {
+    event.preventDefault();
+    sendQuestion();
+  });
 }
 
 
 /* =========================================================
-   フォーム
+   フォーム送信
 ========================================================= */
 
 function setupForm() {
+  const input = getInput();
+  const form = input?.closest("form");
 
-  const input =
-    getQuestionInput();
+  if (!form) return;
 
-
-  if (!input) {
-    return;
-  }
-
-
-  const form =
-    input.closest(
-      "form"
-    );
-
-
-  if (!form) {
-    return;
-  }
-
-
-  form.addEventListener(
-    "submit",
-    event => {
-
-      event.preventDefault();
-
-      sendQuestion();
-
-    }
-  );
-
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    sendQuestion();
+  });
 }
 
 
@@ -867,72 +369,37 @@ function setupForm() {
 ========================================================= */
 
 function setupNewConversation() {
-
-  const buttons =
-    $all(
-      "#newChat, #newConversation, .new-chat, [data-action='new-chat']"
-    );
-
-
-  buttons.forEach(
-    button => {
-
-      button.addEventListener(
-        "click",
-        event => {
-
-          event.preventDefault();
-
-          currentConversationId =
-            null;
-
-          messageHistory =
-            [];
-
-
-          const answer =
-            getAnswerArea();
-
-
-          if (answer) {
-
-            answer.innerHTML =
-              "";
-
-          }
-
-
-          const history =
-            getHistoryArea();
-
-
-          if (history) {
-
-            history.innerHTML =
-              "";
-
-          }
-
-
-          const input =
-            getQuestionInput();
-
-
-          if (input) {
-
-            input.value =
-              "";
-
-            input.focus();
-
-          }
-
-        }
-      );
-
-    }
+  const buttons = $$(
+    "#newChat, #newConversation, .new-chat, [data-action='new-chat']"
   );
 
+  for (const button of buttons) {
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+
+      currentConversationId = null;
+      conversationHistory = [];
+
+      const area = getChatArea();
+
+      if (area) {
+        area.replaceChildren();
+      }
+
+      const answerArea = getAnswerArea();
+
+      if (answerArea) {
+        answerArea.textContent = "";
+      }
+
+      const input = getInput();
+
+      if (input) {
+        input.value = "";
+        input.focus();
+      }
+    });
+  }
 }
 
 
@@ -941,104 +408,45 @@ function setupNewConversation() {
 ========================================================= */
 
 function initializeQuestionPage() {
-
-  /*
-   * ここでは
-   *
-   * 「システムを確認しています。」
-   * 「学習AIを準備しています。」
-   *
-   * などの待機画面は出さない。
-   */
-
-
-  const input =
-    getQuestionInput();
-
-
-  setupInput(
-    input
-  );
-
-
+  setupInput();
   setupSendButton();
-
   setupForm();
-
   setupNewConversation();
 
-
-  /*
-   * Firebaseのログイン状態は
-   * Firebase側に任せる。
-   */
-
-  if (
-    auth
-  ) {
-
-    auth.onAuthStateChanged(
-      user => {
-
-        if (!user) {
-
-          console.warn(
-            "現在ログインユーザーがいません。"
-          );
-
-        }
-
-      }
-    );
-
-  }
-
+  // 初期化中の待機メッセージは表示しない。
+  // Firebaseのログイン状態は既存の認証処理に任せる。
 }
 
-
-/* =========================================================
-   DOM Ready
-========================================================= */
-
-if (
-  document.readyState ===
-  "loading"
-) {
-
+if (document.readyState === "loading") {
   document.addEventListener(
     "DOMContentLoaded",
-    initializeQuestionPage
+    initializeQuestionPage,
+    { once: true }
   );
-
 } else {
-
   initializeQuestionPage();
-
 }
 
 
 /* =========================================================
-   外部から使用
+   他のスクリプトから呼び出すためのAPI
 ========================================================= */
 
 window.QuestionPage = {
-
   sendQuestion,
 
-  getCurrentConversationId() {
+  clearConversation() {
+    currentConversationId = null;
+    conversationHistory = [];
 
-    return currentConversationId;
+    const area = getChatArea();
 
+    if (area) {
+      area.replaceChildren();
+    }
   },
 
-  clearConversation() {
-
-    currentConversationId =
-      null;
-
-    messageHistory =
-      [];
-
+  getConversationId() {
+    return currentConversationId;
   }
-
 };
