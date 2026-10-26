@@ -1,7 +1,10 @@
 // assets/js/firebase-module.js
-// Firebase compat SDK を ES module から利用する共通アダプター。
+// Firebase compat SDK 共通アダプター
+// 対応: Firebase Authentication / Cloud Firestore
 
 const FIREBASE_VERSION = "10.12.5";
+const SDK_BASE =
+  `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
 
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyByt8kGALyS8AU8SR6P8zWFEPXfgHY5iynk",
@@ -12,114 +15,132 @@ const FIREBASE_CONFIG = {
   appId: "1:982302014286:web:abf319aadb1ed919727c1f"
 };
 
-const SDK_BASE =
-  `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
+const SDK_TIMEOUT_MS = 15000;
 
-function loadScript(src) {
+function waitForScript(script, src) {
   return new Promise((resolve, reject) => {
-    const alreadyAvailable =
-      (src.includes("firebase-app-compat") &&
-        !!window.firebase?.initializeApp) ||
-      (src.includes("firebase-auth-compat") &&
-        !!window.firebase?.auth) ||
-      (src.includes("firebase-firestore-compat") &&
-        !!window.firebase?.firestore);
+    let finished = false;
 
-    if (alreadyAvailable) {
-      resolve();
-      return;
+    const timer = setTimeout(() => {
+      finish(
+        new Error(
+          `Firebase SDKの読み込みがタイムアウトしました。\n` +
+          `対象: ${src}\n` +
+          `インターネット接続、広告ブロック、ネットワーク制限を確認してください。`
+        )
+      );
+    }, SDK_TIMEOUT_MS);
+
+    function finish(error) {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+
+      script.removeEventListener("load", onLoad);
+      script.removeEventListener("error", onError);
+
+      if (error) reject(error);
+      else resolve();
     }
 
-    const existing = [...document.scripts].find(
-      script => script.src === src
-    );
-
-    if (existing) {
-      if (existing.dataset.loaded === "true") {
-        resolve();
-        return;
-      }
-
-      existing.addEventListener("load", resolve, { once: true });
-      existing.addEventListener(
-        "error",
-        () => reject(
-          new Error(`Firebase SDKを読み込めませんでした: ${src}`)
-        ),
-        { once: true }
-      );
-      return;
+    function onLoad() {
+      script.dataset.firebaseSdkLoaded = "true";
+      finish();
     }
 
-    const script = document.createElement("script");
-    script.src = src;
-    script.async = false;
-
-    script.addEventListener("load", () => {
-      script.dataset.loaded = "true";
-      resolve();
-    }, { once: true });
-
-    script.addEventListener("error", () => {
-      reject(
-        new Error(`Firebase SDKを読み込めませんでした: ${src}`)
+    function onError() {
+      finish(
+        new Error(
+          `Firebase SDKを読み込めませんでした。\n対象: ${src}`
+        )
       );
-    }, { once: true });
+    }
 
-    document.head.appendChild(script);
+    script.addEventListener("load", onLoad);
+    script.addEventListener("error", onError);
+
+    // すでに読み込みが完了している場合も確認する。
+    if (script.dataset.firebaseSdkLoaded === "true") {
+      finish();
+    }
   });
 }
 
-async function ensureCompatSDK() {
-  if (
-    window.firebase?.initializeApp &&
-    window.firebase?.auth &&
-    window.firebase?.firestore
-  ) {
-    return;
+async function loadScript(src, isAvailable) {
+  if (isAvailable()) return;
+
+  let script = [...document.scripts].find(
+    item => item.src === src
+  );
+
+  if (!script) {
+    script = document.createElement("script");
+    script.src = src;
+    script.async = false;
+    document.head.appendChild(script);
   }
 
-  await loadScript(`${SDK_BASE}/firebase-app-compat.js`);
-  await loadScript(`${SDK_BASE}/firebase-auth-compat.js`);
-  await loadScript(`${SDK_BASE}/firebase-firestore-compat.js`);
+  if (isAvailable()) return;
 
-  if (
-    !window.firebase?.initializeApp ||
-    !window.firebase?.auth ||
-    !window.firebase?.firestore
-  ) {
+  await waitForScript(script, src);
+
+  if (!isAvailable()) {
     throw new Error(
-      "Firebase SDKの読み込み後もAuthまたはFirestoreが利用できません。"
+      `SDKの読み込み完了後も必要な機能を確認できません。\n対象: ${src}`
     );
   }
 }
 
-// SDKを読み込んでから Firebase を初期化する。
-await ensureCompatSDK();
-
-if (!window.firebase.apps.length) {
-  window.firebase.initializeApp(FIREBASE_CONFIG);
-}
-
-export const app = window.firebase.app();
-export const auth = window.firebase.auth();
-export const db = window.firebase.firestore();
-
-// 認証状態の永続化設定をすべてのページで共有する。
-export const persistenceReady = (() => {
-  if (window.authReadyPromise) {
-    return window.authReadyPromise;
-  }
-
-  const promise = auth.setPersistence(
-    window.firebase.auth.Auth.Persistence.LOCAL
+async function ensureCompatSDK() {
+  await loadScript(
+    `${SDK_BASE}/firebase-app-compat.js`,
+    () => typeof window.firebase?.initializeApp === "function"
   );
 
-  window.authReadyPromise = promise;
+  await loadScript(
+    `${SDK_BASE}/firebase-auth-compat.js`,
+    () => typeof window.firebase?.auth === "function"
+  );
+
+  await loadScript(
+    `${SDK_BASE}/firebase-firestore-compat.js`,
+    () => typeof window.firebase?.firestore === "function"
+  );
+
+  if (
+    typeof window.firebase?.initializeApp !== "function" ||
+    typeof window.firebase?.auth !== "function" ||
+    typeof window.firebase?.firestore !== "function"
+  ) {
+    throw new Error(
+      "Firebase App・Authentication・Firestoreの初期化に失敗しました。"
+    );
+  }
+}
+
+// SDKの読み込みが終わってから初期化する。
+// 読み込み失敗時はこのモジュールの読み込みも失敗するため、
+// login.html 側のタイムアウト表示で原因を確認できる。
+await ensureCompatSDK();
+
+const firebase = window.firebase;
+
+if (!firebase.apps.length) {
+  firebase.initializeApp(FIREBASE_CONFIG);
+}
+
+export const app = firebase.app();
+export const auth = firebase.auth();
+export const db = firebase.firestore();
+
+export const persistenceReady = (() => {
+  const promise = auth.setPersistence(
+    firebase.auth.Auth.Persistence.LOCAL
+  );
 
   promise.catch(error => {
     console.error(
-      "Firebase Authenticationの保存設定に失敗しました:",
+      "Firebase Authenticationの永続化設定に失敗しました:",
       error
     );
   });
@@ -127,14 +148,17 @@ export const persistenceReady = (() => {
   return promise;
 })();
 
-// 旧式スクリプトとの互換性を維持する。
+// 旧形式スクリプトとの互換性
 window.firebaseApp = app;
 window.auth = auth;
 window.db = db;
 window.authReadyPromise = persistenceReady;
+window.firebaseInitError = null;
 
 export const GoogleAuthProvider =
-  window.firebase.auth.GoogleAuthProvider;
+  firebase.auth.GoogleAuthProvider;
+
+// Authentication
 
 export function onAuthStateChanged(
   authInstance,
@@ -198,6 +222,8 @@ export function signOut(authInstance) {
   return authInstance.signOut();
 }
 
+// Firestore references
+
 export function doc(...args) {
   return db.doc(...args);
 }
@@ -205,6 +231,8 @@ export function doc(...args) {
 export function collection(...args) {
   return db.collection(...args);
 }
+
+// Firestore read/write
 
 export function getDoc(reference) {
   return reference.get();
@@ -241,6 +269,8 @@ export function onSnapshot(
   );
 }
 
+// Firestore query constraints
+
 export function query(reference, ...constraints) {
   return constraints.reduce(
     (current, constraint) => constraint(current),
@@ -263,13 +293,15 @@ export function limit(count) {
     reference.limit(count);
 }
 
+// Firestore field values
+
 export function serverTimestamp() {
-  return window.firebase.firestore.FieldValue.serverTimestamp();
+  return firebase.firestore.FieldValue.serverTimestamp();
 }
 
 export function Timestamp(...args) {
-  return new window.firebase.firestore.Timestamp(...args);
+  return new firebase.firestore.Timestamp(...args);
 }
 
 export const FieldValue =
-  window.firebase.firestore.FieldValue;
+  firebase.firestore.FieldValue;
