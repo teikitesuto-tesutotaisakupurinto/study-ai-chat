@@ -15,11 +15,9 @@
     if (!window.firebase) {
       throw new Error("Firebase App SDKが読み込まれていません。");
     }
-
     if (typeof window.firebase.auth !== "function") {
       throw new Error("Firebase Authentication SDKが読み込まれていません。");
     }
-
     if (typeof window.firebase.firestore !== "function") {
       throw new Error("Firebase Firestore SDKが読み込まれていません。");
     }
@@ -34,20 +32,14 @@
     window.firebaseInitError = null;
 
     window.authReadyPromise = window.auth
-      .setPersistence(
-        window.firebase.auth.Auth.Persistence.LOCAL
-      )
+      .setPersistence(window.firebase.auth.Auth.Persistence.LOCAL)
       .catch(function (error) {
-        console.error(
-          "認証の保存設定に失敗しました:",
-          error
-        );
-
+        console.error("認証の保存設定に失敗しました:", error);
         window.firebaseInitError = error;
         throw error;
       });
 
-    // 呼び出し元でエラーを処理できるようにする。
+    // 呼び出し元で個別にエラーを表示するため、未処理拒否を防ぐ。
     window.authReadyPromise.catch(function () {});
   } catch (error) {
     console.error("Firebase初期化エラー:", error);
