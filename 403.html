@@ -3,23 +3,26 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>アクセスできません｜学習AIチャット</title>
+  <meta name="theme-color" content="#f6f8fb">
+  <title>アクセス権限の確認｜学習AIチャット</title>
   <link rel="stylesheet" href="./assets/css/common.css">
+  <style>
+    body { min-height: 100vh; display: grid; place-items: center; padding: 20px; }
+    .permission-card { width: min(100%, 560px); padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; box-shadow: 0 4px 18px rgb(15 23 42 / 5%); }
+    .permission-card h1 { margin-top: 0; font-size: 24px; }
+    .permission-card p { color: #475569; line-height: 1.8; overflow-wrap: anywhere; }
+    .permission-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+  </style>
 </head>
 <body>
-  <main class="page-error">
-    <section class="content-card">
-      <h1>アクセスできません</h1>
-      <p>このページを利用する権限がありません。</p>
-      <p class="muted">アカウントが有効か、管理者に確認してください。</p>
-      <p><a href="./login.html">ログイン画面へ</a></p>
-    </section>
+  <main class="permission-card" role="alert" aria-labelledby="permission-title">
+    <h1 id="permission-title">このページを開く権限がありません</h1>
+    <p>現在のアカウントには、このページを利用する権限が設定されていません。</p>
+    <p>利用できるアカウントでログインしているか確認してください。解決しない場合は、運営管理者にアカウントの権限を確認してください。</p>
+    <div class="permission-actions">
+      <a class="primary-button" href="./login.html">ログイン画面へ</a>
+      <a class="secondary-button" href="./index.html">ホームへ戻る</a>
+    </div>
   </main>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="./assets/js/paths.js"></script>
-  <script src="./assets/js/firebase.js"></script>
-  <script type="module" src="./assets/js/auth.js"></script>
 </body>
 </html>
