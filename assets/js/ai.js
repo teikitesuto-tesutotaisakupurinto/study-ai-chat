@@ -18,8 +18,7 @@ export async function askAI({
     throw new Error("ログインが必要です。");
   }
 
-  const idToken =
-    await user.getIdToken(true);
+  const idToken = await user.getIdToken(true);
 
   const response = await fetch(FUNCTION_URL, {
     method: "POST",
@@ -35,14 +34,19 @@ export async function askAI({
     })
   });
 
-  const result = await response.json();
+  const result = await response.json().catch(() => ({}));
 
   if (!response.ok) {
     throw new Error(
       result.error ||
-      "AIへの接続に失敗しました。"
+      result.message ||
+      `AIへの接続に失敗しました（HTTP ${response.status}）。`
     );
   }
 
-  return result.reply;
+  if (typeof result.reply !== "string" || !result.reply.trim()) {
+    throw new Error("AIから有効な回答が返されませんでした。");
+  }
+
+  return result.reply.trim();
 }
