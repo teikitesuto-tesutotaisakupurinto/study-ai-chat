@@ -1,2220 +1,351 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f4f7fb">
-  <meta name="description" content="学習AIチャット">
-  <title>AI学習チャット | 学習AIチャット</title>
+  <meta name="theme-color" content="#f7f8fa">
+  <title>AIに質問 | 学習AIチャット</title>
+
+  <script>
+    document.documentElement.classList.add("auth-pending");
+    // JavaScriptモジュールの読み込み失敗時も画面が永久に非表示にならないようにする。
+    window.setTimeout(() => document.documentElement.classList.remove("auth-pending"), 15000);
+  </script>
+
+  <link rel="stylesheet" href="../assets/css/common.css">
+  <link rel="stylesheet" href="../assets/css/student.css">
 
   <style>
-    :root {
-      font-family:
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Noto Sans JP",
-        "Hiragino Kaku Gothic ProN",
-        Meiryo,
-        sans-serif;
+    [hidden] { display: none !important; }
 
-      color: #172033;
-      background: #f4f7fb;
-      font-synthesis: none;
-    }
+    body { background: #f7f8fa; }
 
-    * {
-      box-sizing: border-box;
-    }
-
-    [hidden] {
-      display: none !important;
-    }
-
-    html,
-    body {
-      margin: 0;
-      min-height: 100%;
-    }
-
-    body {
-      min-height: 100vh;
-      background:
-        linear-gradient(
-          180deg,
-          #f8fafc 0%,
-          #f4f7fb 100%
-        );
-    }
-
-    button,
-    textarea {
-      font: inherit;
-    }
-
-    button {
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    /* =====================================================
-       アプリ全体
-       ===================================================== */
-
-    .app {
+    .app-main {
+      min-width: 0;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
     }
 
-    /* =====================================================
-       ヘッダー
-       ===================================================== */
-
-    .topbar {
-      position: sticky;
-      top: 0;
-      z-index: 50;
-
-      height: 64px;
-
+    .chat-header {
       display: flex;
       align-items: center;
-
-      padding: 0 22px;
-
-      background: rgba(255, 255, 255, .94);
-      border-bottom: 1px solid #e2e8f0;
-
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 24px;
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
     }
 
-    .topbar-left {
-      min-width: 0;
+    .chat-header h1 { margin: 0; font-size: 21px; }
+    .chat-header p { margin: 5px 0 0; color: #64748b; font-size: 13px; }
 
+    .chat-content {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .subject-panel {
       display: flex;
       align-items: center;
       gap: 12px;
+      margin-bottom: 18px;
     }
 
-    .back-button {
-      width: 40px;
-      height: 40px;
+    .subject-panel label { font-weight: 600; font-size: 14px; }
 
-      display: grid;
-      place-items: center;
-
-      border: 1px solid #dbe3ef;
-      border-radius: 10px;
-
+    .subject-panel select {
+      width: 220px;
+      max-width: 100%;
+      padding: 11px 12px;
+      border: 1px solid #d0d5dd;
+      border-radius: 8px;
       background: #fff;
-      color: #334155;
-
-      cursor: pointer;
+      font: inherit;
     }
 
-    .back-button:hover {
-      background: #f8fafc;
-    }
-
-    .back-button:active {
-      transform: translateY(1px);
-    }
-
-    .brand {
-      min-width: 0;
-    }
-
-    .brand-title {
-      margin: 0;
-
-      font-size: 17px;
-      font-weight: 750;
-
-      letter-spacing: -.02em;
-
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .brand-subtitle {
-      margin: 2px 0 0;
-
-      color: #64748b;
-
-      font-size: 11px;
-
-      white-space: nowrap;
-    }
-
-    /* =====================================================
-       メイン
-       ===================================================== */
-
-    .chat-main {
+    .conversation {
+      display: flex;
       flex: 1;
-
-      width: 100%;
-      max-width: 980px;
-
-      margin: 0 auto;
-
-      display: flex;
       flex-direction: column;
-
-      padding: 26px 20px 120px;
+      gap: 18px;
+      min-height: 280px;
+      padding-bottom: 24px;
     }
 
-    /* =====================================================
-       会話エリア
-       ===================================================== */
-
-    .messages {
-      width: 100%;
-
-      display: flex;
-      flex-direction: column;
-
-      gap: 22px;
-    }
-
-    .empty-state {
-      min-height: 55vh;
-
-      display: grid;
-      place-items: center;
-
+    .welcome {
+      max-width: 550px;
+      margin: auto;
+      padding: 30px 10px;
       text-align: center;
     }
 
-    .empty-inner {
-      max-width: 580px;
-      padding: 40px 20px;
-    }
-
-    .empty-icon {
-      width: 58px;
-      height: 58px;
-
-      margin: 0 auto 18px;
-
-      display: grid;
-      place-items: center;
-
-      border-radius: 16px;
-
-      background: #dbeafe;
-      color: #2563eb;
-
-      font-size: 25px;
-      font-weight: 800;
-    }
-
-    .empty-state h1 {
-      margin: 0;
-
-      font-size: 25px;
-      letter-spacing: -.03em;
-    }
-
-    .empty-state p {
-      margin: 12px 0 0;
-
-      color: #64748b;
-
-      line-height: 1.8;
-      font-size: 14px;
-    }
-
-    /* =====================================================
-       メッセージ
-       ===================================================== */
-
-    .message-row {
-      width: 100%;
-
-      display: flex;
-    }
-
-    .message-row.user {
-      justify-content: flex-end;
-    }
-
-    .message-row.assistant {
-      justify-content: flex-start;
-    }
+    .welcome h2 { margin: 0 0 12px; font-size: 25px; font-weight: 600; }
+    .welcome p { color: #64748b; line-height: 1.8; }
 
     .message {
-      max-width: min(78%, 760px);
-
       display: flex;
       flex-direction: column;
-
-      gap: 7px;
+      gap: 6px;
+      max-width: 85%;
     }
 
-    .message-row.user .message {
-      align-items: flex-end;
-    }
+    .message.user { align-self: flex-end; align-items: flex-end; }
+    .message.assistant { align-self: flex-start; align-items: flex-start; }
+    .message-role { color: #64748b; font-size: 12px; }
 
-    .message-row.assistant .message {
-      align-items: flex-start;
-    }
-
-    .message-name {
-      color: #64748b;
-
-      font-size: 11px;
-      font-weight: 700;
-    }
-
-    .bubble {
-      padding: 14px 17px;
-
-      border-radius: 18px;
-
-      font-size: 15px;
-      line-height: 1.85;
-
-      overflow-wrap: anywhere;
-      word-break: break-word;
-    }
-
-    .message-row.user .bubble {
-      background: #2563eb;
-      color: #fff;
-
-      border-bottom-right-radius: 5px;
-    }
-
-    .message-row.assistant .bubble {
-      background: #fff;
-      color: #172033;
-
-      border: 1px solid #e2e8f0;
-
-      border-bottom-left-radius: 5px;
-
-      box-shadow:
-        0 3px 14px rgba(15, 23, 42, .045);
-    }
-
-    /* AI回答内 */
-
-    .bubble p {
-      margin: 0 0 12px;
-    }
-
-    .bubble p:last-child {
-      margin-bottom: 0;
-    }
-
-    .bubble ul,
-    .bubble ol {
-      margin:
-        8px 0
-        8px 22px;
-
-      padding: 0;
-    }
-
-    .bubble li {
-      margin: 4px 0;
-    }
-
-    .bubble strong {
-      font-weight: 750;
-    }
-
-    .bubble code {
-      padding: 2px 5px;
-
-      border-radius: 5px;
-
-      background: #f1f5f9;
-
-      font-size: .9em;
-    }
-
-    .bubble pre {
-      margin: 12px 0;
-
-      padding: 13px;
-
-      overflow-x: auto;
-
-      border-radius: 10px;
-
-      background: #0f172a;
-      color: #e2e8f0;
-
-      font-size: 13px;
-      line-height: 1.6;
-    }
-
-    .bubble pre code {
-      padding: 0;
-
-      background: transparent;
-
-      color: inherit;
-    }
-
-    .message-time {
-      color: #94a3b8;
-
-      font-size: 10px;
-    }
-
-    /* =====================================================
-       AI入力中
-       ===================================================== */
-
-    .typing-bubble {
-      min-width: 72px;
-      min-height: 48px;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      gap: 5px;
-
-      padding: 12px 16px;
-
-      border: 1px solid #e2e8f0;
-      border-radius: 18px;
-
-      border-bottom-left-radius: 5px;
-
-      background: #fff;
-
-      box-shadow:
-        0 3px 14px rgba(15, 23, 42, .045);
-    }
-
-    .typing-dot {
-      width: 7px;
-      height: 7px;
-
-      border-radius: 50%;
-
-      background: #94a3b8;
-
-      animation:
-        typingPulse 1.25s ease-in-out infinite;
-    }
-
-    .typing-dot:nth-child(2) {
-      animation-delay: .16s;
-    }
-
-    .typing-dot:nth-child(3) {
-      animation-delay: .32s;
-    }
-
-    @keyframes typingPulse {
-      0%,
-      60%,
-      100% {
-        transform: translateY(0);
-        opacity: .38;
-      }
-
-      30% {
-        transform: translateY(-6px);
-        opacity: 1;
-      }
-    }
-
-    /* =====================================================
-       エラー
-       ===================================================== */
-
-    .chat-error {
-      width: min(78%, 760px);
-
+    .message-content {
       padding: 14px 16px;
-
-      border: 1px solid #fecaca;
+      border: 1px solid #e5e7eb;
       border-radius: 12px;
+      background: #fff;
+      line-height: 1.85;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
 
-      background: #fff1f2;
-      color: #991b1b;
+    .message.user .message-content {
+      background: #eaf2ff;
+      border-color: #d7e5ff;
+    }
 
+    .message.error .message-content {
+      color: #a12b22;
+      background: #fff4f2;
+      border-color: #f3c8c3;
+    }
+
+    .typing {
+      align-self: flex-start;
+      padding: 12px 14px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      background: #fff;
+      color: #64748b;
       font-size: 13px;
+    }
+
+    .typing::after {
+      content: "";
+      display: inline-block;
+      width: 1.5em;
+      text-align: left;
+      animation: typingDots 1.2s steps(4, end) infinite;
+    }
+
+    @keyframes typingDots {
+      0% { content: ""; }
+      25% { content: "."; }
+      50% { content: ".."; }
+      75%, 100% { content: "..."; }
+    }
+
+    .composer {
+      position: sticky;
+      bottom: 0;
+      padding: 14px 0 18px;
+      background: #f7f8fa;
+    }
+
+    .composer-box {
+      padding: 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 4px 16px rgba(0,0,0,.04);
+    }
+
+    #questionInput {
+      display: block;
+      width: 100%;
+      min-height: 90px;
+      max-height: 260px;
+      padding: 8px;
+      resize: vertical;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: #202124;
+      font: inherit;
       line-height: 1.7;
     }
 
-    .chat-error-title {
-      margin-bottom: 5px;
-
-      font-weight: 750;
+    .composer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 4px;
     }
 
-    .chat-error-detail {
-      color: #7f1d1d;
+    .composer-hint, .notice {
+      color: #64748b;
+      font-size: 12px;
+    }
 
+    #sendButton {
+      min-width: 100px;
+      border-color: #2563eb;
+      background: #2563eb;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    #sendButton:disabled, #newChatButton:disabled {
+      opacity: .6;
+      cursor: wait;
+    }
+
+    .status-message {
+      margin: 8px 0;
+      color: #b42318;
+      font-size: 13px;
+      line-height: 1.7;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
     }
 
-    .retry-ai {
-      margin-top: 10px;
-
-      padding: 8px 12px;
-
-      border: 1px solid #fecaca;
-      border-radius: 8px;
-
-      background: #fff;
-      color: #991b1b;
-
-      cursor: pointer;
-
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .retry-ai:hover {
-      background: #fef2f2;
-    }
-
-    /* =====================================================
-       入力エリア
-       ===================================================== */
-
-    .composer-wrap {
-      position: fixed;
-
-      left: 0;
-      right: 0;
-      bottom: 0;
-
-      z-index: 40;
-
-      padding:
-        12px
-        16px
-        calc(12px + env(safe-area-inset-bottom));
-
-      background:
-        linear-gradient(
-          to top,
-          rgba(244,247,251,1) 65%,
-          rgba(244,247,251,.92) 100%
-        );
-    }
-
-    .composer {
-      width: 100%;
-      max-width: 860px;
-
-      margin: 0 auto;
-
-      display: flex;
-      align-items: flex-end;
-      gap: 9px;
-
-      padding: 8px;
-
-      background: #fff;
-
-      border: 1px solid #cbd5e1;
-      border-radius: 17px;
-
-      box-shadow:
-        0 8px 30px rgba(15, 23, 42, .10);
-    }
-
-    .question-input {
-      flex: 1;
-
-      min-width: 0;
-
-      min-height: 44px;
-      max-height: 180px;
-
-      resize: none;
-
-      border: 0;
-      outline: 0;
-
-      padding:
-        10px
-        10px;
-
-      background: transparent;
-
-      color: #172033;
-
-      line-height: 1.65;
-
-      font-size: 15px;
-    }
-
-    .question-input::placeholder {
-      color: #94a3b8;
-    }
-
-    .send-button {
-      flex: 0 0 auto;
-
-      width: 44px;
-      height: 44px;
-
-      display: grid;
-      place-items: center;
-
-      border: 0;
-      border-radius: 12px;
-
-      background: #2563eb;
-      color: #fff;
-
-      cursor: pointer;
-
-      font-size: 19px;
-      font-weight: 800;
-
-      transition:
-        background .15s,
-        transform .1s,
-        opacity .15s;
-    }
-
-    .send-button:hover {
-      background: #1d4ed8;
-    }
-
-    .send-button:active {
-      transform: scale(.96);
-    }
-
-    .send-button:disabled {
-      cursor: wait;
-      opacity: .45;
-    }
-
-    .composer-hint {
-      width: 100%;
-      max-width: 860px;
-
-      margin: 6px auto 0;
-
-      padding: 0 4px;
-
-      color: #94a3b8;
-
-      font-size: 10px;
-      line-height: 1.5;
-    }
-
-    /* =====================================================
-       通知
-       ===================================================== */
-
-    .toast {
-      position: fixed;
-
-      left: 50%;
-      bottom: 92px;
-
-      z-index: 100;
-
-      transform:
-        translate(-50%, 20px);
-
-      min-width: min(90vw, 320px);
-
-      padding: 12px 15px;
-
-      border-radius: 10px;
-
-      background: #172033;
-      color: #fff;
-
-      box-shadow:
-        0 8px 30px rgba(15, 23, 42, .18);
-
-      font-size: 13px;
-      line-height: 1.6;
-
-      opacity: 0;
-
-      pointer-events: none;
-
-      transition:
-        opacity .2s,
-        transform .2s;
-    }
-
-    .toast.show {
-      opacity: 1;
-
-      transform:
-        translate(-50%, 0);
-    }
-
-    /* =====================================================
-       ローディング
-       ===================================================== */
-
-    .page-loading {
-      position: fixed;
-
-      inset: 0;
-
-      z-index: 200;
-
-      display: grid;
-      place-items: center;
-
-      background: #f4f7fb;
-    }
-
-    .page-loading-inner {
+    .status-message[data-type="success"] { color: #067647; }
+    .status-message[data-type="info"] { color: #475467; }
+
+    .notice {
+      margin: 12px 0 0;
+      line-height: 1.7;
       text-align: center;
     }
 
-    .loader {
-      width: 30px;
-      height: 30px;
-
-      margin: 0 auto 13px;
-
-      border: 3px solid #dbeafe;
-      border-top-color: #2563eb;
-
-      border-radius: 50%;
-
-      animation:
-        spin .8s linear infinite;
-    }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
-
-    .page-loading-text {
+    .app-footer {
+      padding: 18px;
+      text-align: center;
       color: #64748b;
-
-      font-size: 13px;
+      font-size: 11px;
     }
-
-    /* =====================================================
-       レスポンシブ
-       ===================================================== */
 
     @media (max-width: 700px) {
-      .topbar {
-        height: 58px;
-
-        padding:
-          0
-          14px;
-      }
-
-      .chat-main {
-        padding:
-          18px
-          12px
-          120px;
-      }
-
-      .message {
-        max-width: 90%;
-      }
-
-      .chat-error {
-        width: 90%;
-      }
-
-      .bubble {
-        font-size: 14px;
-        line-height: 1.8;
-      }
-
-      .brand-title {
-        font-size: 15px;
-      }
-
-      .brand-subtitle {
-        display: none;
-      }
-
-      .composer-wrap {
-        padding:
-          8px
-          9px
-          calc(8px + env(safe-area-inset-bottom));
-      }
-
-      .composer-hint {
-        display: none;
-      }
-
-      .empty-state h1 {
-        font-size: 22px;
-      }
-    }
-
-    @media (max-width: 420px) {
-      .message {
-        max-width: 94%;
-      }
-
-      .bubble {
-        padding:
-          12px
-          14px;
-      }
+      .chat-header { padding: 14px; }
+      .chat-header h1 { font-size: 18px; }
+      .chat-content { padding: 14px; }
+      .subject-panel { align-items: flex-start; flex-direction: column; gap: 8px; }
+      .subject-panel select { width: 100%; }
+      .message { max-width: 95%; }
+      .composer-hint { max-width: 60%; }
     }
   </style>
 </head>
 
-<body>
+<body data-role="student">
+  <div class="app-layout">
+    <aside id="appSidebar" class="sidebar" aria-label="メインメニュー"></aside>
 
-  <!-- =====================================================
-       初期ローディング
-       ===================================================== -->
-
-  <div id="pageLoading" class="page-loading">
-    <div class="page-loading-inner">
-      <div class="loader"></div>
-      <div id="pageLoadingText" class="page-loading-text">
-        学習AIを準備しています。
-      </div>
-    </div>
-  </div>
-
-  <!-- =====================================================
-       アプリ
-       ===================================================== -->
-
-  <div id="app" class="app" hidden>
-
-    <!-- ヘッダー -->
-
-    <header class="topbar">
-
-      <div class="topbar-left">
-
-        <button
-          id="backButton"
-          class="back-button"
-          type="button"
-          aria-label="学習ホームへ戻る"
-          title="学習ホームへ戻る"
-        >
-          ←
-        </button>
-
-        <div class="brand">
-          <h1 class="brand-title">
-            学習AIチャット
-          </h1>
-
-          <p class="brand-subtitle">
-            中学生向け学習サポート
-          </p>
+    <main id="appMain" class="app-main">
+      <header class="chat-header">
+        <div>
+          <h1>学習AIチャット</h1>
+          <p>中学校の学習をサポートします</p>
         </div>
 
-      </div>
+        <button id="newChatButton" class="new-chat-button" type="button">
+          新しい質問
+        </button>
+      </header>
 
-    </header>
+      <section class="chat-content">
+        <div class="subject-panel">
+          <label for="subjectSelect">質問する教科</label>
+          <select id="subjectSelect">
+            <option value="国語">国語</option>
+            <option value="数学" selected>数学</option>
+            <option value="英語">英語</option>
+            <option value="理科">理科</option>
+            <option value="社会">社会</option>
+            <option value="音楽">音楽</option>
+            <option value="美術">美術</option>
+            <option value="保健体育">保健体育</option>
+            <option value="技術家庭">技術家庭</option>
+          </select>
+        </div>
 
-    <!-- チャット -->
-
-    <main class="chat-main">
-
-      <section
-        id="messages"
-        class="messages"
-        aria-live="polite"
-        aria-label="AIとの会話"
-      >
-
-        <div
-          id="emptyState"
-          class="empty-state"
-        >
-          <div class="empty-inner">
-
-            <div class="empty-icon">
-              AI
-            </div>
-
-            <h1>
-              何を勉強しますか？
-            </h1>
-
+        <div id="conversation" class="conversation" aria-live="polite">
+          <div id="welcomeMessage" class="welcome">
+            <h2>何を勉強していますか？</h2>
             <p>
-              数学・英語・国語・理科・社会など、
-              学校の勉強について質問してください。
+              わからない問題や授業で習った内容を入力してください。
+              中学生にもわかりやすく説明します。
             </p>
-
           </div>
         </div>
 
+        <p id="statusMessage" class="status-message" role="status" aria-live="polite" hidden></p>
+
+        <form id="questionForm" class="composer">
+          <div class="composer-box">
+            <textarea
+              id="questionInput"
+              maxlength="5000"
+              placeholder="学習について質問してください..."
+              aria-label="質問内容"
+              required
+            ></textarea>
+
+            <div class="composer-bottom">
+              <span class="composer-hint">Enterで送信・Shift+Enterで改行</span>
+              <button id="sendButton" class="primary-button" type="submit">
+                質問する
+              </button>
+            </div>
+          </div>
+
+          <p class="notice">
+            このAIは学習専用です。学習以外の質問には対応していません。
+          </p>
+        </form>
       </section>
 
+      <footer class="app-footer">
+        © 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.
+      </footer>
     </main>
-
-    <!-- 入力 -->
-
-    <div class="composer-wrap">
-
-      <form
-        id="composer"
-        class="composer"
-      >
-
-        <textarea
-          id="questionInput"
-          class="question-input"
-          rows="1"
-          maxlength="4000"
-          placeholder="学習について質問してください"
-          autocomplete="off"
-          spellcheck="false"
-        ></textarea>
-
-        <button
-          id="sendButton"
-          class="send-button"
-          type="submit"
-          aria-label="送信"
-          title="送信"
-        >
-          ↑
-        </button>
-
-      </form>
-
-      <div class="composer-hint">
-        Enterで送信・Shift + Enterで改行
-      </div>
-
-    </div>
-
   </div>
 
-  <!-- トースト -->
+  <script type="module" src="../assets/js/page.js" id="pageModule"></script>
+  <script>
+    (() => {
+      const releaseLoading = () => document.documentElement.classList.remove("auth-pending");
 
-  <div
-    id="toast"
-    class="toast"
-    role="status"
-    aria-live="polite"
-  ></div>
-
-  <!-- =====================================================
-       Firebase / アプリ
-       ===================================================== -->
-
-  <script type="module">
-
-    import {
-      auth,
-      persistenceReady,
-      onAuthStateChanged,
-      sendStudyQuestion,
-      getConversation
-    } from "../assets/js/firebase.js";
-
-    /* =====================================================
-       要素
-       ===================================================== */
-
-    const $ = (id) =>
-      document.getElementById(id);
-
-    const pageLoading =
-      $("pageLoading");
-
-    const pageLoadingText =
-      $("pageLoadingText");
-
-    const app =
-      $("app");
-
-    const messages =
-      $("messages");
-
-    const emptyState =
-      $("emptyState");
-
-    const composer =
-      $("composer");
-
-    const input =
-      $("questionInput");
-
-    const sendButton =
-      $("sendButton");
-
-    const toast =
-      $("toast");
-
-    /* =====================================================
-       状態
-       ===================================================== */
-
-    let currentUser = null;
-
-    let conversationId = null;
-
-    let sending = false;
-
-    let pendingQuestion = null;
-
-    let toastTimer = null;
-
-    /* =====================================================
-       URL
-       ===================================================== */
-
-    const params =
-      new URLSearchParams(
-        location.search
-      );
-
-    const requestedConversationId =
-      (
-        params.get(
-          "conversationId"
-        ) || ""
-      ).trim();
-
-    if (
-      requestedConversationId
-    ) {
-      conversationId =
-        requestedConversationId;
-    }
-
-    /* =====================================================
-       トースト
-       ===================================================== */
-
-    function showToast(
-      message
-    ) {
-      clearTimeout(
-        toastTimer
-      );
-
-      toast.textContent =
-        message;
-
-      toast.classList.add(
-        "show"
-      );
-
-      toastTimer =
-        setTimeout(() => {
-          toast.classList.remove(
-            "show"
-          );
-        }, 2800);
-    }
-
-    /* =====================================================
-       ページ表示
-       ===================================================== */
-
-    function showApp() {
-      pageLoading.hidden =
-        true;
-
-      app.hidden =
-        false;
-
-      setTimeout(() => {
-        input.focus();
-      }, 100);
-    }
-
-    /* =====================================================
-       日時
-       ===================================================== */
-
-    function formatTime(
-      value = new Date()
-    ) {
-      const date =
-        value instanceof Date
-          ? value
-          : new Date(value);
-
-      if (
-        Number.isNaN(
-          date.getTime()
-        )
-      ) {
-        return "";
-      }
-
-      return new Intl.DateTimeFormat(
-        "ja-JP",
-        {
-          hour: "2-digit",
-          minute: "2-digit"
+      const showFatal = (message) => {
+        releaseLoading();
+        const status = document.getElementById("statusMessage");
+        if (status) {
+          status.hidden = false;
+          status.dataset.type = "error";
+          status.textContent = message;
         }
-      ).format(date);
-    }
-
-    /* =====================================================
-       HTMLエスケープ
-       ===================================================== */
-
-    function escapeHtml(
-      value
-    ) {
-      return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-
-    /* =====================================================
-       AI回答を簡易Markdown風に整形
-       ===================================================== */
-
-    function formatAnswer(
-      text
-    ) {
-      let value =
-        escapeHtml(
-          text
-        );
-
-      /*
-        コードブロック
-      */
-
-      const codeBlocks = [];
-
-      value =
-        value.replace(
-          /```([\s\S]*?)```/g,
-          (_, code) => {
-
-            const index =
-              codeBlocks.length;
-
-            codeBlocks.push(
-              `<pre><code>${code
-                .replace(/^\n/, "")
-                .replace(/\n$/, "")
-              }</code></pre>`
-            );
-
-            return `@@CODE_${index}@@`;
-          }
-        );
-
-      /*
-        太字
-      */
-
-      value =
-        value.replace(
-          /\*\*(.+?)\*\*/g,
-          "<strong>$1</strong>"
-        );
-
-      /*
-        インラインコード
-      */
-
-      value =
-        value.replace(
-          /`([^`]+)`/g,
-          "<code>$1</code>"
-        );
-
-      /*
-        改行
-      */
-
-      const lines =
-        value.split("\n");
-
-      let html = "";
-
-      let listMode =
-        null;
-
-      for (
-        const line of lines
-      ) {
-
-        const unordered =
-          /^\s*[-*]\s+(.+)$/.exec(
-            line
-          );
-
-        const ordered =
-          /^\s*\d+\.\s+(.+)$/.exec(
-            line
-          );
-
-        if (
-          unordered
-        ) {
-
-          if (
-            listMode !== "ul"
-          ) {
-
-            if (
-              listMode
-            ) {
-              html +=
-                listMode === "ul"
-                  ? "</ul>"
-                  : "</ol>";
-            }
-
-            html += "<ul>";
-
-            listMode =
-              "ul";
-          }
-
-          html +=
-            `<li>${unordered[1]}</li>`;
-
-          continue;
-        }
-
-        if (
-          ordered
-        ) {
-
-          if (
-            listMode !== "ol"
-          ) {
-
-            if (
-              listMode
-            ) {
-              html +=
-                listMode === "ul"
-                  ? "</ul>"
-                  : "</ol>";
-            }
-
-            html += "<ol>";
-
-            listMode =
-              "ol";
-          }
-
-          html +=
-            `<li>${ordered[1]}</li>`;
-
-          continue;
-        }
-
-        if (
-          listMode
-        ) {
-
-          html +=
-            listMode === "ul"
-              ? "</ul>"
-              : "</ol>";
-
-          listMode =
-            null;
-        }
-
-        if (
-          line.trim() === ""
-        ) {
-          html += "<br>";
-        } else {
-          html +=
-            `<p>${line}</p>`;
-        }
-      }
-
-      if (
-        listMode
-      ) {
-
-        html +=
-          listMode === "ul"
-            ? "</ul>"
-            : "</ol>";
-      }
-
-      /*
-        コードブロックを戻す
-      */
-
-      html =
-        html.replace(
-          /@@CODE_(\d+)@@/g,
-          (_, index) =>
-            codeBlocks[
-              Number(index)
-            ]
-        );
-
-      return html;
-    }
-
-    /* =====================================================
-       空状態
-       ===================================================== */
-
-    function removeEmptyState() {
-      if (
-        emptyState &&
-        emptyState.isConnected
-      ) {
-        emptyState.remove();
-      }
-    }
-
-    /* =====================================================
-       ユーザーメッセージ
-       ===================================================== */
-
-    function addUserMessage(
-      text
-    ) {
-
-      removeEmptyState();
-
-      const row =
-        document.createElement(
-          "div"
-        );
-
-      row.className =
-        "message-row user";
-
-      const message =
-        document.createElement(
-          "article"
-        );
-
-      message.className =
-        "message";
-
-      const name =
-        document.createElement(
-          "div"
-        );
-
-      name.className =
-        "message-name";
-
-      name.textContent =
-        "あなた";
-
-      const bubble =
-        document.createElement(
-          "div"
-        );
-
-      bubble.className =
-        "bubble";
-
-      bubble.textContent =
-        text;
-
-      const time =
-        document.createElement(
-          "div"
-        );
-
-      time.className =
-        "message-time";
-
-      time.textContent =
-        formatTime();
-
-      message.append(
-        name,
-        bubble,
-        time
-      );
-
-      row.append(
-        message
-      );
-
-      messages.append(
-        row
-      );
-
-      scrollToBottom();
-    }
-
-    /* =====================================================
-       AIメッセージ
-       ===================================================== */
-
-    function addAssistantMessage(
-      text
-    ) {
-
-      removeEmptyState();
-
-      const row =
-        document.createElement(
-          "div"
-        );
-
-      row.className =
-        "message-row assistant";
-
-      const message =
-        document.createElement(
-          "article"
-        );
-
-      message.className =
-        "message";
-
-      const name =
-        document.createElement(
-          "div"
-        );
-
-      name.className =
-        "message-name";
-
-      name.textContent =
-        "学習AI";
-
-      const bubble =
-        document.createElement(
-          "div"
-        );
-
-      bubble.className =
-        "bubble";
-
-      bubble.innerHTML =
-        formatAnswer(
-          text
-        );
-
-      const time =
-        document.createElement(
-          "div"
-        );
-
-      time.className =
-        "message-time";
-
-      time.textContent =
-        formatTime();
-
-      message.append(
-        name,
-        bubble,
-        time
-      );
-
-      row.append(
-        message
-      );
-
-      messages.append(
-        row
-      );
-
-      scrollToBottom();
-    }
-
-    /* =====================================================
-       AI入力中
-       ===================================================== */
-
-    function addTypingMessage() {
-
-      removeEmptyState();
-
-      const row =
-        document.createElement(
-          "div"
-        );
-
-      row.className =
-        "message-row assistant";
-
-      row.dataset.typing =
-        "true";
-
-      const message =
-        document.createElement(
-          "article"
-        );
-
-      message.className =
-        "message";
-
-      const name =
-        document.createElement(
-          "div"
-        );
-
-      name.className =
-        "message-name";
-
-      name.textContent =
-        "学習AI";
-
-      const bubble =
-        document.createElement(
-          "div"
-        );
-
-      bubble.className =
-        "typing-bubble";
-
-      bubble.innerHTML = `
-        <span class="typing-dot"></span>
-        <span class="typing-dot"></span>
-        <span class="typing-dot"></span>
-      `;
-
-      message.append(
-        name,
-        bubble
-      );
-
-      row.append(
-        message
-      );
-
-      messages.append(
-        row
-      );
-
-      scrollToBottom();
-
-      return row;
-    }
-
-    function removeTypingMessage() {
-
-      const typing =
-        messages.querySelector(
-          '[data-typing="true"]'
-        );
-
-      if (
-        typing
-      ) {
-        typing.remove();
-      }
-    }
-
-    /* =====================================================
-       エラー
-       ===================================================== */
-
-    function normalizeError(
-      error
-    ) {
-
-      const code =
-        error?.code ||
-        "";
-
-      const message =
-        error?.message ||
-        String(error);
-
-      if (
-        message.includes(
-          "14 UNAVAILABLE"
-        ) ||
-        message.includes(
-          "No connection established"
-        ) ||
-        message.includes(
-          "TLS connection"
-        )
-      ) {
-
-        return {
-          title:
-            "AIサーバーとの通信に失敗しました",
-          detail:
-            "AIサーバーへの接続が一時的に確立できませんでした。\n少し待ってからもう一度送信してください。",
-          retry: true
-        };
-      }
-
-      if (
-        code ===
-        "auth/api-key-not-valid"
-      ) {
-
-        return {
-          title:
-            "Firebaseの設定エラー",
-          detail:
-            "FirebaseのAPIキーが正しくありません。assets/js/firebase.js の設定を確認してください。",
-          retry: false
-        };
-      }
-
-      if (
-        code ===
-        "permission-denied"
-      ) {
-
-        return {
-          title:
-            "アクセス権限エラー",
-          detail:
-            "Firestoreへのアクセスが拒否されました。",
-          retry: false
-        };
-      }
-
-      if (
-        message.includes(
-          "401"
-        )
-      ) {
-
-        return {
-          title:
-            "AIサーバーの認証エラー",
-          detail:
-            "AIサーバーが認証情報を受け取れませんでした。Supabase Edge Function側の認証設定を確認してください。",
-          retry: true
-        };
-      }
-
-      return {
-        title:
-          "AIサーバーエラー",
-        detail:
-          message,
-        retry: true
       };
-    }
 
-    function addErrorMessage(
-      error
-    ) {
+      const moduleScript = document.getElementById("pageModule");
 
-      removeTypingMessage();
-
-      const info =
-        normalizeError(
-          error
+      moduleScript?.addEventListener("error", () => {
+        showFatal(
+          "画面のJavaScriptを読み込めませんでした。通信状態と ../assets/js/page.js の公開URLを確認し、ページを再読み込みしてください。"
         );
+      });
 
-      const row =
-        document.createElement(
-          "div"
-        );
+      window.addEventListener("unhandledrejection", (event) => {
+        const reason = event.reason;
+        const message = reason?.message || String(reason || "不明なエラー");
 
-      row.className =
-        "message-row assistant";
-
-      const message =
-        document.createElement(
-          "article"
-        );
-
-      message.className =
-        "message";
-
-      const box =
-        document.createElement(
-          "div"
-        );
-
-      box.className =
-        "chat-error";
-
-      const title =
-        document.createElement(
-          "div"
-        );
-
-      title.className =
-        "chat-error-title";
-
-      title.textContent =
-        info.title;
-
-      const detail =
-        document.createElement(
-          "div"
-        );
-
-      detail.className =
-        "chat-error-detail";
-
-      detail.textContent =
-        info.detail;
-
-      box.append(
-        title,
-        detail
-      );
-
-      if (
-        info.retry &&
-        pendingQuestion
-      ) {
-
-        const retry =
-          document.createElement(
-            "button"
-          );
-
-        retry.type =
-          "button";
-
-        retry.className =
-          "retry-ai";
-
-        retry.textContent =
-          "もう一度送信";
-
-        retry.addEventListener(
-          "click",
-          () => {
-
-            if (
-              sending
-            ) {
-              return;
-            }
-
-            sendQuestion(
-              pendingQuestion
-            );
-          }
-        );
-
-        box.append(
-          retry
-        );
-      }
-
-      message.append(
-        box
-      );
-
-      row.append(
-        message
-      );
-
-      messages.append(
-        row
-      );
-
-      scrollToBottom();
-    }
-
-    /* =====================================================
-       スクロール
-       ===================================================== */
-
-    function scrollToBottom() {
-
-      requestAnimationFrame(
-        () => {
-
-          window.scrollTo(
-            {
-              top:
-                document.body.scrollHeight,
-              behavior:
-                "smooth"
-            }
-          );
-
-        }
-      );
-    }
-
-    /* =====================================================
-       入力欄自動リサイズ
-       ===================================================== */
-
-    function resizeInput() {
-
-      input.style.height =
-        "auto";
-
-      input.style.height =
-        `${Math.min(
-          input.scrollHeight,
-          180
-        )}px`;
-    }
-
-    input.addEventListener(
-      "input",
-      resizeInput
-    );
-
-    /* =====================================================
-       AI送信
-       ===================================================== */
-
-    async function sendQuestion(
-      question
-    ) {
-
-      const cleanQuestion =
-        String(
-          question || ""
-        ).trim();
-
-      if (
-        !cleanQuestion
-      ) {
-        return;
-      }
-
-      if (
-        sending
-      ) {
-        return;
-      }
-
-      if (
-        !currentUser
-      ) {
-
-        showToast(
-          "ログイン状態を確認できません。"
-        );
-
-        return;
-      }
-
-      sending =
-        true;
-
-      pendingQuestion =
-        cleanQuestion;
-
-      sendButton.disabled =
-        true;
-
-      input.disabled =
-        true;
-
-      addUserMessage(
-        cleanQuestion
-      );
-
-      const typing =
-        addTypingMessage();
-
-      /*
-        ここが重要。
-
-        Firestoreの履歴取得を先に行わない。
-        まずAIサーバーへ送信する。
-      */
-
-      try {
-
-        const result =
-          await sendStudyQuestion(
-            cleanQuestion,
-            conversationId
-          );
-
-        /*
-          AI回答が返った瞬間に表示。
-          Firestoreの再取得を待たない。
-        */
-
-        if (
-          result?.conversationId
-        ) {
-
-          conversationId =
-            result.conversationId;
-
-          const newUrl =
-            new URL(
-              location.href
-            );
-
-          newUrl.searchParams.set(
-            "conversationId",
-            conversationId
-          );
-
-          history.replaceState(
-            null,
-            "",
-            newUrl
+        if (/permission-denied|Missing or insufficient permissions/i.test(message)) {
+          showFatal(
+            "Firestoreのアクセス権限が拒否されました。Firestore Database → ルールを確認してください。詳細: " + message
           );
         }
-
-        removeTypingMessage();
-
-        if (
-          result?.answer
-        ) {
-
-          addAssistantMessage(
-            result.answer
-          );
-
-        } else {
-
-          addErrorMessage(
-            new Error(
-              "AIから回答が返ってきませんでした。"
-            )
-          );
-        }
-
-      } catch (error) {
-
-        console.error(
-          "AI送信エラー:",
-          error
-        );
-
-        removeTypingMessage();
-
-        addErrorMessage(
-          error
-        );
-
-      } finally {
-
-        sending =
-          false;
-
-        sendButton.disabled =
-          false;
-
-        input.disabled =
-          false;
-
-        input.focus();
-
-        resizeInput();
-      }
-    }
-
-    /* =====================================================
-       フォーム送信
-       ===================================================== */
-
-    composer.addEventListener(
-      "submit",
-      async event => {
-
-        event.preventDefault();
-
-        const question =
-          input.value.trim();
-
-        if (
-          !question
-        ) {
-          return;
-        }
-
-        input.value =
-          "";
-
-        resizeInput();
-
-        await sendQuestion(
-          question
-        );
-      }
-    );
-
-    /* =====================================================
-       Enter送信
-       ===================================================== */
-
-    input.addEventListener(
-      "keydown",
-      event => {
-
-        if (
-          event.key ===
-          "Enter" &&
-          !event.shiftKey
-        ) {
-
-          event.preventDefault();
-
-          composer.requestSubmit();
-        }
-      }
-    );
-
-    /* =====================================================
-       ホームへ戻る
-       ===================================================== */
-
-    $("backButton")
-      .addEventListener(
-        "click",
-        () => {
-
-          location.href =
-            "./index.html";
-
-        }
-      );
-
-    /* =====================================================
-       過去の会話を読み込む
-       ===================================================== */
-
-    async function loadConversation() {
-
-      if (
-        !conversationId
-      ) {
-        return;
-      }
-
-      /*
-        会話履歴の読み込みは、
-        AI送信とは独立して実行する。
-      */
-
-      try {
-
-        const result =
-          await getConversation(
-            conversationId
-          );
-
-        const conversation =
-          result?.conversation;
-
-        if (
-          !conversation
-        ) {
-          return;
-        }
-
-        const history =
-          Array.isArray(
-            conversation.messages
-          )
-            ? conversation.messages
-            : [];
-
-        if (
-          !history.length
-        ) {
-          return;
-        }
-
-        removeEmptyState();
-
-        /*
-          既存表示を消して履歴を再構築
-        */
-
-        messages.replaceChildren();
-
-        for (
-          const item of history
-        ) {
-
-          if (
-            !item ||
-            typeof item.content !==
-              "string"
-          ) {
-            continue;
-          }
-
-          if (
-            item.role ===
-            "user"
-          ) {
-
-            addUserMessage(
-              item.content
-            );
-
-          } else if (
-            item.role ===
-            "assistant"
-          ) {
-
-            addAssistantMessage(
-              item.content
-            );
-          }
-        }
-
-      } catch (error) {
-
-        /*
-          履歴取得失敗はAIチャットそのものを
-          使用不能にしない。
-        */
-
-        console.warn(
-          "会話履歴の取得に失敗しました:",
-          error
-        );
-
-        showToast(
-          "過去の会話を読み込めませんでした。新しい質問は送信できます。"
-        );
-      }
-    }
-
-    /* =====================================================
-       認証
-       ===================================================== */
-
-    async function start() {
-
-      try {
-
-        pageLoadingText.textContent =
-          "ログイン状態を確認しています。";
-
-        await persistenceReady;
-
-        /*
-          認証状態が確定するまで待つ。
-        */
-
-        const user =
-          await new Promise(
-            (
-              resolve,
-              reject
-            ) => {
-
-              let unsubscribe =
-                null;
-
-              unsubscribe =
-                onAuthStateChanged(
-                  auth,
-                  value => {
-
-                    if (
-                      unsubscribe
-                    ) {
-                      unsubscribe();
-                    }
-
-                    resolve(
-                      value
-                    );
-                  },
-                  error => {
-
-                    if (
-                      unsubscribe
-                    ) {
-                      unsubscribe();
-                    }
-
-                    reject(
-                      error
-                    );
-                  }
-                );
-
-            }
-          );
-
-        if (
-          !user
-        ) {
-
-          location.replace(
-            "../login.html"
-          );
-
-          return;
-        }
-
-        currentUser =
-          user;
-
-        /*
-          ここで初めてチャット画面を表示。
-        */
-
-        showApp();
-
-        /*
-          履歴読み込みはバックグラウンド。
-          失敗してもAI送信には影響させない。
-        */
-
-        if (
-          conversationId
-        ) {
-
-          loadConversation()
-            .catch(
-              error => {
-                console.warn(
-                  "履歴読み込み失敗:",
-                  error
-                );
-              }
-            );
-        }
-
-      } catch (error) {
-
-        console.error(
-          "question.html 初期化エラー:",
-          error
-        );
-
-        pageLoadingText.textContent =
-          "ログイン状態を確認できませんでした。";
-
-        showToast(
-          error?.message ||
-          String(error)
-        );
-      }
-    }
-
-    /* =====================================================
-       開始
-       ===================================================== */
-
-    start();
-
+      });
+    })();
   </script>
-
 </body>
 </html>
