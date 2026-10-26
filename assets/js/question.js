@@ -1,4 +1,5 @@
 // assets/js/question.js
+// 学習AIチャット画面
 
 import {
   auth,
@@ -15,96 +16,72 @@ import {
   orderBy,
   getDocs,
   serverTimestamp
-} from "./firebase.js";
+} from "./firebase-module.js";
 
-const loading =
-  document.getElementById(
-    "questionLoading"
-  );
+import { askAI } from "./ai.js";
 
-const chatSection =
-  document.getElementById(
-    "chatSection"
-  );
-
-const messageList =
-  document.getElementById(
-    "messageList"
-  );
-
-const form =
-  document.getElementById(
-    "questionForm"
-  );
-
-const input =
-  document.getElementById(
-    "questionInput"
-  );
-
-const sendButton =
-  document.getElementById(
-    "sendButton"
-  );
-
-const status =
-  document.getElementById(
-    "questionStatus"
-  );
-
-const titleElement =
-  document.getElementById(
-    "conversationTitle"
-  );
+const loading = document.getElementById("questionLoading");
+const chatSection = document.getElementById("chatSection");
+const messageList = document.getElementById("messageList");
+const form = document.getElementById("questionForm");
+const input = document.getElementById("questionInput");
+const sendButton = document.getElementById("sendButton");
+const status = document.getElementById("questionStatus");
+const titleElement = document.getElementById("conversationTitle");
 
 let currentUser = null;
 let currentProfile = null;
 let conversationId = null;
+let conversationHistory = [];
+let initializing = false;
+let sending = false;
 
-const params =
-  new URLSearchParams(
-    window.location.search
-  );
-
-const requestedConversationId =
-  params.get(
-    "conversationId"
-  );
-
-const requestedAnswerId =
-  params.get(
-    "answerId"
-  );
+const params = new URLSearchParams(window.location.search);
+const requestedConversationId = params.get("conversationId");
+const requestedAnswerId = params.get("answerId");
 
 function setStatus(text) {
-  status.textContent =
-    text || "";
+  if (status) {
+    status.textContent = text || "";
+  }
 }
 
 function showChat() {
-  loading.hidden = true;
-  chatSection.hidden = false;
+  if (loading) loading.hidden = true;
+  if (chatSection) chatSection.hidden = false;
 }
 
 function showLoading(text) {
-  loading.hidden = false;
-  loading.textContent = text;
-  chatSection.hidden = true;
+  if (loading) {
+    loading.hidden = false;
+    loading.textContent = text;
+  }
+
+  if (chatSection) {
+    chatSection.hidden = true;
+  }
 }
 
 function showError(message) {
-  showLoading(
-    message
-  );
+  showLoading(message);
+  setStatus("");
 }
 
-function createMessageElement(
-  message
-) {
-  const wrapper =
-    document.createElement(
-      "article"
-    );
+function setSending(value) {
+  sending = value;
+
+  if (sendButton) {
+    sendButton.disabled = value;
+    sendButton.textContent = value ? "回答を生成しています..." : "送信";
+  }
+
+  if (input) {
+    input.disabled = value;
+  }
+}
+
+function createMessageElement(message) {
+  const wrapper = document.createElement("article");
 
   wrapper.className =
     `chat-message ${
@@ -113,179 +90,28 @@ function createMessageElement(
         : "message-ai"
     }`;
 
-  if (
-    message.answerId
-  ) {
-    wrapper.dataset.answerId =
-      message.answerId;
+  if (message.answerId) {
+    wrapper.dataset.answerId = message.answerId;
   }
 
-  const role =
-    document.createElement(
-      "div"
-    );
-
-  role.className =
-    "message-role";
-
+  const role = document.createElement("div");
+  role.className = "message-role";
   role.textContent =
-    message.role === "user"
-      ? "あなた"
-      : "学習AI";
+    message.role === "user" ? "あなた" : "学習AI";
 
-  const content =
-    document.createElement(
-      "div"
-    );
+  const content = document.createElement("div");
+  content.className = "message-content";
+  content.textContent = message.content || "";
 
-  content.className =
-    "message-content";
-
-  content.textContent =
-    message.content || "";
-
-  wrapper.append(
-    role,
-    content
-  );
-
+  wrapper.append(role, content);
   return wrapper;
 }
 
-function renderMessage(
-  message
-) {
-  messageList.append(
-    createMessageElement(
-      message
-    )
-  );
+function renderMessage(message) {
+  if (!messageList) return;
 
-  messageList.scrollTop =
-    messageList.scrollHeight;
-}
-
-async function createConversation(
-  user
-) {
-  const conversationRef =
-    await addDoc(
-      collection(
-        db,
-        "chatConversations"
-      ),
-      {
-        userId: user.uid,
-        title: "新しい学習",
-        createdAt:
-          serverTimestamp(),
-        updatedAt:
-          serverTimestamp()
-      }
-    );
-
-  conversationId =
-    conversationRef.id;
-
-  titleElement.textContent =
-    "新しい学習";
-
-  return conversationId;
-}
-
-async function loadConversation(
-  user,
-  id
-) {
-  const conversationSnap =
-    await getDoc(
-      doc(
-        db,
-        "chatConversations",
-        id
-      )
-    );
-
-  if (
-    !conversationSnap.exists()
-  ) {
-    throw new Error(
-      "指定された会話が見つかりません。"
-    );
-  }
-
-  const conversation =
-    conversationSnap.data();
-
-  if (
-    conversation.userId !==
-    user.uid
-  ) {
-    throw new Error(
-      "この会話を開く権限がありません。"
-    );
-  }
-
-  conversationId = id;
-
-  titleElement.textContent =
-    conversation.title ||
-    "学習AIとの会話";
-
-  const messagesQuery =
-    query(
-      collection(
-        db,
-        "chatMessages"
-      ),
-      where(
-        "conversationId",
-        "==",
-        id
-      ),
-      orderBy(
-        "createdAt",
-        "asc"
-      )
-    );
-
-  const snapshot =
-    await getDocs(
-      messagesQuery
-    );
-
-  messageList.replaceChildren();
-
-  snapshot.forEach(
-    item => {
-      const data =
-        item.data();
-
-      renderMessage({
-        id: item.id,
-        ...data
-      });
-    }
-  );
-}
-
-async function initializeConversation(
-  user
-) {
-  if (
-    requestedConversationId
-  ) {
-    await loadConversation(
-      user,
-      requestedConversationId
-    );
-
-    return;
-  }
-
-  await createConversation(
-    user
-  );
+  messageList.append(createMessageElement(message));
+  messageList.scrollTop = messageList.scrollHeight;
 }
 
 function createAnswerId() {
@@ -293,153 +119,268 @@ function createAnswerId() {
     "ans_" +
     Date.now().toString(36) +
     "_" +
-    Math.random()
-      .toString(36)
-      .slice(2, 10)
+    Math.random().toString(36).slice(2, 10)
   );
 }
 
-async function saveUserMessage(
-  content
-) {
-  const answerId =
-    createAnswerId();
+function getRootPath(fileName) {
+  return `../${fileName}`;
+}
 
-  await addDoc(
-    collection(
-      db,
-      "chatMessages"
-    ),
+async function waitForCurrentUser() {
+  await persistenceReady;
+
+  return new Promise((resolve, reject) => {
+    let unsubscribe = null;
+    let finished = false;
+
+    const timeout = setTimeout(() => {
+      finish(
+        new Error(
+          "ログイン状態の確認がタイムアウトしました。ページを再読み込みしてください。"
+        )
+      );
+    }, 15000);
+
+    function finish(error, user) {
+      if (finished) return;
+
+      finished = true;
+      clearTimeout(timeout);
+
+      if (unsubscribe) {
+        unsubscribe();
+        unsubscribe = null;
+      }
+
+      if (error) {
+        reject(error);
+      } else {
+        resolve(user);
+      }
+    }
+
+    try {
+      unsubscribe = onAuthStateChanged(
+        auth,
+        user => finish(null, user),
+        error => finish(error)
+      );
+    } catch (error) {
+      finish(error);
+    }
+  });
+}
+
+async function createConversation(user) {
+  const conversationRef = await addDoc(
+    collection(db, "chatConversations"),
     {
-      conversationId,
-      userId:
-        currentUser.uid,
-      role: "user",
-      content,
-      answerId,
-      createdAt:
-        serverTimestamp()
+      userId: user.uid,
+      title: "新しい学習",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     }
   );
 
-  return answerId;
+  conversationId = conversationRef.id;
+
+  if (titleElement) {
+    titleElement.textContent = "新しい学習";
+  }
+
+  conversationHistory = [];
+  return conversationId;
 }
 
-async function saveAIMessage(
-  content,
-  answerId
-) {
-  await addDoc(
-    collection(
-      db,
-      "chatMessages"
-    ),
-    {
-      conversationId,
-      userId:
-        currentUser.uid,
-      role: "assistant",
-      content,
-      answerId,
-      createdAt:
-        serverTimestamp()
-    }
+async function loadConversation(user, id) {
+  const conversationSnap = await getDoc(
+    doc(db, "chatConversations", id)
   );
+
+  if (!conversationSnap.exists()) {
+    throw new Error("指定された会話が見つかりません。");
+  }
+
+  const conversation = conversationSnap.data();
+
+  if (conversation.userId !== user.uid) {
+    const error = new Error(
+      "この会話を開く権限がありません。"
+    );
+    error.code = "permission-denied";
+    throw error;
+  }
+
+  conversationId = id;
+
+  if (titleElement) {
+    titleElement.textContent =
+      conversation.title || "学習AIとの会話";
+  }
+
+  const messagesQuery = query(
+    collection(db, "chatMessages"),
+    where("conversationId", "==", id),
+    orderBy("createdAt", "asc")
+  );
+
+  const snapshot = await getDocs(messagesQuery);
+
+  if (messageList) {
+    messageList.replaceChildren();
+  }
+
+  conversationHistory = [];
+
+  snapshot.forEach(item => {
+    const data = item.data();
+
+    const message = {
+      id: item.id,
+      ...data
+    };
+
+    renderMessage(message);
+
+    if (
+      (message.role === "user" ||
+        message.role === "assistant") &&
+      typeof message.content === "string"
+    ) {
+      conversationHistory.push({
+        role: message.role,
+        content: message.content
+      });
+    }
+  });
 }
 
-async function updateConversationTitle(
-  question
-) {
-  if (!conversationId) {
-    return;
+async function initializeConversation(user) {
+  if (requestedConversationId) {
+    await loadConversation(user, requestedConversationId);
+  } else {
+    await createConversation(user);
   }
+}
 
-  const title =
-    question
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 40);
+async function saveUserMessage(content, answerId) {
+  const data = {
+    conversationId,
+    userId: currentUser.uid,
+    role: "user",
+    content,
+    answerId,
+    createdAt: serverTimestamp()
+  };
 
-  if (!title) {
-    return;
-  }
+  const reference = await addDoc(
+    collection(db, "chatMessages"),
+    data
+  );
+
+  conversationHistory.push({
+    role: "user",
+    content
+  });
+
+  return reference.id;
+}
+
+async function saveAIMessage(content, answerId) {
+  const data = {
+    conversationId,
+    userId: currentUser.uid,
+    role: "assistant",
+    content,
+    answerId,
+    createdAt: serverTimestamp()
+  };
+
+  const reference = await addDoc(
+    collection(db, "chatMessages"),
+    data
+  );
+
+  conversationHistory.push({
+    role: "assistant",
+    content
+  });
+
+  return reference.id;
+}
+
+async function updateConversationTitle(question) {
+  if (!conversationId) return;
+
+  const title = question
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 40);
+
+  if (!title) return;
 
   await setDoc(
-    doc(
-      db,
-      "chatConversations",
-      conversationId
-    ),
+    doc(db, "chatConversations", conversationId),
     {
       title,
-      updatedAt:
-        serverTimestamp()
+      updatedAt: serverTimestamp()
     },
-    {
-      merge: true
-    }
+    { merge: true }
   );
 
-  titleElement.textContent =
-    title;
+  if (titleElement) {
+    titleElement.textContent = title;
+  }
 }
 
-async function generateAIAnswer(
-  question,
-  previousAnswerId = null
-) {
-  /*
-   * ここはAI API接続部分。
-   *
-   * FirebaseだけではAI回答そのものは生成できません。
-   * Cloud Functions等のバックエンドを接続する場合は、
-   * この関数から安全なAPIへリクエストします。
-   *
-   * 現在は動作確認用のフォールバック回答です。
-   */
+async function generateAIAnswer(question) {
+  const history = conversationHistory
+    .slice(-12)
+    .map(item => ({
+      role: item.role,
+      content: item.content
+    }));
 
-  if (
-    previousAnswerId
-  ) {
-    return (
-      "前の回答をもとに、続きの質問として受け取りました。\n\n" +
-      "AI回答APIが接続されると、この場所に実際の学習AIの回答が表示されます。"
-    );
-  }
+  const grade =
+    currentProfile?.grade ||
+    currentProfile?.schoolGrade ||
+    "中学生";
 
-  return (
-    "質問を受け取りました。\n\n" +
-    "AI回答APIを接続すると、ここに学習内容に合わせた回答が表示されます。"
-  );
+  // 現在の画面に教科選択欄がないため、教科は学習全般とする。
+  // 教科選択欄がある場合は、ここを選択値に置き換える。
+  const subject =
+    document.getElementById("subjectSelect")?.value ||
+    "学習全般";
+
+  const prompt = requestedAnswerId
+    ? `前の回答に関連する質問です。\n${question}`
+    : question;
+
+  return await askAI({
+    message: prompt,
+    grade,
+    subject,
+    history
+  });
 }
 
 async function sendQuestion() {
-  const question =
-    input.value.trim();
+  if (sending) return;
 
-  if (
-    !question ||
-    !conversationId ||
-    !currentUser
-  ) {
+  const question = input?.value.trim();
+
+  if (!question || !conversationId || !currentUser) {
     return;
   }
 
-  sendButton.disabled =
-    true;
+  setSending(true);
+  setStatus("回答を生成しています...");
 
-  input.disabled =
-    true;
-
-  setStatus(
-    "回答を生成しています..."
-  );
+  const answerId = createAnswerId();
 
   try {
-    const answerId =
-      await saveUserMessage(
-        question
-      );
+    await saveUserMessage(question, answerId);
 
     renderMessage({
       role: "user",
@@ -447,22 +388,15 @@ async function sendQuestion() {
       answerId
     });
 
-    await updateConversationTitle(
-      question
-    );
+    if (input) {
+      input.value = "";
+    }
 
-    input.value = "";
+    await updateConversationTitle(question);
 
-    const aiAnswer =
-      await generateAIAnswer(
-        question,
-        requestedAnswerId
-      );
+    const aiAnswer = await generateAIAnswer(question);
 
-    await saveAIMessage(
-      aiAnswer,
-      answerId
-    );
+    await saveAIMessage(aiAnswer, answerId);
 
     renderMessage({
       role: "assistant",
@@ -470,165 +404,108 @@ async function sendQuestion() {
       answerId
     });
 
-    setStatus(
-      "回答を保存しました。"
-    );
-
+    setStatus("回答を保存しました。");
   } catch (error) {
-    console.error(
-      "質問処理エラー:",
-      error
-    );
+    console.error("質問処理エラー:", error);
 
-    setStatus(
-      "回答の保存に失敗しました。"
-    );
+    const code = error?.code || "";
+    const message = error?.message || String(error);
 
-    const errorMessage =
-      document.createElement(
-        "div"
+    if (
+      code === "permission-denied" ||
+      /Missing or insufficient permissions/i.test(message)
+    ) {
+      setStatus(
+        "アクセス権限がありません。Firestoreのルールを確認してください。"
       );
+    } else {
+      setStatus(`処理に失敗しました: ${message}`);
+    }
 
-    errorMessage.className =
-      "question-error";
-
+    const errorMessage = document.createElement("div");
+    errorMessage.className = "question-error";
     errorMessage.textContent =
-      `処理に失敗しました。\n${
-        error.message ||
-        String(error)
-      }`;
+      `回答を取得できませんでした。\n${message}`;
 
-    messageList.append(
-      errorMessage
-    );
-
+    messageList?.append(errorMessage);
   } finally {
-    sendButton.disabled =
-      false;
-
-    input.disabled =
-      false;
-
-    input.focus();
+    setSending(false);
+    input?.focus();
   }
 }
 
 async function initialize() {
-  showLoading(
-    "学習AIチャットを準備しています。"
-  );
+  if (initializing) return;
+  initializing = true;
+
+  showLoading("学習AIチャットを準備しています。");
 
   try {
-    await persistenceReady;
-
-    const user =
-      await new Promise(
-        (resolve, reject) => {
-          let unsubscribe;
-
-          unsubscribe =
-            onAuthStateChanged(
-              auth,
-              current => {
-                if (unsubscribe) {
-                  unsubscribe();
-                }
-
-                resolve(
-                  current
-                );
-              },
-              error => {
-                if (unsubscribe) {
-                  unsubscribe();
-                }
-
-                reject(
-                  error
-                );
-              }
-            );
-        }
-      );
+    const user = await waitForCurrentUser();
 
     if (!user) {
-      window.location.replace(
-        "../login.html"
-      );
-
+      window.location.replace(getRootPath("login.html"));
       return;
     }
 
-    currentUser =
-      user;
+    currentUser = user;
 
-    const profileSnap =
-      await getDoc(
-        doc(
-          db,
-          "users",
-          user.uid
-        )
-      );
+    const profileSnap = await getDoc(
+      doc(db, "users", user.uid)
+    );
 
-    if (
-      !profileSnap.exists()
-    ) {
+    if (!profileSnap.exists()) {
       throw new Error(
-        "ユーザープロフィールがありません。"
+        "ユーザープロフィールがありません。管理者に確認してください。"
       );
     }
 
-    currentProfile =
-      profileSnap.data();
+    currentProfile = profileSnap.data();
 
-    if (
-      currentProfile.role !==
-      "student"
-    ) {
-      throw new Error(
-        "この画面は生徒アカウント専用です。"
-      );
+    if (currentProfile.role !== "student") {
+      window.location.replace(getRootPath("403.html"));
+      return;
     }
 
-    if (
-      currentProfile.status !==
-      "active"
-    ) {
+    if (currentProfile.status !== "active") {
       throw new Error(
         "このアカウントは現在利用できません。"
       );
     }
 
-    await initializeConversation(
-      user
-    );
+    await initializeConversation(user);
 
     showChat();
-
-    input.focus();
-
+    input?.focus();
   } catch (error) {
-    console.error(
-      "質問画面初期化エラー:",
-      error
-    );
+    console.error("質問画面初期化エラー:", error);
+
+    if (
+      error?.code === "permission-denied" ||
+      /この会話を開く権限がありません/.test(error?.message || "")
+    ) {
+      window.location.replace(getRootPath("403.html"));
+      return;
+    }
 
     showError(
       "質問画面を初期化できませんでした。\n" +
-      (error.message ||
-        String(error))
+      (error?.message || String(error))
     );
+  } finally {
+    initializing = false;
   }
 }
 
-form.addEventListener(
-  "submit",
-  event => {
+if (form) {
+  form.addEventListener("submit", event => {
     event.preventDefault();
-
     sendQuestion();
-  }
-);
+  });
+} else {
+  console.error(
+    "質問フォーム #questionForm がHTMLに見つかりません。"
+  );
+}
 
 initialize();
