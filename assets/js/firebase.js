@@ -2,7 +2,7 @@
 (function () {
   "use strict";
 
-  const firebaseConfig = {
+const firebaseConfig = {
   apiKey: "AIzaSyByt8kGALyS8AU8SR6PzWFEPXfgHY5iynk",
   authDomain: "studychat-1b39d.firebaseapp.com",
   projectId: "studychat-1b39d",
