@@ -330,7 +330,7 @@ async function markTurnFailed(saved, errorMessage) {
 }
 
 async function loadConversation(id) {
-  showStatus("会話履歴を読み込んでいます...", "info");
+  showStatus("");
 
   const ref = conversationRef(id);
   const snapshot = await getDoc(ref);
@@ -354,9 +354,7 @@ async function loadConversation(id) {
 
   turns = turnsSnapshot.docs
     .map((item) => normalizeTurn(item.data()))
-    .filter(
-      (turn) => turn.status === "completed" || turn.status === "error"
-    );
+    .filter((turn) => turn.status === "completed" || turn.status === "error");
 
   currentConversationId = id;
   updateAddressForConversation(id);
@@ -384,7 +382,6 @@ async function loadConversation(id) {
     showStatus("");
   }
 }
-
 async function callAI(question, subject) {
   if (!currentUser) {
     throw new Error("ログイン状態を確認できません。再読み込みしてください。");
@@ -652,7 +649,24 @@ function formatLegacyDate(value) {
 }
 
 function renderLegacyShell(appRoot, role, profile, user, pageName) {
-  appRoot.replaceChildren();
+  // 既存の共通サイドバーがある場合は残し、本文領域だけを更新する。
+  const sharedSidebar = appRoot.querySelector("#appSidebar");
+  const adminContent = appRoot.querySelector("#adminPageContent");
+  let host = appRoot;
+
+  if (adminContent) {
+    host = adminContent;
+    host.replaceChildren();
+  } else if (sharedSidebar) {
+    host = appRoot.querySelector(":scope > .app-main");
+    if (!host) {
+      host = legacyElement("div", "", "app-main");
+      appRoot.append(host);
+    }
+    host.replaceChildren();
+  } else {
+    appRoot.replaceChildren();
+  }
 
   const shell = legacyElement("div", "", "legacy-shell");
   const header = legacyElement("header", "", "page-header");
@@ -669,57 +683,63 @@ function renderLegacyShell(appRoot, role, profile, user, pageName) {
     )
   );
 
-  const nav = legacyElement("nav", "", "legacy-nav");
+  // 固定サイドバーが存在しない旧ページに限り、ページ内ナビゲーションを作成する。
+  if (!sharedSidebar) {
+    const nav = legacyElement("nav", "", "legacy-nav");
 
-  const items = role === "admin"
-    ? [
-        ["管理者ホーム", "index.html"],
-        ["ユーザー管理", "users.html"],
-        ["お知らせ管理", "announcements.html"],
-        ["メンテナンス", "maintenance.html"],
-        ["AI設定", "ai-settings.html"],
-        ["操作ログ", "logs.html"],
-        ["システム状態", "system.html"],
-        ["管理者設定", "settings.html"]
-      ]
-    : [
-        ["学習ホーム", "index.html"],
-        ["AIに質問", "question.html"],
-        ["学習履歴", "history.html"],
-        ["お知らせ", "announcements.html"],
-        ["設定", "settings.html"]
-      ];
+    const items = role === "admin"
+      ? [
+          ["管理者ホーム", "index.html"],
+          ["ユーザー管理", "users.html"],
+          ["お知らせ管理", "announcements.html"],
+          ["メンテナンス", "maintenance.html"],
+          ["AI設定", "ai-settings.html"],
+          ["操作ログ", "logs.html"],
+          ["システム状態", "system.html"],
+          ["管理者設定", "settings.html"]
+        ]
+      : [
+          ["学習ホーム", "index.html"],
+          ["AIに質問", "question.html"],
+          ["学習履歴", "history.html"],
+          ["お知らせ", "announcements.html"],
+          ["設定", "settings.html"]
+        ];
 
-  for (const [label, href] of items) {
-    const link = legacyLink(label, href);
+    for (const [label, href] of items) {
+      const link = legacyLink(label, href);
 
-    if (
-      href ===
-      (pageName === "home" ? "index.html" : `${pageName}.html`)
-    ) {
-      link.classList.add("active");
+      if (
+        href ===
+        (pageName === "home" ? "index.html" : `${pageName}.html`)
+      ) {
+        link.classList.add("active");
+      }
+
+      nav.append(link);
     }
 
-    nav.append(link);
+    const logout = legacyButton("ログアウト", async () => {
+      logout.disabled = true;
+
+      try {
+        await auth.signOut();
+        location.replace("../login.html");
+      } catch (error) {
+        logout.disabled = false;
+        legacyMessage(
+          host,
+          `ログアウトに失敗しました: ${error.message || error}`,
+          true
+        );
+      }
+    }, "secondary-button");
+
+    nav.append(logout);
+    shell.append(header, nav);
+  } else {
+    shell.append(header);
   }
-
-  const logout = legacyButton("ログアウト", async () => {
-    logout.disabled = true;
-
-    try {
-      await auth.signOut();
-      location.replace("../login.html");
-    } catch (error) {
-      logout.disabled = false;
-      legacyMessage(
-        appRoot,
-        `ログアウトに失敗しました: ${error.message || error}`,
-        true
-      );
-    }
-  }, "secondary-button");
-
-  nav.append(logout);
 
   const main = legacyElement("main", "", "page-content");
 
@@ -729,12 +749,11 @@ function renderLegacyShell(appRoot, role, profile, user, pageName) {
     "page-footer"
   );
 
-  shell.append(header, nav, main, footer);
-  appRoot.append(shell);
+  shell.append(main, footer);
+  host.append(shell);
 
   return main;
 }
-
 async function legacyQueryCollection(collectionName, constraints = []) {
   return getDocs(
     query(collection(db, collectionName), ...constraints)
@@ -774,15 +793,31 @@ async function initializeLegacyPage() {
     document.documentElement.classList.remove("auth-pending");
 
     if (!document.querySelector(".auth-error")) {
-      appRoot.replaceChildren();
+      // エラー表示も本文だけに出し、共通サイドバーは消さない。
+      const sidebar = appRoot.querySelector("#appSidebar");
+      const adminContent = appRoot.querySelector("#adminPageContent");
+      let host = adminContent;
+
+      if (!host && sidebar) {
+        host = appRoot.querySelector(":scope > .app-main");
+        if (!host) {
+          host = legacyElement("div", "", "app-main");
+          appRoot.append(host);
+        }
+      }
+
+      if (!host) {
+        appRoot.replaceChildren();
+        host = appRoot;
+      } else {
+        host.replaceChildren();
+      }
 
       const panel = legacyElement("main", "", "auth-error");
-
       panel.append(
         legacyElement("h1", "ページを開けませんでした"),
         legacyElement("p", explainError(error))
       );
-
       panel.append(
         legacyButton(
           "再読み込み",
@@ -790,8 +825,7 @@ async function initializeLegacyPage() {
           "secondary-button"
         )
       );
-
-      appRoot.append(panel);
+      host.append(panel);
     }
   }
 }
@@ -1046,8 +1080,7 @@ async function renderAdminLegacyPage(main, pageName, user, profile) {
 
     return;
   }
-
-  if (pageName === "announcements") {
+    if (pageName === "announcements") {
     main.append(legacyElement("h2", "お知らせ管理"));
 
     const form = legacyElement("form", "", "page-card");
@@ -1146,7 +1179,7 @@ async function renderAdminLegacyPage(main, pageName, user, profile) {
     );
     save.type = "submit";
 
-    const status = legacyElement("p", "設定を読み込んでいます。");
+    const status = legacyElement("p", "");
 
     form.append(
       enabledLabel,
@@ -1318,7 +1351,6 @@ async function renderAdminLegacyPage(main, pageName, user, profile) {
     legacyLink("管理者ホームへ", "index.html")
   );
 }
-
 async function initializeQuestionPage() {
   if (initializationStarted) return;
   initializationStarted = true;
