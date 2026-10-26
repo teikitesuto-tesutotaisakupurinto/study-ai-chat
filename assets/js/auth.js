@@ -1,7 +1,3 @@
-/* =========================================================
-   学習AIチャット 認証・権限管理
-   ========================================================= */
-
 import {
   auth,
   db,
@@ -10,312 +6,33 @@ import {
   signOut,
   doc,
   getDoc
-} from "./firebase.js";
-
-/* =========================================================
-   Supabase AI
-   ========================================================= */
-
-const SUPABASE_FUNCTION_URL =
-  "https://fjqobjcvejhkevyfsoxt.supabase.co/functions/v1/study-chat";
-
-/* =========================================================
-   パス
-   ========================================================= */
+} from "./firebase-module.js";
 
 function rootPath(file) {
-  const path =
-    location.pathname;
-
+  const path = location.pathname;
   const nested =
     path.includes("/student/") ||
     path.includes("/admin/");
 
-  return nested
-    ? `../${file}`
-    : `./${file}`;
+  return nested ? `../${file}` : `./${file}`;
 }
 
-/* =========================================================
-   エラー画面
-   ========================================================= */
+function withTimeout(promise, milliseconds, message) {
+  let timer;
 
-function showAccessError(
-  title,
-  message,
-  detail = ""
-) {
-  document.documentElement.classList.remove(
-    "auth-pending"
-  );
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error(message));
+    }, milliseconds);
+  });
 
-  /*
-    既存ページを完全に破壊しない。
-    特にサイドバーが既に存在する場合は残す。
-  */
-
-  const existingMain =
-    document.getElementById(
-      "appMain"
-    );
-
-  if (existingMain) {
-    let box =
-      document.getElementById(
-        "authAccessError"
-      );
-
-    if (!box) {
-      box =
-        document.createElement(
-          "section"
-        );
-
-      box.id =
-        "authAccessError";
-
-      box.style.cssText = `
-        margin: 24px;
-        padding: 24px;
-        background: #fff;
-        border: 1px solid #fecaca;
-        border-radius: 14px;
-        color: #172033;
-      `;
-
-      existingMain.prepend(
-        box
-      );
-    }
-
-    box.innerHTML = "";
-
-    const heading =
-      document.createElement(
-        "h1"
-      );
-
-    heading.textContent =
-      title;
-
-    heading.style.cssText = `
-      margin: 0 0 10px;
-      font-size: 22px;
-      color: #991b1b;
-    `;
-
-    const description =
-      document.createElement(
-        "p"
-      );
-
-    description.textContent =
-      message;
-
-    description.style.lineHeight =
-      "1.8";
-
-    box.append(
-      heading,
-      description
-    );
-
-    if (detail) {
-      const pre =
-        document.createElement(
-          "pre"
-        );
-
-      pre.textContent =
-        detail;
-
-      pre.style.cssText = `
-        margin-top: 14px;
-        padding: 12px;
-        overflow: auto;
-        white-space: pre-wrap;
-        overflow-wrap: anywhere;
-        background: #f8fafc;
-        border-radius: 8px;
-        font-size: 12px;
-      `;
-
-      box.append(pre);
-    }
-
-    return;
-  }
-
-  /*
-    ログイン画面など appMain がない場合のみ
-    専用エラー表示を作る。
-  */
-
-  document.body.replaceChildren();
-
-  const main =
-    document.createElement(
-      "main"
-    );
-
-  main.className =
-    "auth-error";
-
-  main.style.cssText = `
-    min-height: 100vh;
-    display: grid;
-    place-items: center;
-    padding: 24px;
-    background: #f4f7fb;
-  `;
-
-  const card =
-    document.createElement(
-      "section"
-    );
-
-  card.style.cssText = `
-    width: min(100%, 520px);
-    padding: 28px;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    box-shadow: 0 12px 30px rgb(15 23 42 / 8%);
-  `;
-
-  const heading =
-    document.createElement(
-      "h1"
-    );
-
-  heading.textContent =
-    title;
-
-  const description =
-    document.createElement(
-      "p"
-    );
-
-  description.textContent =
-    message;
-
-  description.style.lineHeight =
-    "1.8";
-
-  card.append(
-    heading,
-    description
-  );
-
-  if (detail) {
-    const pre =
-      document.createElement(
-        "pre"
-      );
-
-    pre.textContent =
-      detail;
-
-    pre.style.cssText = `
-      padding: 12px;
-      background: #f8fafc;
-      border-radius: 8px;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-      font-size: 12px;
-    `;
-
-    card.append(pre);
-  }
-
-  const retry =
-    document.createElement(
-      "button"
-    );
-
-  retry.type =
-    "button";
-
-  retry.textContent =
-    "再読み込み";
-
-  retry.style.cssText = `
-    width: 100%;
-    min-height: 46px;
-    margin-top: 18px;
-    border: 0;
-    border-radius: 9px;
-    background: #2563eb;
-    color: #fff;
-    font-weight: 700;
-    cursor: pointer;
-  `;
-
-  retry.addEventListener(
-    "click",
-    () => location.reload()
-  );
-
-  card.append(retry);
-
-  const loginLink =
-    document.createElement(
-      "a"
-    );
-
-  loginLink.href =
-    rootPath(
-      "login.html"
-    );
-
-  loginLink.textContent =
-    "ログイン画面へ";
-
-  loginLink.style.cssText = `
-    display: block;
-    margin-top: 14px;
-    text-align: center;
-    color: #2563eb;
-  `;
-
-  card.append(
-    loginLink
-  );
-
-  main.append(card);
-
-  document.body.append(main);
+  return Promise.race([promise, timeout]).finally(() => {
+    clearTimeout(timer);
+  });
 }
-
-/* =========================================================
-   エラー詳細
-   ========================================================= */
-
-function errorDetails(
-  error
-) {
-  return `${
-    error?.code ||
-    "error"
-  }: ${
-    error?.message ||
-    String(error)
-  }`;
-}
-
-/* =========================================================
-   システム設定
-   ========================================================= */
 
 export async function getSystemSettings() {
-  const snapshot =
-    await getDoc(
-      doc(
-        db,
-        "settings",
-        "system"
-      )
-    );
+  const snapshot = await getDoc(doc(db, "settings", "system"));
 
   if (!snapshot.exists()) {
     throw new Error(
@@ -326,27 +43,12 @@ export async function getSystemSettings() {
   return snapshot.data();
 }
 
-/* =========================================================
-   現在ユーザー
-   ========================================================= */
-
-export async function getCurrentProfile(
-  user
-) {
+export async function getCurrentProfile(user) {
   if (!user?.uid) {
-    throw new Error(
-      "ログイン中の利用者を確認できません。"
-    );
+    throw new Error("ログイン中の利用者を確認できません。");
   }
 
-  const snapshot =
-    await getDoc(
-      doc(
-        db,
-        "users",
-        user.uid
-      )
-    );
+  const snapshot = await getDoc(doc(db, "users", user.uid));
 
   if (!snapshot.exists()) {
     throw new Error(
@@ -357,272 +59,211 @@ export async function getCurrentProfile(
   return snapshot.data();
 }
 
-/* =========================================================
-   Firebase Auth待機
-   ========================================================= */
-
 export function waitForAuth() {
-  return new Promise(
-    (
-      resolve,
-      reject
-    ) => {
-      let unsubscribe =
-        null;
+  return new Promise((resolve, reject) => {
+    let unsubscribe = null;
+    let finished = false;
 
-      let finished =
-        false;
+    const timer = setTimeout(() => {
+      finish(
+        new Error(
+          "ログイン状態の確認が15秒以内に完了しませんでした。"
+        )
+      );
+    }, 15000);
 
-      function cleanup() {
-        if (
-          unsubscribe
-        ) {
-          unsubscribe();
+    function finish(error, user) {
+      if (finished) return;
 
-          unsubscribe =
-            null;
-        }
+      finished = true;
+      clearTimeout(timer);
+
+      if (unsubscribe) {
+        unsubscribe();
+        unsubscribe = null;
       }
 
-      unsubscribe =
-        onAuthStateChanged(
-          auth,
-          user => {
-            if (
-              finished
-            ) {
-              return;
-            }
-
-            finished =
-              true;
-
-            cleanup();
-
-            resolve(user);
-          },
-          error => {
-            if (
-              finished
-            ) {
-              return;
-            }
-
-            finished =
-              true;
-
-            cleanup();
-
-            reject(error);
-          }
-        );
+      if (error) {
+        reject(error);
+      } else {
+        resolve(user);
+      }
     }
-  );
+
+    try {
+      unsubscribe = onAuthStateChanged(
+        auth,
+        (user) => finish(null, user),
+        (error) => finish(error)
+      );
+    } catch (error) {
+      finish(error);
+    }
+  });
 }
 
-/* =========================================================
-   権限確認
-   ========================================================= */
+function showAccessError(title, message, detail = "") {
+  document.documentElement.classList.remove("auth-pending");
 
-export async function requireRole(
-  requiredRole,
-  options = {}
-) {
-  document.documentElement.classList.add(
-    "auth-pending"
-  );
+  const main = document.createElement("main");
+  main.className = "auth-error";
 
-  if (
-    ![
-      "student",
-      "admin"
-    ].includes(
-      requiredRole
-    )
-  ) {
+  const heading = document.createElement("h1");
+  heading.textContent = title;
+
+  const description = document.createElement("p");
+  description.textContent = message;
+
+  main.append(heading, description);
+
+  if (detail) {
+    const pre = document.createElement("pre");
+    pre.textContent = detail;
+    main.append(pre);
+  }
+
+  const retry = document.createElement("button");
+  retry.type = "button";
+  retry.textContent = "再読み込み";
+  retry.addEventListener("click", () => location.reload());
+
+  main.append(retry);
+  document.body.replaceChildren(main);
+}
+
+function errorDetails(error) {
+  return `${error?.code || "error"}: ${
+    error?.message || String(error)
+  }`;
+}
+
+function redirectForbidden(message = "このページを開く権限がありません。権限案内ページへ移動します。") {
+  document.documentElement.classList.remove("auth-pending");
+  const currentFile = location.pathname.split("/").pop() || "";
+  if (currentFile === "403.html") {
+    showAccessError("アクセス権限がありません", "このページを利用する権限がありません。自分のアカウントで利用できるページへ戻ってください。");
+    return;
+  }
+  window.alert(message);
+  location.replace(rootPath("403.html"));
+}
+
+// 同じページ内での認証確認を共有する。
+const roleCheckPromises = new Map();
+
+async function runRoleCheck(requiredRole, options = {}) {
+  document.documentElement.classList.add("auth-pending");
+
+  if (!["student", "admin"].includes(requiredRole)) {
     showAccessError(
       "ページ設定エラー",
       "必要な権限の設定が正しくありません。",
-      `requiredRole: ${String(
-        requiredRole
-      )}`
+      `requiredRole: ${String(requiredRole)}`
     );
-
     return null;
   }
 
   try {
-    /*
-      Firebase Authの初期化を待つ。
-    */
+    await withTimeout(
+      persistenceReady,
+      15000,
+      "Firebase Authentication の初期化が15秒以内に完了しませんでした。"
+    );
 
-    await persistenceReady;
-
-    const user =
-      await waitForAuth();
-
-    /*
-      未ログインならログイン画面へ。
-    */
+    const user = await waitForAuth();
 
     if (!user) {
-      location.replace(
-        rootPath(
-          "login.html"
-        )
-      );
-
+      location.replace(rootPath("login.html"));
       return null;
     }
-
-    /*
-      プロフィール取得。
-    */
 
     let profile;
 
     try {
-      profile =
-        await getCurrentProfile(
-          user
-        );
+      profile = await withTimeout(
+        getCurrentProfile(user),
+        15000,
+        "ユーザープロフィールの取得がタイムアウトしました。"
+      );
     } catch (error) {
+      if (error?.code === "permission-denied") {
+        redirectForbidden("このアカウントには、このページを開く権限がありません。権限案内ページへ移動します。");
+      } else {
+        showAccessError(
+          "ユーザー情報エラー",
+          "ユーザープロフィールを取得できませんでした。Firestoreのユーザー情報とセキュリティルールを確認してください。",
+          errorDetails(error)
+        );
+      }
+      return null;
+    }
+
+    if (profile.status !== "active") {
+      try {
+        await signOut(auth);
+      } catch (error) {
+        console.error("サインアウトエラー:", error);
+      }
+
       showAccessError(
-        error?.code ===
-          "permission-denied"
-          ? "アクセス権限エラー"
-          : "ユーザー情報エラー",
-        "ユーザープロフィールを確認できませんでした。",
-        errorDetails(error)
+        "アカウント利用不可",
+        "このアカウントは無効化されています。管理者にお問い合わせください。"
       );
-
       return null;
     }
 
-    /*
-      アカウント状態。
-    */
-
-    if (
-      profile.status !==
-      "active"
-    ) {
-      await signOut(
-        auth
-      );
-
-      location.replace(
-        rootPath(
-          "login.html"
-        )
-      );
-
+    if (!["student", "admin"].includes(profile.role)) {
+      redirectForbidden("このアカウントには有効な権限が設定されていません。権限案内ページへ移動します。");
       return null;
     }
 
-    /*
-      role確認。
-    */
-
-    if (
-      ![
-        "student",
-        "admin"
-      ].includes(
-        profile.role
-      )
-    ) {
-      showAccessError(
-        "403 Forbidden",
-        "アカウントの権限が設定されていないか、不正です。",
-        `role: ${String(
-          profile.role
-        )}`
-      );
-
+    if (profile.role !== requiredRole) {
+      redirectForbidden("このページを開く権限がありません。権限案内ページへ移動します。");
       return null;
     }
-
-    /*
-      必要role確認。
-    */
-
-    if (
-      profile.role !==
-      requiredRole
-    ) {
-      showAccessError(
-        "403 Forbidden",
-        "このページを開く権限がありません。",
-        `必要な権限: ${requiredRole}\n現在の権限: ${profile.role}`
-      );
-
-      return null;
-    }
-
-    /*
-      メンテナンス設定。
-      
-      allowMaintenance=trueなら
-      学生でも通過できる。
-    */
 
     let settings;
 
     try {
-      settings =
-        await getSystemSettings();
+      settings = await withTimeout(
+        getSystemSettings(),
+        15000,
+        "システム設定の取得がタイムアウトしました。"
+      );
     } catch (error) {
       showAccessError(
         "システム設定エラー",
-        "システム設定を取得できません。",
+        "システム設定を取得できません。Firestoreの settings/system とセキュリティルールを確認してください。",
         errorDetails(error)
       );
-
       return null;
     }
 
     if (
-      settings.maintenance ===
-        true &&
-      requiredRole ===
-        "student" &&
-      options.allowMaintenance !==
-        true
+      settings.maintenance === true &&
+      requiredRole === "student" &&
+      options.allowMaintenance !== true
     ) {
-      location.replace(
-        rootPath(
-          "maintenance.html"
-        )
-      );
-
+      location.replace(rootPath("maintenance.html"));
       return null;
     }
 
-    document.documentElement.classList.remove(
-      "auth-pending"
-    );
+    document.documentElement.classList.remove("auth-pending");
 
     return {
       user,
       profile,
-      data:
-        profile,
+      data: profile,
       settings
     };
-
   } catch (error) {
-    console.error(
-      "認証・権限チェックエラー:",
-      error
-    );
+    console.error("認証・権限チェックエラー:", error);
 
     showAccessError(
-      error?.code ===
-        "permission-denied"
-        ? "アクセス権限エラー"
+      error?.code === "permission-denied"
+        ? "403 Forbidden"
         : "認証・権限の確認に失敗しました",
-      "安全にページを開けませんでした。",
+      "安全にページを開けませんでした。以下のエラー内容を確認してください。",
       errorDetails(error)
     );
 
@@ -630,19 +271,26 @@ export async function requireRole(
   }
 }
 
-/* =========================================================
-   ページ保護
-   ========================================================= */
+export function requireRole(requiredRole, options = {}) {
+  // 管理者ページではメンテナンス設定による移動は発生しないため、
+  // layout.js とページ側で同じ認証確認を共有できる。
+  const allowMaintenance =
+    requiredRole === "admin" || options.allowMaintenance === true;
 
-export async function protectPage(
-  requiredRole,
-  options = {}
-) {
-  const result =
-    await requireRole(
-      requiredRole,
-      options
+  const key = `${requiredRole}:${allowMaintenance}`;
+
+  if (!roleCheckPromises.has(key)) {
+    roleCheckPromises.set(
+      key,
+      runRoleCheck(requiredRole, { allowMaintenance })
     );
+  }
+
+  return roleCheckPromises.get(key);
+}
+
+export async function protectPage(requiredRole, options = {}) {
+  const result = await requireRole(requiredRole, options);
 
   if (!result) {
     throw new Error(
@@ -653,288 +301,4 @@ export async function protectPage(
   return result;
 }
 
-/* =========================================================
-   Study AI Chat
-   ========================================================= */
-
-export async function sendStudyQuestion(
-  question,
-  conversationId = null
-) {
-  const user =
-    auth.currentUser;
-
-  if (!user) {
-    throw new Error(
-      "ログインしてください。"
-    );
-  }
-
-  const cleanQuestion =
-    String(
-      question || ""
-    ).trim();
-
-  if (!cleanQuestion) {
-    throw new Error(
-      "質問を入力してください。"
-    );
-  }
-
-  if (
-    cleanQuestion.length >
-    4000
-  ) {
-    throw new Error(
-      "質問が長すぎます。"
-    );
-  }
-
-  const token =
-    await user.getIdToken(
-      true
-    );
-
-  const response =
-    await fetch(
-      SUPABASE_FUNCTION_URL,
-      {
-        method:
-          "POST",
-
-        headers: {
-          Authorization:
-            `Bearer ${token}`,
-
-          "Content-Type":
-            "application/json"
-        },
-
-        body:
-          JSON.stringify({
-            question:
-              cleanQuestion,
-
-            conversationId:
-              conversationId ||
-              null
-          })
-      }
-    );
-
-  let result;
-
-  try {
-    result =
-      await response.json();
-  } catch {
-    throw new Error(
-      "AIサーバーから正しい応答を受信できませんでした。"
-    );
-  }
-
-  if (
-    !response.ok ||
-    result?.success !==
-      true
-  ) {
-    throw new Error(
-      result?.error ||
-      `AIサーバーエラー (${response.status})`
-    );
-  }
-
-  return {
-    conversationId:
-      result.conversationId,
-
-    questionId:
-      result.questionId,
-
-    answerId:
-      result.answerId,
-
-    answer:
-      result.answer,
-
-    createdAt:
-      result.createdAt
-  };
-}
-
-/* =========================================================
-   会話取得
-   ========================================================= */
-
-export async function getConversation(
-  conversationId
-) {
-  const user =
-    auth.currentUser;
-
-  if (!user) {
-    throw new Error(
-      "ログインしてください。"
-    );
-  }
-
-  const cleanId =
-    String(
-      conversationId ||
-        ""
-    ).trim();
-
-  if (!cleanId) {
-    throw new Error(
-      "会話IDがありません。"
-    );
-  }
-
-  const token =
-    await user.getIdToken(
-      true
-    );
-
-  const response =
-    await fetch(
-      SUPABASE_FUNCTION_URL,
-      {
-        method:
-          "POST",
-
-        headers: {
-          Authorization:
-            `Bearer ${token}`,
-
-          "Content-Type":
-            "application/json"
-        },
-
-        body:
-          JSON.stringify({
-            action:
-              "getConversation",
-
-            conversationId:
-              cleanId
-          })
-      }
-    );
-
-  let result;
-
-  try {
-    result =
-      await response.json();
-  } catch {
-    throw new Error(
-      "会話サーバーから正しい応答を受信できませんでした。"
-    );
-  }
-
-  if (
-    !response.ok ||
-    result?.success !==
-      true
-  ) {
-    throw new Error(
-      result?.error ||
-      `会話取得エラー (${response.status})`
-    );
-  }
-
-  return result;
-}
-
-/* =========================================================
-   回答IDから会話取得
-   ========================================================= */
-
-export async function getConversationByAnswerId(
-  answerId
-) {
-  const user =
-    auth.currentUser;
-
-  if (!user) {
-    throw new Error(
-      "ログインしてください。"
-    );
-  }
-
-  const cleanId =
-    String(
-      answerId ||
-        ""
-    ).trim();
-
-  if (!cleanId) {
-    throw new Error(
-      "回答IDがありません。"
-    );
-  }
-
-  const token =
-    await user.getIdToken(
-      true
-    );
-
-  const response =
-    await fetch(
-      SUPABASE_FUNCTION_URL,
-      {
-        method:
-          "POST",
-
-        headers: {
-          Authorization:
-            `Bearer ${token}`,
-
-          "Content-Type":
-            "application/json"
-        },
-
-        body:
-          JSON.stringify({
-            action:
-              "getConversationByAnswerId",
-
-            answerId:
-              cleanId
-          })
-      }
-    );
-
-  let result;
-
-  try {
-    result =
-      await response.json();
-  } catch {
-    throw new Error(
-      "会話サーバーから正しい応答を受信できませんでした。"
-    );
-  }
-
-  if (
-    !response.ok ||
-    result?.success !==
-      true
-  ) {
-    throw new Error(
-      result?.error ||
-      `回答取得エラー (${response.status})`
-    );
-  }
-
-  return result;
-}
-
-/* =========================================================
-   Export
-   ========================================================= */
-
-export {
-  auth,
-  db
-};
+export { auth, db };
