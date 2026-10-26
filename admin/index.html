@@ -3,19 +3,71 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f7fb">
   <title>管理者ホーム｜学習AIチャット</title>
   <link rel="stylesheet" href="../assets/css/common.css">
   <link rel="stylesheet" href="../assets/css/admin.css">
 </head>
-<body data-role="admin" data-page="dashboard">
-  <div id="app">
-    <main class="page-content">画面を読み込んでいます。</main>
+<body class="admin-shell" data-role="admin" data-page="dashboard">
+  <div id="app" class="app-layout">
+    <aside id="appSidebar" class="sidebar" aria-label="管理メニュー">
+      <div class="sidebar-header">
+        <strong>学習AIチャット</strong>
+        <span>運営管理コンソール</span>
+      </div>
+
+      <nav class="sidebar-nav" aria-label="管理メニュー">
+        <a class="sidebar-link active" href="./index.html">
+          <span class="sidebar-label">管理者ホーム</span>
+        </a>
+        <a class="sidebar-link" href="./users.html">
+          <span class="sidebar-label">ユーザー管理</span>
+        </a>
+        <a class="sidebar-link" href="./announcements.html">
+          <span class="sidebar-label">お知らせ管理</span>
+        </a>
+        <a class="sidebar-link" href="./maintenance.html">
+          <span class="sidebar-label">メンテナンス</span>
+        </a>
+        <a class="sidebar-link" href="./ai-settings.html">
+          <span class="sidebar-label">AI設定</span>
+        </a>
+        <a class="sidebar-link" href="./logs.html">
+          <span class="sidebar-label">操作ログ</span>
+        </a>
+        <a class="sidebar-link" href="./system.html">
+          <span class="sidebar-label">システム状態</span>
+        </a>
+        <a class="sidebar-link" href="./settings.html">
+          <span class="sidebar-label">管理者設定</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-user" id="currentUserName">
+        アカウントを確認しています
+      </div>
+
+      <button class="logout-button" type="button" data-logout>
+        ログアウト
+      </button>
+    </aside>
+
+    <div class="app-main">
+      <div
+        id="adminPageContent"
+        class="admin-page-content"
+        aria-live="polite"
+      ></div>
+    </div>
   </div>
+
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
   <script src="../assets/js/paths.js"></script>
   <script src="../assets/js/firebase.js"></script>
+
   <script type="module" src="../assets/js/auth.js"></script>
   <script type="module" src="../assets/js/layout.js"></script>
   <script type="module" src="../assets/js/page.js"></script>
