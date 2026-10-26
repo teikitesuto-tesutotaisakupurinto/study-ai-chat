@@ -1,5 +1,11 @@
-// Firebase SDK
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+// ============================================================
+// Firebase Module
+// 学習AIチャット
+// ============================================================
+
+import {
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 
 import {
   getAuth,
@@ -18,17 +24,7 @@ import {
 import {
   getFirestore,
   doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  collection,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  limit,
-  addDoc,
-  deleteDoc
+  getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 
@@ -37,7 +33,7 @@ import {
 // ============================================================
 
 const firebaseConfig = {
-  apiKey: "AIzaSyByt8kGALyS8AU8SR6P8zWFEPXfgHY5iynk",
+  apiKey: "AIzaSyByt8kGALyS8AU8SR6PzWFEPXfgHY5iynk",
   authDomain: "studychat-1b39d.firebaseapp.com",
   projectId: "studychat-1b39d",
   storageBucket: "studychat-1b39d.firebasestorage.app",
@@ -47,17 +43,10 @@ const firebaseConfig = {
 
 
 // ============================================================
-// Firebase Initialize
+// Initialize Firebase
 // ============================================================
 
-let app;
-
-try {
-  app = initializeApp(firebaseConfig);
-} catch (error) {
-  console.error("Firebase初期化エラー:", error);
-  throw error;
-}
+const app = initializeApp(firebaseConfig);
 
 
 // ============================================================
@@ -65,6 +54,7 @@ try {
 // ============================================================
 
 const auth = getAuth(app);
+
 const db = getFirestore(app);
 
 
@@ -79,34 +69,26 @@ const persistenceReady = setPersistence(
 
 
 // ============================================================
-// Google Provider
-// ============================================================
-
-const googleProvider = new GoogleAuthProvider();
-
-googleProvider.setCustomParameters({
-  prompt: "select_account"
-});
-
-
-// ============================================================
-// Export
+// Exports
 // ============================================================
 
 export {
   app,
+
   auth,
+
   db,
 
   persistenceReady,
 
-  googleProvider,
-
   onAuthStateChanged,
 
   signInWithEmailAndPassword,
+
   signInWithPopup,
+
   signInWithRedirect,
+
   getRedirectResult,
 
   GoogleAuthProvider,
@@ -116,18 +98,6 @@ export {
   sendPasswordResetEmail,
 
   doc,
-  getDoc,
-  setDoc,
-  updateDoc,
 
-  collection,
-  getDocs,
-
-  query,
-  where,
-  orderBy,
-  limit,
-
-  addDoc,
-  deleteDoc
+  getDoc
 };
