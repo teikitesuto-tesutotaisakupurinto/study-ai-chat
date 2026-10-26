@@ -6,8 +6,8 @@ const FIREBASE_VERSION = "10.12.5";
 const SDK_BASE =
   `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
 
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyByt8kGALyS8AU8SR6P8zWFEPXfgHY5iynk",
+const firebaseConfig = {
+  apiKey: "AIzaSyByt8kGALyS8AU8SR6PzWFEPXfgHY5iynk",
   authDomain: "studychat-1b39d.firebaseapp.com",
   projectId: "studychat-1b39d",
   storageBucket: "studychat-1b39d.firebasestorage.app",
