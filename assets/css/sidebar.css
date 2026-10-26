@@ -1,147 +1,37 @@
 
 /* =========================================================
-   assets/css/common.css
-   Study AI Chat 共通レイアウト
+   学習AIチャット 共通サイドバー
+   assets/css/sidebar.css
 
-   目的
-   - サイドバーを常に独立表示
-   - 本文とサイドバーを絶対に重ねない
-   - 生徒画面・管理者画面で同じレイアウト
-   - 白基調
-   - 不要な横スクロールを防止
-   - Chromebook対応
-========================================================= */
-
-
-/* =========================================================
-   ROOT
+   ・白基調
+   ・生徒 / 管理者で共通
+   ・絵文字なし
+   ・ログアウトは最下部
+   ・本文とサイドバーが重ならない
+   ・Firebase / Firestore / Supabase 非依存
 ========================================================= */
 
 :root {
-  font-family:
-    Inter,
-    "Noto Sans JP",
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  --sidebar-width: 250px;
 
-  color: #182334;
-  background: #f6f8fb;
+  --sidebar-bg: #ffffff;
+  --sidebar-border: #e2e8f0;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  --sidebar-text: #172033;
+  --sidebar-muted: #64748b;
 
-  --sidebar-width: 260px;
+  --sidebar-hover: #f1f5f9;
 
-  --navy: #ffffff;
-  --blue: #2563eb;
-  --blue-light: #eff6ff;
-
-  --border: #e2e8f0;
-  --muted: #64748b;
-
-  --surface: #ffffff;
-  --background: #f6f8fb;
-
-  --header-height: 68px;
-
-  --content-max-width: 1280px;
-
-  --page-padding: 28px;
+  --sidebar-active: #eff6ff;
+  --sidebar-active-text: #1d4ed8;
 }
 
 
 /* =========================================================
-   RESET
+   サイドバー
 ========================================================= */
 
-* {
-  box-sizing: border-box;
-}
-
-html {
-  width: 100%;
-  min-width: 320px;
-  min-height: 100%;
-
-  margin: 0;
-  padding: 0;
-
-  scroll-behavior: auto;
-}
-
-body {
-  width: 100%;
-  min-width: 320px;
-  min-height: 100vh;
-
-  margin: 0;
-  padding: 0;
-
-  background: var(--background);
-  color: #1f2937;
-
-  overflow-x: hidden;
-}
-
-img,
-svg,
-video,
-canvas {
-  max-width: 100%;
-}
-
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
-
-button,
-a {
-  -webkit-tap-highlight-color: transparent;
-}
-
-button:disabled {
-  opacity: .6;
-  cursor: not-allowed;
-}
-
-a {
-  color: var(--blue);
-}
-
-
-/* =========================================================
-   APP SHELL
-========================================================= */
-
-.app-shell {
-  width: 100%;
-  min-height: 100vh;
-
-  display: block;
-
-  position: relative;
-}
-
-
-/* =========================================================
-   SIDEBAR
-========================================================= */
-
-/*
- * デスクトップでは常に左側に固定。
- *
- * 重要:
- * 本文側には --sidebar-width 分の margin-left を
- * 必ず設定する。
- */
-
-.sidebar {
+.app-sidebar {
   position: fixed;
 
   top: 0;
@@ -151,390 +41,353 @@ a {
   z-index: 1000;
 
   width: var(--sidebar-width);
-  height: 100vh;
-  height: 100dvh;
 
   display: flex;
   flex-direction: column;
+
+  margin: 0;
+  padding: 0;
+
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+
+  border-right: 1px solid var(--sidebar-border);
+
+  overflow: hidden;
+}
+
+
+/* =========================================================
+   ブランド
+========================================================= */
+
+.sidebar-brand {
+  width: 100%;
+
+  min-height: 76px;
+
+  display: flex;
+  align-items: center;
+
+  flex: 0 0 auto;
+
+  padding: 0 20px;
+
+  border-bottom: 1px solid var(--sidebar-border);
+
+  background: #ffffff;
+}
+
+.sidebar-brand a {
+  display: block;
+
+  min-width: 0;
+
+  color: var(--sidebar-text);
+
+  text-decoration: none;
+
+  font-size: 18px;
+  font-weight: 800;
+
+  letter-spacing: -0.03em;
+
+  overflow-wrap: anywhere;
+}
+
+.sidebar-brand a:hover {
+  color: #2563eb;
+}
+
+
+/* =========================================================
+   サイドバー本体
+========================================================= */
+
+.sidebar-scroll {
+  flex: 1 1 auto;
 
   min-height: 0;
 
-  padding: 12px;
-
-  overflow: hidden;
-
-  border-right: 1px solid var(--border);
-
-  background: #ffffff;
-  color: #1f2937;
-
-  flex-shrink: 0;
-}
-
-
-/* =========================================================
-   SIDEBAR HEADER
-========================================================= */
-
-.sidebar-header {
   width: 100%;
 
-  display: flex;
-  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
 
-  align-items: flex-start;
-  justify-content: center;
-
-  gap: 3px;
-
-  min-height: 56px;
-
-  padding: 8px 10px;
-
-  color: #1f2937;
-
-  line-height: 1.4;
-
-  flex-shrink: 0;
-}
-
-.sidebar-brand-title {
-  font-size: 15px;
-  font-weight: 750;
-}
-
-.sidebar-brand-subtitle {
-  color: #64748b;
-
-  font-size: 11px;
-  font-weight: 500;
+  scrollbar-width: thin;
 }
 
 
 /* =========================================================
-   SIDEBAR TOGGLE
-========================================================= */
-
-.sidebar-toggle-row {
-  display: flex;
-
-  justify-content: flex-end;
-
-  padding:
-    3px 5px 7px;
-
-  flex-shrink: 0;
-}
-
-.sidebar-toggle {
-  display: inline-flex;
-
-  align-items: center;
-  justify-content: center;
-
-  width: 32px;
-  height: 30px;
-
-  padding: 5px;
-
-  border: 1px solid var(--border);
-
-  border-radius: 7px;
-
-  background: #ffffff;
-
-  color: #475569;
-
-  cursor: pointer;
-}
-
-.sidebar-icon-svg {
-  width: 19px;
-  height: 19px;
-
-  flex: 0 0 19px;
-
-  display: block;
-}
-
-.sidebar-toggle .sidebar-icon-svg {
-  width: 17px;
-  height: 17px;
-}
-
-
-/* =========================================================
-   SIDEBAR USER
-========================================================= */
-
-.sidebar-user {
-  margin:
-    0 2px 8px;
-
-  padding:
-    9px 10px;
-
-  border:
-    1px solid var(--border);
-
-  border-radius: 8px;
-
-  background: #f8fafc;
-
-  color: #475569;
-
-  font-size: 12px;
-
-  line-height: 1.45;
-
-  overflow-wrap: anywhere;
-
-  flex-shrink: 0;
-}
-
-
-/* =========================================================
-   SIDEBAR NAV
+   ナビゲーション
 ========================================================= */
 
 .sidebar-nav {
   width: 100%;
 
-  display: flex;
-  flex-direction: column;
-
-  gap: 8px;
-
-  min-height: 0;
-
-  padding:
-    0 2px;
-
-  overflow: hidden;
+  padding: 14px 12px 10px;
 }
 
-.sidebar-nav-group {
-  display: flex;
-  flex-direction: column;
 
-  gap: 3px;
+/* =========================================================
+   セクション
+========================================================= */
 
-  min-width: 0;
+.sidebar-section {
+  width: 100%;
+
+  margin: 0 0 12px;
 }
 
-.sidebar-group-heading {
-  margin:
-    3px 8px 2px;
+.sidebar-section-title {
+  margin: 0;
 
-  color: #94a3b8;
+  padding: 8px 10px 6px;
+
+  color: var(--sidebar-muted);
 
   font-size: 10px;
+  font-weight: 800;
 
-  font-weight: 700;
-
-  letter-spacing: .04em;
+  letter-spacing: 0.08em;
 }
 
-.sidebar-nav-links {
+
+/* =========================================================
+   リンク
+========================================================= */
+
+.sidebar-link {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+
+  width: 100%;
+  min-width: 0;
+
+  min-height: 44px;
+
+  margin: 3px 0;
+  padding: 0 12px;
+
+  border: 1px solid transparent;
+  border-radius: 9px;
+
+  background: transparent;
+
+  color: var(--sidebar-text);
+
+  text-decoration: none;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  line-height: 1.35;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.sidebar-link:hover {
+  background: var(--sidebar-hover);
+  color: #172033;
+}
+
+.sidebar-link.active {
+  background: var(--sidebar-active);
+
+  border-color: #dbeafe;
+
+  color: var(--sidebar-active-text);
+}
+
+.sidebar-link.active::before {
+  position: absolute;
+
+  left: -1px;
+  top: 8px;
+  bottom: 8px;
+
+  width: 3px;
+
+  content: "";
+
+  background: #2563eb;
+
+  border-radius: 0 3px 3px 0;
+}
+
+
+/* =========================================================
+   アイコン
+========================================================= */
+
+.sidebar-icon {
+  width: 22px;
+  min-width: 22px;
+
+  height: 22px;
+
+  margin-right: 10px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: currentColor;
+
+  font-size: 15px;
+
+  flex: 0 0 22px;
+}
+
+
+/*
+ * Material Icons等を使う場合
+ */
+
+.sidebar-icon .material-icons,
+.sidebar-icon .material-symbols-outlined {
+  font-size: 19px;
+}
+
+
+/* =========================================================
+   ラベル
+========================================================= */
+
+.sidebar-label {
+  display: block;
+
+  min-width: 0;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+}
+
+
+/* =========================================================
+   履歴
+========================================================= */
+
+.sidebar-history {
+  width: 100%;
+
+  margin-top: 8px;
+
+  padding-top: 10px;
+
+  border-top: 1px solid var(--sidebar-border);
+}
+
+.sidebar-history-title {
+  margin: 0;
+
+  padding: 5px 10px;
+
+  color: var(--sidebar-muted);
+
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.sidebar-history-list {
+  width: 100%;
+
   display: grid;
 
   gap: 2px;
 }
 
-
-/* =========================================================
-   SIDEBAR LINK
-========================================================= */
-
-.sidebar-link {
-  display: flex;
-
-  align-items: center;
-
-  gap: 10px;
+.sidebar-history-link {
+  display: block;
 
   width: 100%;
-  min-width: 0;
 
-  min-height: 36px;
-
-  padding:
-    7px 9px;
-
-  border:
-    1px solid transparent;
+  padding: 7px 9px;
 
   border-radius: 7px;
 
-  background: transparent;
-
   color: #475569;
 
-  font-size: 12px;
-
-  line-height: 1.35;
-
-  text-align: left;
-
   text-decoration: none;
-
-  cursor: pointer;
-}
-
-.sidebar-link:hover {
-  background: #f1f5f9;
-
-  color: #1f2937;
-}
-
-.sidebar-link.active {
-  border-color: #dbeafe;
-
-  background: var(--blue-light);
-
-  color: #1d4ed8;
-
-  font-weight: 650;
-}
-
-.sidebar-label {
-  min-width: 0;
-
-  overflow-wrap: anywhere;
-}
-
-
-/* =========================================================
-   SIDEBAR HISTORY
-========================================================= */
-
-.sidebar-history {
-  margin:
-    8px 2px 0;
-
-  padding-top: 7px;
-
-  border-top:
-    1px solid var(--border);
-
-  min-height: 0;
-
-  overflow: hidden;
-}
-
-.sidebar-history-heading {
-  margin:
-    0 8px 4px;
-
-  color: #94a3b8;
-
-  font-size: 10px;
-
-  font-weight: 700;
-}
-
-.sidebar-history-list {
-  display: grid;
-
-  gap: 1px;
-
-  min-height: 0;
-
-  color: #64748b;
 
   font-size: 11px;
-}
 
-.sidebar-history-link {
-  display: flex;
-  flex-direction: column;
+  overflow: hidden;
 
-  gap: 1px;
+  text-overflow: ellipsis;
 
-  min-width: 0;
-
-  padding:
-    5px 8px;
-
-  border-radius: 6px;
-
-  color: #475569;
-
-  text-decoration: none;
+  white-space: nowrap;
 }
 
 .sidebar-history-link:hover {
   background: #f8fafc;
 }
 
-.sidebar-history-title {
-  overflow: hidden;
-
-  text-overflow: ellipsis;
-
-  white-space: nowrap;
-
-  font-size: 11px;
-}
-
-.sidebar-history-date {
-  color: #94a3b8;
-
-  font-size: 9px;
-}
-
 
 /* =========================================================
-   SIDEBAR BOTTOM
+   下部
 ========================================================= */
 
 .sidebar-bottom {
+  width: 100%;
+
   margin-top: auto;
 
-  flex:
-    0 0 auto;
+  padding: 10px 12px 12px;
 
-  padding-top: 8px;
+  border-top: 1px solid var(--sidebar-border);
 
-  border-top:
-    1px solid var(--border);
+  background: #ffffff;
+
+  flex: 0 0 auto;
 }
 
 
 /* =========================================================
-   LOGOUT
+   ログアウト
 ========================================================= */
 
+.sidebar-logout,
 .logout-button {
-  width: 100%;
-
-  min-height: 38px;
-
   display: flex;
-
   align-items: center;
 
-  gap: 10px;
+  width: 100%;
+  min-height: 44px;
 
-  padding:
-    7px 9px;
+  margin: 0;
 
-  border:
-    1px solid var(--border);
+  padding: 0 12px;
 
-  border-radius: 7px;
+  border: 1px solid #e2e8f0;
+
+  border-radius: 9px;
 
   background: #ffffff;
 
   color: #475569;
 
-  font-size: 12px;
+  font: inherit;
 
-  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
 
   text-align: left;
+
+  cursor: pointer;
 }
 
+.sidebar-logout:hover,
 .logout-button:hover {
   border-color: #fecaca;
 
@@ -545,20 +398,43 @@ a {
 
 
 /* =========================================================
-   MAIN COLUMN
+   フッター
+========================================================= */
+
+.sidebar-footer {
+  width: 100%;
+
+  padding: 0 16px 12px;
+
+  background: #ffffff;
+
+  flex: 0 0 auto;
+}
+
+.sidebar-footer-text {
+  margin: 0;
+
+  color: #94a3b8;
+
+  font-size: 10px;
+
+  line-height: 1.6;
+
+  text-align: center;
+}
+
+
+/* =========================================================
+   本文
 ========================================================= */
 
 /*
- * ここが今回の最重要部分。
- *
- * sidebarはfixedなので通常のflexレイアウトから外れる。
- * そのためmain-columnに必ず260px分の余白を作る。
+ * .app-sidebar が position: fixed なので、
+ * 本文側に必ずサイドバー分の余白を確保する。
  */
 
-.main-column {
-  width: calc(
-    100% - var(--sidebar-width)
-  );
+.has-independent-sidebar {
+  width: calc(100% - var(--sidebar-width));
 
   min-width: 0;
 
@@ -566,1152 +442,188 @@ a {
 
   margin-left: var(--sidebar-width);
 
-  display: flex;
-
-  flex-direction: column;
-}
-
-
-/* =========================================================
-   TOPBAR
-========================================================= */
-
-.topbar {
-  width: 100%;
-
-  min-height: var(--header-height);
-
-  display: flex;
-
-  align-items: center;
-
-  gap: 16px;
-
-  padding:
-    12px 28px;
-
-  background: #ffffff;
-
-  border-bottom:
-    1px solid var(--border);
-
-  flex-shrink: 0;
-
   position: relative;
-
-  z-index: 10;
 }
 
-.topbar-title {
+
+/*
+ * よくあるメインコンテンツのクラスにも対応
+ */
+
+.has-independent-sidebar .main-content {
+  width: 100%;
+
   min-width: 0;
-
-  font-weight: 700;
-
-  overflow-wrap: anywhere;
 }
 
-.user-label {
-  margin-left: auto;
 
-  color: var(--muted);
+/* =========================================================
+   サイドバー付きページ
+========================================================= */
 
-  font-size: 13px;
+.sidebar-page {
+  width: 100%;
 
-  overflow-wrap: anywhere;
+  min-height: 100vh;
+
+  margin: 0;
+  padding: 0;
 }
 
-.menu-toggle {
+
+/* =========================================================
+   モバイル用ボタン
+========================================================= */
+
+.sidebar-menu-button {
   display: none;
-}
 
+  position: fixed;
 
-/* =========================================================
-   PAGE CONTENT
-========================================================= */
+  top: 14px;
+  left: 14px;
 
-.page-content {
-  width: 100%;
+  z-index: 1100;
 
-  max-width: var(--content-max-width);
-
-  min-width: 0;
-
-  margin:
-    0 auto;
-
-  padding:
-    var(--page-padding);
-
-  flex: 1;
-}
-
-
-/* =========================================================
-   FOOTER
-========================================================= */
-
-.app-footer {
-  width: 100%;
-
-  padding:
-    18px 24px;
-
-  color: #718096;
-
-  text-align: center;
-
-  font-size: 11px;
-
-  line-height: 1.7;
-
-  flex-shrink: 0;
-}
-
-
-/* =========================================================
-   WELCOME
-========================================================= */
-
-.welcome-panel {
-  width: 100%;
-
-  padding:
-    32px;
-
-  margin-bottom:
-    22px;
-
-  border:
-    1px solid #d9e6fb;
-
-  border-radius:
-    16px;
-
-  background:
-    linear-gradient(
-      120deg,
-      #ffffff,
-      #edf4ff
-    );
-}
-
-.welcome-panel h1 {
-  margin:
-    8px 0 12px;
-}
-
-.eyebrow {
-  color: var(--blue);
-
-  font-size: 11px;
-
-  letter-spacing: .14em;
-
-  font-weight: 800;
-}
-
-
-/* =========================================================
-   CONTENT CARD
-========================================================= */
-
-.content-card {
-  width: 100%;
-
-  min-width: 0;
-
-  padding:
-    24px;
-
-  margin-bottom:
-    20px;
-
-  background:
-    var(--surface);
-
-  border:
-    1px solid var(--border);
-
-  border-radius:
-    13px;
-
-  box-shadow:
-    0 4px 18px
-    rgb(15 23 42 / 3%);
-
-  overflow: hidden;
-}
-
-.content-card h1,
-.content-card h2 {
-  margin-top: 0;
-}
-
-.content-card h3 {
-  margin-bottom: 8px;
-}
-
-.muted {
-  color: var(--muted);
-
-  font-size: 13px;
-}
-
-.preserve-lines {
-  white-space: pre-wrap;
-
-  overflow-wrap: anywhere;
-
-  word-break: break-word;
-}
-
-
-/* =========================================================
-   BUTTONS
-========================================================= */
-
-.primary-button,
-.secondary-button {
-  display: inline-flex;
+  width: 42px;
+  height: 42px;
 
   align-items: center;
   justify-content: center;
 
-  min-height: 42px;
+  padding: 0;
 
-  max-width: 100%;
+  border: 1px solid #dbe3ef;
 
-  padding:
-    10px 17px;
+  border-radius: 9px;
 
-  border: 0;
+  background: #ffffff;
 
-  border-radius: 8px;
-
-  background:
-    var(--blue);
-
-  color: #ffffff;
-
-  text-decoration: none;
+  color: #172033;
 
   cursor: pointer;
 
-  font-weight: 650;
-}
-
-.secondary-button {
-  background: #edf2f7;
-
-  color: #24354c;
-
-  border:
-    1px solid var(--border);
-}
-
-
-/* =========================================================
-   FORMS
-========================================================= */
-
-.chat-form {
-  width: 100%;
-
-  display: grid;
-
-  gap: 10px;
-}
-
-.chat-form label {
-  font-size: 13px;
-
-  font-weight: 700;
-}
-
-input,
-select,
-textarea {
-  width: 100%;
-
-  max-width: 100%;
-
-  padding:
-    11px 12px;
-
-  border:
-    1px solid #cbd5e1;
-
-  border-radius: 8px;
-
-  background: #ffffff;
-
-  color: #182334;
-}
-
-textarea {
-  resize: vertical;
-}
-
-
-/* =========================================================
-   ANSWER
-========================================================= */
-
-.answer-output {
-  width: 100%;
-
-  min-width: 0;
-
-  min-height: 100px;
-
-  padding:
-    17px;
-
-  border-radius:
-    9px;
-
-  background:
-    #f7f9fc;
-
-  white-space:
-    pre-wrap;
-
-  overflow-wrap:
-    anywhere;
-
-  word-break:
-    break-word;
-
-  line-height:
-    1.8;
-}
-
-
-/* =========================================================
-   NOTICE
-========================================================= */
-
-.notice {
-  width: 100%;
-
-  padding:
-    13px 15px;
-
-  margin:
-    12px 0;
-
-  border-radius:
-    8px;
-
-  background:
-    #eff6ff;
-
-  color:
-    #1e40af;
-
-  white-space:
-    pre-wrap;
-
-  overflow-wrap:
-    anywhere;
-}
-
-.notice.warning {
-  background:
-    #fff7ed;
-
-  color:
-    #9a3412;
-}
-
-.notice.error {
-  background:
-    #fef2f2;
-
-  color:
-    #b91c1c;
-}
-
-.notice.success {
-  background:
-    #f0fdf4;
-
-  color:
-    #166534;
-}
-
-
-/* =========================================================
-   EMPTY
-========================================================= */
-
-.empty-state {
-  padding:
-    24px 0;
-
-  color:
-    var(--muted);
-}
-
-
-/* =========================================================
-   TABLE
-========================================================= */
-
-.table-wrap {
-  width: 100%;
-
-  min-width: 0;
-
-  overflow-x: auto;
-}
-
-.data-table {
-  width: 100%;
-
-  border-collapse:
-    collapse;
-
-  font-size:
-    13px;
-}
-
-.data-table th,
-.data-table td {
-  padding:
-    12px;
-
-  border-bottom:
-    1px solid var(--border);
-
-  text-align:
-    left;
-
-  vertical-align:
-    top;
-
-  overflow-wrap:
-    anywhere;
-}
-
-.data-table th {
-  background:
-    #f7f9fc;
-}
-
-
-/* =========================================================
-   DETAILS
-========================================================= */
-
-.details-list {
-  display: grid;
-
-  grid-template-columns:
-    150px
-    minmax(0, 1fr);
-
-  gap:
-    12px;
-}
-
-.details-list dt {
-  color:
-    var(--muted);
-}
-
-.details-list dd {
-  margin: 0;
-
-  min-width: 0;
-
-  overflow-wrap:
-    anywhere;
-
-  word-break:
-    break-word;
-}
-
-
-/* =========================================================
-   AUTH
-========================================================= */
-
-.auth-page {
-  width: 100%;
-
-  min-height: 100vh;
-
-  display: grid;
-
-  place-items: center;
-
-  padding: 22px;
-
-  background:
-    #f2f6fc;
-}
-
-.auth-card {
-  width: 100%;
-
-  max-width: 440px;
-
-  padding:
-    32px;
-
-  border:
-    1px solid var(--border);
-
-  border-radius:
-    15px;
-
-  background:
-    #ffffff;
-
   box-shadow:
-    0 15px 50px
-    rgb(15 23 42 / 8%);
-}
-
-.auth-card h1 {
-  margin-top: 0;
-}
-
-.auth-form {
-  display: grid;
-
-  gap: 13px;
-}
-
-.auth-form label {
-  font-size: 13px;
-
-  font-weight: 700;
-}
-
-.auth-links {
-  display: flex;
-
-  flex-wrap: wrap;
-
-  gap: 14px;
-
-  margin-top: 18px;
-
-  font-size: 13px;
-}
-
-.auth-footer {
-  margin-top: 24px;
-
-  color:
-    var(--muted);
-
-  font-size: 10px;
-
-  text-align: center;
-
-  line-height: 1.6;
-}
-
-.page-error {
-  width: 100%;
-
-  max-width: 700px;
-
-  margin:
-    10vh auto;
-
-  padding:
-    30px;
+    0 4px 14px
+    rgb(15 23 42 / 10%);
 }
 
 
 /* =========================================================
-   LEGACY LAYOUT
+   オーバーレイ
 ========================================================= */
 
-.legacy-layout {
-  width: 100%;
-
-  min-height: 100vh;
-
-  background:
-    var(--background);
-}
-
-.legacy-main-column {
-  width: calc(
-    100% - var(--sidebar-width)
-  );
-
-  min-width: 0;
-
-  min-height: 100vh;
-
-  margin-left:
-    var(--sidebar-width);
-
-  display: flex;
-
-  flex-direction: column;
-}
-
-.legacy-main-column > .page-header {
-  width: 100%;
-
-  flex:
-    0 0 auto;
-
-  padding:
-    18px 26px 14px;
-
-  border-bottom:
-    1px solid var(--border);
-
-  background:
-    #ffffff;
-}
-
-.legacy-main-column > .page-header .page-title {
-  margin: 0;
-
-  font-size: 21px;
-}
-
-.legacy-main-column > .page-header p {
-  margin:
-    5px 0 0;
-
-  color:
-    #64748b;
-
-  font-size:
-    12px;
-}
-
-.legacy-page-content {
-  width: 100%;
-
-  max-width: none;
-
-  min-width: 0;
-
-  min-height: 0;
-
-  flex: 1 1 auto;
-
-  margin: 0;
-
-  padding:
-    22px 26px;
-
-  overflow: auto;
-
-  scrollbar-width: none;
-}
-
-.legacy-page-content::-webkit-scrollbar {
+.sidebar-overlay {
   display: none;
-}
 
-.legacy-page-content > h2 {
-  margin:
-    0 0 16px;
+  position: fixed;
 
-  font-size:
-    20px;
-}
+  inset: 0;
 
-.legacy-main-column > .page-footer {
-  width: 100%;
-
-  flex:
-    0 0 auto;
-
-  padding:
-    10px 16px;
+  z-index: 990;
 
   background:
-    #ffffff;
-
-  border-top:
-    1px solid var(--border);
+    rgb(15 23 42 / 30%);
 }
 
 
 /* =========================================================
-   MAINTENANCE
+   画面幅 760px以下
 ========================================================= */
 
-.maintenance-page {
-  width: 100%;
+@media (max-width: 760px) {
 
-  min-height: 100vh;
-
-  margin-left:
-    var(--sidebar-width);
-
-  width:
-    calc(
-      100% - var(--sidebar-width)
+  .app-sidebar {
+    width: min(
+      var(--sidebar-width),
+      86vw
     );
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  padding:
-    30px;
-}
-
-.maintenance-container {
-  width: 100%;
-
-  max-width: 720px;
-
-  margin: auto;
-}
-
-.maintenance-heading {
-  display: flex;
-
-  align-items: center;
-
-  gap: 9px;
-}
-
-.maintenance-wrench-icon {
-  flex:
-    0 0 auto;
-
-  color:
-    #475569;
-}
-
-
-/* =========================================================
-   UNIVERSAL WIDTH SAFETY
-========================================================= */
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-p,
-span,
-div,
-section,
-article,
-main,
-aside,
-header,
-footer {
-  min-width: 0;
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-p {
-  overflow-wrap:
-    anywhere;
-}
-
-button,
-input,
-select,
-textarea {
-  max-width:
-    100%;
-}
-
-
-/* =========================================================
-   DESKTOP
-========================================================= */
-
-@media (min-width: 801px) {
-
-  /*
-   * サイドバー固定。
-   * 本文は必ず260px右から開始。
-   */
-
-  .main-column {
-    margin-left:
-      var(--sidebar-width);
-  }
-
-  .legacy-main-column {
-    margin-left:
-      var(--sidebar-width);
-  }
-
-}
-
-
-/* =========================================================
-   TABLET
-========================================================= */
-
-@media (max-width: 1000px) {
-
-  :root {
-    --sidebar-width: 250px;
-
-    --page-padding: 22px;
-  }
-
-  .sidebar {
-    width:
-      var(--sidebar-width);
-  }
-
-  .main-column {
-    width:
-      calc(
-        100% -
-        var(--sidebar-width)
-      );
-
-    margin-left:
-      var(--sidebar-width);
-  }
-
-  .legacy-main-column {
-    width:
-      calc(
-        100% -
-        var(--sidebar-width)
-      );
-
-    margin-left:
-      var(--sidebar-width);
-  }
-
-}
-
-
-/* =========================================================
-   MOBILE
-========================================================= */
-
-@media (max-width: 800px) {
-
-  :root {
-    --sidebar-width: 0px;
-
-    --page-padding: 18px;
-  }
-
-
-  /*
-   * モバイルではサイドバーを
-   * 画面外に待機。
-   */
-
-  .sidebar {
-    width:
-      min(
-        280px,
-        86vw
-      );
 
     transform:
       translateX(-100%);
 
     transition:
-      transform
-      .18s
-      ease;
+      transform 0.18s ease;
 
     box-shadow:
-      8px 0 24px
-      rgb(15 23 42 / 8%);
+      10px 0 30px
+      rgb(15 23 42 / 12%);
   }
 
 
-  /*
-   * JSがbodyに
-   * sidebar-expandedを付けた場合
-   * 表示する。
-   */
-
-  body.sidebar-expanded
-  .sidebar {
+  .app-sidebar.open {
     transform:
       translateX(0);
   }
 
 
-  /*
-   * 本文はサイドバー分の
-   * marginを持たない。
-   */
-
-  .main-column {
+  .has-independent-sidebar {
     width: 100%;
 
     margin-left: 0;
-
-    min-height: 100vh;
-  }
-
-  .legacy-main-column {
-    width: 100%;
-
-    margin-left: 0;
-
-    min-height: 100vh;
   }
 
 
-  /*
-   * 背景オーバーレイ
-   */
-
-  body.sidebar-expanded::after {
-    position: fixed;
-
-    z-index: 900;
-
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-
-    background:
-      rgb(15 23 42 / 30%);
-
-    content: "";
+  .sidebar-menu-button {
+    display: flex;
   }
 
 
-  /*
-   * サイドバー本体は
-   * オーバーレイより上。
-   */
-
-  body.sidebar-expanded
-  .sidebar {
-    z-index: 1000;
-  }
-
-
-  .menu-toggle {
-    display: inline-flex;
-
-    align-items: center;
-    justify-content: center;
-
-    width: 40px;
-    height: 40px;
-
-    padding: 0;
-
-    border:
-      1px solid var(--border);
-
-    border-radius: 8px;
-
-    background:
-      #ffffff;
-
-    color:
-      #475569;
-
-    cursor: pointer;
-  }
-
-
-  .topbar {
-    min-height:
-      62px;
-
-    padding:
-      10px 15px;
-  }
-
-
-  .page-content {
-    width: 100%;
-
-    max-width: none;
-
-    padding:
-      18px 13px;
-  }
-
-
-  .content-card {
-    padding:
-      18px;
-  }
-
-
-  .welcome-panel {
-    padding:
-      23px;
-  }
-
-
-  .details-list {
-    grid-template-columns:
-      1fr;
-
-    gap:
-      5px;
-  }
-
-
-  .details-list dd {
-    margin-bottom:
-      12px;
-  }
-
-
-  .app-footer {
-    padding:
-      16px;
-  }
-
-
-  .legacy-main-column
-  > .page-header {
-    padding:
-      16px;
-  }
-
-
-  .legacy-page-content {
-    padding:
-      16px;
-  }
-
-
-  .maintenance-page {
-    width: 100%;
-
-    margin-left: 0;
-
-    padding:
-      20px 16px;
+  .sidebar-overlay.open {
+    display: block;
   }
 
 }
 
 
 /* =========================================================
-   SMALL MOBILE
-========================================================= */
-
-@media (max-width: 480px) {
-
-  .page-content {
-    padding:
-      14px 10px;
-  }
-
-  .content-card {
-    padding:
-      15px;
-  }
-
-  .welcome-panel {
-    padding:
-      18px;
-  }
-
-  .auth-page {
-    padding:
-      14px;
-  }
-
-  .auth-card {
-    padding:
-      22px;
-  }
-
-}
-
-
-/* =========================================================
-   SHORT SCREEN
+   高さが低い画面
 ========================================================= */
 
 @media (max-height: 650px) {
 
-  .sidebar {
-    padding-top:
-      7px;
-
-    padding-bottom:
-      7px;
-  }
-
-  .sidebar-header {
-    min-height:
-      44px;
-
-    padding-top:
-      4px;
-
-    padding-bottom:
-      4px;
-  }
-
-  .sidebar-toggle-row {
-    padding-bottom:
-      4px;
-  }
-
-  .sidebar-user {
-    margin-bottom:
-      5px;
-
-    padding:
-      6px 8px;
+  .sidebar-brand {
+    min-height: 62px;
   }
 
   .sidebar-nav {
-    gap:
-      4px;
+    padding-top: 8px;
   }
 
   .sidebar-link {
-    min-height:
-      31px;
-
-    padding-top:
-      5px;
-
-    padding-bottom:
-      5px;
+    min-height: 38px;
   }
 
-  .sidebar-history {
-    margin-top:
-      4px;
-
-    padding-top:
-      4px;
+  .sidebar-section {
+    margin-bottom: 7px;
   }
 
-  .sidebar-history-link {
-    padding-top:
-      3px;
+  .sidebar-bottom {
+    padding-top: 7px;
+    padding-bottom: 8px;
+  }
 
-    padding-bottom:
-      3px;
+}
+
+
+/* =========================================================
+   横幅が非常に狭い場合
+========================================================= */
+
+@media (max-width: 420px) {
+
+  .app-sidebar {
+    width: 86vw;
+  }
+
+  .sidebar-brand {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .sidebar-nav {
+    padding-left: 9px;
+    padding-right: 9px;
   }
 
 }
