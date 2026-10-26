@@ -16,7 +16,7 @@ import {
 } from "./firebase-module.js";
 
 import { protectPage } from "./auth.js";
-import { setupSidebar, setupLogout } from "./layout.js";
+import { setupSidebar, setupLogout, renderSidebar } from "./layout.js";
 
 const AI_ENDPOINT =
   "https://fjqobjcvejhkevyfsoxt.supabase.co/functions/v1/study-chat";
@@ -330,7 +330,7 @@ async function markTurnFailed(saved, errorMessage) {
 }
 
 async function loadConversation(id) {
-  showStatus("");
+  showStatus("会話履歴を読み込んでいます...", "info");
 
   const ref = conversationRef(id);
   const snapshot = await getDoc(ref);
@@ -354,7 +354,9 @@ async function loadConversation(id) {
 
   turns = turnsSnapshot.docs
     .map((item) => normalizeTurn(item.data()))
-    .filter((turn) => turn.status === "completed" || turn.status === "error");
+    .filter(
+      (turn) => turn.status === "completed" || turn.status === "error"
+    );
 
   currentConversationId = id;
   updateAddressForConversation(id);
@@ -382,6 +384,7 @@ async function loadConversation(id) {
     showStatus("");
   }
 }
+
 async function callAI(question, subject) {
   if (!currentUser) {
     throw new Error("ログイン状態を確認できません。再読み込みしてください。");
@@ -604,6 +607,25 @@ function legacyElement(tag, text = "", className = "") {
   return node;
 }
 
+function legacyWrenchIcon() {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("focusable", "false");
+  svg.setAttribute("width", "22");
+  svg.setAttribute("height", "22");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "1.8");
+  svg.setAttribute("stroke-linecap", "round");
+  svg.setAttribute("stroke-linejoin", "round");
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", "M14.7 6.3a5 5 0 0 0-6.4 6.4L3 18l3 3 5.3-5.3a5 5 0 0 0 6.4-6.4L14 13l-3-3 3.7-3.7Z");
+  svg.append(path);
+  svg.classList.add("maintenance-wrench-icon");
+  return svg;
+}
+
 function legacyButton(text, onClick, className = "primary-button") {
   const button = legacyElement("button", text, className);
   button.type = "button";
@@ -649,28 +671,15 @@ function formatLegacyDate(value) {
 }
 
 function renderLegacyShell(appRoot, role, profile, user, pageName) {
-  // 既存の共通サイドバーがある場合は残し、本文領域だけを更新する。
-  const sharedSidebar = appRoot.querySelector("#appSidebar");
-  const adminContent = appRoot.querySelector("#adminPageContent");
-  let host = appRoot;
+  appRoot.replaceChildren();
 
-  if (adminContent) {
-    host = adminContent;
-    host.replaceChildren();
-  } else if (sharedSidebar) {
-    host = appRoot.querySelector(":scope > .app-main");
-    if (!host) {
-      host = legacyElement("div", "", "app-main");
-      appRoot.append(host);
-    }
-    host.replaceChildren();
-  } else {
-    appRoot.replaceChildren();
-  }
+  const shell = legacyElement("div", "", "legacy-layout");
+  const sidebar = legacyElement("aside", "", "sidebar");
+  sidebar.id = "appSidebar";
+  sidebar.setAttribute("aria-label", "メインメニュー");
 
-  const shell = legacyElement("div", "", "legacy-shell");
+  const column = legacyElement("div", "", "legacy-main-column");
   const header = legacyElement("header", "", "page-header");
-
   header.append(
     legacyElement(
       "h1",
@@ -683,77 +692,20 @@ function renderLegacyShell(appRoot, role, profile, user, pageName) {
     )
   );
 
-  // 固定サイドバーが存在しない旧ページに限り、ページ内ナビゲーションを作成する。
-  if (!sharedSidebar) {
-    const nav = legacyElement("nav", "", "legacy-nav");
-
-    const items = role === "admin"
-      ? [
-          ["管理者ホーム", "index.html"],
-          ["ユーザー管理", "users.html"],
-          ["お知らせ管理", "announcements.html"],
-          ["メンテナンス", "maintenance.html"],
-          ["AI設定", "ai-settings.html"],
-          ["操作ログ", "logs.html"],
-          ["システム状態", "system.html"],
-          ["管理者設定", "settings.html"]
-        ]
-      : [
-          ["学習ホーム", "index.html"],
-          ["AIに質問", "question.html"],
-          ["学習履歴", "history.html"],
-          ["お知らせ", "announcements.html"],
-          ["設定", "settings.html"]
-        ];
-
-    for (const [label, href] of items) {
-      const link = legacyLink(label, href);
-
-      if (
-        href ===
-        (pageName === "home" ? "index.html" : `${pageName}.html`)
-      ) {
-        link.classList.add("active");
-      }
-
-      nav.append(link);
-    }
-
-    const logout = legacyButton("ログアウト", async () => {
-      logout.disabled = true;
-
-      try {
-        await auth.signOut();
-        location.replace("../login.html");
-      } catch (error) {
-        logout.disabled = false;
-        legacyMessage(
-          host,
-          `ログアウトに失敗しました: ${error.message || error}`,
-          true
-        );
-      }
-    }, "secondary-button");
-
-    nav.append(logout);
-    shell.append(header, nav);
-  } else {
-    shell.append(header);
-  }
-
-  const main = legacyElement("main", "", "page-content");
-
+  const main = legacyElement("main", "", "page-content legacy-page-content");
   const footer = legacyElement(
     "footer",
     "© 2026 Regular Test Preparation Worksheet Administration Office. All Rights Reserved.",
     "page-footer"
   );
 
-  shell.append(main, footer);
-  host.append(shell);
+  column.append(header, main, footer);
+  shell.append(sidebar, column);
+  appRoot.append(shell);
 
   return main;
 }
+
 async function legacyQueryCollection(collectionName, constraints = []) {
   return getDocs(
     query(collection(db, collectionName), ...constraints)
@@ -781,6 +733,9 @@ async function initializeLegacyPage() {
       pageName
     );
 
+    // 旧ページでもAI質問画面と同じ共通サイドバーを使う。
+    await renderSidebar(role, user, profile);
+
     if (role === "student") {
       await renderStudentLegacyPage(main, pageName, user, profile);
     } else {
@@ -793,31 +748,14 @@ async function initializeLegacyPage() {
     document.documentElement.classList.remove("auth-pending");
 
     if (!document.querySelector(".auth-error")) {
-      // エラー表示も本文だけに出し、共通サイドバーは消さない。
-      const sidebar = appRoot.querySelector("#appSidebar");
-      const adminContent = appRoot.querySelector("#adminPageContent");
-      let host = adminContent;
-
-      if (!host && sidebar) {
-        host = appRoot.querySelector(":scope > .app-main");
-        if (!host) {
-          host = legacyElement("div", "", "app-main");
-          appRoot.append(host);
-        }
-      }
-
-      if (!host) {
-        appRoot.replaceChildren();
-        host = appRoot;
-      } else {
-        host.replaceChildren();
-      }
-
+      const existingColumn = appRoot.querySelector(".legacy-main-column");
       const panel = legacyElement("main", "", "auth-error");
+
       panel.append(
         legacyElement("h1", "ページを開けませんでした"),
         legacyElement("p", explainError(error))
       );
+
       panel.append(
         legacyButton(
           "再読み込み",
@@ -825,7 +763,12 @@ async function initializeLegacyPage() {
           "secondary-button"
         )
       );
-      host.append(panel);
+
+      if (existingColumn) {
+        existingColumn.replaceChildren(panel);
+      } else {
+        appRoot.replaceChildren(panel);
+      }
     }
   }
 }
@@ -1080,7 +1023,8 @@ async function renderAdminLegacyPage(main, pageName, user, profile) {
 
     return;
   }
-    if (pageName === "announcements") {
+
+  if (pageName === "announcements") {
     main.append(legacyElement("h2", "お知らせ管理"));
 
     const form = legacyElement("form", "", "page-card");
@@ -1150,7 +1094,9 @@ async function renderAdminLegacyPage(main, pageName, user, profile) {
   }
 
   if (pageName === "maintenance") {
-    main.append(legacyElement("h2", "メンテナンス設定"));
+    const heading = legacyElement("h2", "", "maintenance-heading");
+    heading.append(legacyWrenchIcon(), document.createTextNode(" システムメンテナンス設定"));
+    main.append(heading);
 
     const form = legacyElement("form", "", "page-card");
 
@@ -1351,6 +1297,7 @@ async function renderAdminLegacyPage(main, pageName, user, profile) {
     legacyLink("管理者ホームへ", "index.html")
   );
 }
+
 async function initializeQuestionPage() {
   if (initializationStarted) return;
   initializationStarted = true;
